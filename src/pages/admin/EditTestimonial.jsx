@@ -92,6 +92,13 @@ export default function EditTestimonial() {
                 updates.gallery_urls = [...(form.gallery_urls || []), ...newUrls]
             }
 
+            // Append edit history entry
+            const historyEntry = {
+                at: new Date().toISOString(),
+                note: `Status: ${updates.status}`
+            }
+            updates.edit_history = [...(form.edit_history || []), historyEntry]
+
             delete updates.id
             delete updates.created_at
 
@@ -228,6 +235,26 @@ export default function EditTestimonial() {
                         )}
                         <input type="file" accept="image/*" multiple onChange={e => setNewGalleryImages(Array.from(e.target.files))} className="file-input" />
                         {newGalleryImages.length > 0 && <p className="upload-hint">{newGalleryImages.length} new photo(s) to add (not saved yet)</p>}
+                    </div>
+
+                    <div className="edit-section">
+                        <label className="edit-label">Edit History</label>
+                        {(form.edit_history || []).length === 0 ? (
+                            <p className="edit-meta">No edits yet.</p>
+                        ) : (
+                            <div className="edit-history-list">
+                                {[...(form.edit_history || [])].reverse().map((entry, i) => (
+                                    <div key={i} className="edit-history-item">
+                                        <span className="edit-history-date">
+                                            {new Date(entry.at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {' '}
+                                            {new Date(entry.at).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                        <span className="edit-history-note">{entry.note}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="edit-section">

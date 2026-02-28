@@ -903,3 +903,9 @@ a {
 .row-action-btn.feature { background: #fef9c3; color: #854d0e; }
 .row-action-btn.unfeature { background: #fef3c7; color: #92400e; }
 
+
+/* === EDIT HISTORY === */
+.edit-history-list { display: flex; flex-direction: column; gap: 8px; }
+.edit-history-item { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: #f9fafb; border-radius: 6px; border-left: 3px solid #009b6b; }
+.edit-history-date { font-size: 0.75rem; color: #aaa; }
+.edit-history-note { font-size: 0.82rem; color: #444; }
