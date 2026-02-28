@@ -909,3 +909,15 @@ a {
 .edit-history-item { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: #f9fafb; border-radius: 6px; border-left: 3px solid #009b6b; }
 .edit-history-date { font-size: 0.75rem; color: #aaa; }
 .edit-history-note { font-size: 0.82rem; color: #444; }
+
+/* === ADMIN QUICK SEARCH === */
+.admin-search-wrap { padding: 10px 12px; position: relative; border-bottom: 1px solid #2a2a4a; }
+.admin-quick-search { width: 100%; background: #2a2a4a; border: 1px solid #3a3a5a; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 0.85rem; outline: none; }
+.admin-quick-search::placeholder { color: #666; }
+.admin-quick-search:focus { border-color: #009b6b; }
+.admin-search-results { position: absolute; top: calc(100% - 10px); left: 12px; right: 12px; background: #2a2a4a; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 300; overflow: hidden; }
+.admin-search-result { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; color: #ddd; font-size: 0.85rem; text-decoration: none; border-bottom: 1px solid #3a3a5a; }
+.admin-search-result:last-child { border-bottom: none; }
+.admin-search-result:hover { background: #3a3a5a; }
+.qs-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-status { font-size: 0.7rem; margin-left: 8px; }

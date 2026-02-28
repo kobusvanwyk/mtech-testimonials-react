@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
 
 const ADMIN_PASSWORD = 'mannatech2024'
 
@@ -9,6 +10,9 @@ export default function AdminLayout() {
     )
     const [password, setPassword] = useState('')
     const [error, setError] = useState(false)
+    const [quickSearch, setQuickSearch] = useState('')
+    const [quickResults, setQuickResults] = useState([])
+    const [searching, setSearching] = useState(false)
     const navigate = useNavigate()
 
     function handleLogin() {
@@ -19,6 +23,19 @@ export default function AdminLayout() {
         } else {
             setError(true)
         }
+    }
+
+    async function handleQuickSearch(q) {
+        setQuickSearch(q)
+        if (!q.trim()) { setQuickResults([]); return }
+        setSearching(true)
+        const { data } = await supabase
+            .from('testimonials')
+            .select('id, title, status')
+            .or(`title.ilike.%${q}%,person_name.ilike.%${q}%`)
+            .limit(6)
+        setQuickResults(data || [])
+        setSearching(false)
     }
 
     function handleLogout() {
@@ -54,6 +71,30 @@ export default function AdminLayout() {
             <aside className="admin-sidebar">
                 <div className="admin-sidebar-header">
                     <span className="admin-sidebar-title">Admin Panel</span>
+                </div>
+                <div className="admin-search-wrap">
+                    <input
+                        type="text"
+                        placeholder="Quick find..."
+                        value={quickSearch}
+                        onChange={e => handleQuickSearch(e.target.value)}
+                        className="admin-quick-search"
+                    />
+                    {quickResults.length > 0 && (
+                        <div className="admin-search-results">
+                            {quickResults.map(r => (
+                                <NavLink
+                                    key={r.id}
+                                    to={`/admin/edit/${r.id}`}
+                                    className="admin-search-result"
+                                    onClick={() => { setQuickSearch(''); setQuickResults([]) }}
+                                >
+                                    <span className="qs-title">{r.title}</span>
+                                    <span className={`qs-status status-badge badge-${r.status === 'approved' ? 'approved' : r.status === 'pending' ? 'pending' : 'unpublished'}`}>{r.status}</span>
+                                </NavLink>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <nav className="admin-nav">
                     <NavLink to="/admin/dashboard" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
