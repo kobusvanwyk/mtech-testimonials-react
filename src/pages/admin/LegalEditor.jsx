@@ -68,8 +68,9 @@ export default function LegalEditor() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
-    const [preview, setPreview] = useState(false)
+    const [mode, setMode] = useState('edit') // 'edit' | 'html' | 'preview'
     const [previewHtml, setPreviewHtml] = useState('')
+    const [htmlSource, setHtmlSource] = useState('')
 
     // Single source of truth for all content — plain object, not state
     const contentRef = useRef({ terms: FALLBACK.terms, privacy: FALLBACK.privacy })
@@ -91,9 +92,9 @@ export default function LegalEditor() {
         fetchContent()
     }, [])
 
-    // Mount / remount Quill whenever tab changes or preview is toggled off
+    // Mount / remount Quill whenever tab changes or returning to edit mode
     useEffect(() => {
-        if (loading || preview) return
+        if (loading || mode !== 'edit') return
 
         // Destroy any existing instance first
         if (quillRef.current) {
@@ -123,7 +124,7 @@ export default function LegalEditor() {
         return () => {
             quillRef.current = null
         }
-    }, [activeTab, preview, loading])
+    }, [activeTab, mode, loading])
 
     function handleTabChange(key) {
         if (key === activeTab) return
@@ -132,23 +133,43 @@ export default function LegalEditor() {
             contentRef.current[activeTab] = quillRef.current.root.innerHTML
             quillRef.current = null
         }
-        setPreview(false)
+        if (mode === 'html') {
+            contentRef.current[activeTab] = htmlSource
+        }
+        setMode('edit')
         setSaved(false)
         setActiveTab(key)
     }
 
-    function handlePreviewToggle() {
-        if (!preview && quillRef.current) {
+    function handleModeChange(newMode) {
+        if (newMode === mode) return
+
+        // Flush content out of whatever mode we're leaving
+        if (mode === 'edit' && quillRef.current) {
             contentRef.current[activeTab] = quillRef.current.root.innerHTML
-            setPreviewHtml(contentRef.current[activeTab])
             quillRef.current = null
         }
-        setPreview(p => !p)
+        if (mode === 'html') {
+            contentRef.current[activeTab] = htmlSource
+        }
+
+        // Prep the incoming mode
+        if (newMode === 'html') {
+            setHtmlSource(contentRef.current[activeTab])
+        }
+        if (newMode === 'preview') {
+            setPreviewHtml(contentRef.current[activeTab])
+        }
+
+        setSaved(false)
+        setMode(newMode)
     }
 
     async function handleSave() {
-        const html = quillRef.current
+        const html = mode === 'edit' && quillRef.current
             ? quillRef.current.root.innerHTML
+            : mode === 'html'
+            ? htmlSource
             : contentRef.current[activeTab]
 
         setSaving(true)
@@ -178,12 +199,20 @@ export default function LegalEditor() {
             <div className="edit-header">
                 <h2>📝 Legal Pages</h2>
                 <div className="edit-header-actions">
-                    <button
-                        className={`btn-preview ${preview ? 'active' : ''}`}
-                        onClick={handlePreviewToggle}
-                    >
-                        {preview ? '✎ Edit' : '👁 Preview'}
-                    </button>
+                    <div className="mode-toggle-group">
+                        <button
+                            className={`mode-toggle-btn ${mode === 'edit' ? 'active' : ''}`}
+                            onClick={() => handleModeChange('edit')}
+                        >✎ Edit</button>
+                        <button
+                            className={`mode-toggle-btn ${mode === 'html' ? 'active' : ''}`}
+                            onClick={() => handleModeChange('html')}
+                        >{'</>'} HTML</button>
+                        <button
+                            className={`mode-toggle-btn ${mode === 'preview' ? 'active' : ''}`}
+                            onClick={() => handleModeChange('preview')}
+                        >👁 Preview</button>
+                    </div>
                     <button className="btn-save" onClick={handleSave} disabled={saving}>
                         {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
                     </button>
@@ -203,12 +232,21 @@ export default function LegalEditor() {
             </div>
 
             <div className="legal-editor-wrap">
-                {preview ? (
+                {mode === 'preview' && (
                     <div
                         className="legal-preview-pane legal-content"
                         dangerouslySetInnerHTML={{ __html: previewHtml }}
                     />
-                ) : (
+                )}
+                {mode === 'html' && (
+                    <textarea
+                        className="legal-html-source"
+                        value={htmlSource}
+                        onChange={e => { setHtmlSource(e.target.value); setSaved(false) }}
+                        spellCheck={false}
+                    />
+                )}
+                {mode === 'edit' && (
                     <div ref={quillContainerRef} className="quill-mount-point" />
                 )}
             </div>

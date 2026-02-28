@@ -1148,3 +1148,48 @@ a {
     .legal-container { padding: 28px 20px; }
     .legal-content h1 { font-size: 1.4rem; }
 }
+
+/* ── Mode toggle group (Edit / HTML / Preview) ── */
+.mode-toggle-group {
+    display: flex;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.mode-toggle-btn {
+    padding: 7px 14px;
+    border: none;
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #64748b;
+    border-right: 1px solid #e2e8f0;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.mode-toggle-btn:last-child { border-right: none; }
+.mode-toggle-btn:hover { background: #f1f5f9; color: #1e293b; }
+.mode-toggle-btn.active {
+    background: #16a34a;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* ── HTML source textarea ── */
+.legal-html-source {
+    width: 100%;
+    min-height: 520px;
+    padding: 20px 24px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: #1e293b;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: none;
+    resize: vertical;
+    box-sizing: border-box;
+    outline: none;
+}
