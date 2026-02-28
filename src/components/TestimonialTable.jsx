@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-export default function TestimonialTable({ testimonials, onStatusChange, onDelete, loading }) {
+export default function TestimonialTable({ testimonials, onStatusChange, onDelete, onToggleFeatured, loading }) {
     const [selected, setSelected] = useState([])
     const [search, setSearch] = useState('')
 
@@ -29,15 +29,11 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
     })
 
     function toggleSelect(id) {
-        setSelected(prev =>
-            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-        )
+        setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
     }
 
     function toggleAll() {
-        setSelected(
-            selected.length === filtered.length ? [] : filtered.map(t => t.id)
-        )
+        setSelected(selected.length === filtered.length ? [] : filtered.map(t => t.id))
     }
 
     if (loading) return <div className="loading">Loading...</div>
@@ -55,15 +51,9 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                 {selected.length > 0 && (
                     <div className="bulk-actions">
                         <span className="bulk-count">{selected.length} selected</span>
-                        <button className="btn-bulk-approve" onClick={() => { selected.forEach(id => onStatusChange(id, 'approved')); setSelected([]) }}>
-                            ✓ Approve All
-                        </button>
-                        <button className="btn-bulk-unpublish" onClick={() => { selected.forEach(id => onStatusChange(id, 'unpublished')); setSelected([]) }}>
-                            ⊘ Unpublish All
-                        </button>
-                        <button className="btn-bulk-delete" onClick={() => { if (window.confirm(`Delete ${selected.length} testimonials?`)) { selected.forEach(id => onDelete(id)); setSelected([]) } }}>
-                            🗑 Delete All
-                        </button>
+                        <button className="btn-bulk-approve" onClick={() => { selected.forEach(id => onStatusChange(id, 'approved')); setSelected([]) }}>✓ Publish All</button>
+                        <button className="btn-bulk-unpublish" onClick={() => { selected.forEach(id => onStatusChange(id, 'unpublished')); setSelected([]) }}>⊘ Unpublish All</button>
+                        <button className="btn-bulk-delete" onClick={() => { if (window.confirm(`Delete ${selected.length} testimonials?`)) { selected.forEach(id => onDelete(id)); setSelected([]) } }}>🗑 Delete All</button>
                     </div>
                 )}
             </div>
@@ -100,6 +90,15 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                 <td>
                                     <div className="row-actions">
                                         <Link to={`/admin/edit/${t.id}`} className="row-action-btn">Edit</Link>
+                                        {onToggleFeatured && (
+                                            <button
+                                                className={`row-action-btn ${t.featured ? 'unfeature' : 'feature'}`}
+                                                onClick={() => onToggleFeatured(t.id, t.featured)}
+                                                title={t.featured ? 'Remove from featured' : 'Pin to top'}
+                                            >
+                                                {t.featured ? '★ Unpin' : '☆ Pin'}
+                                            </button>
+                                        )}
                                         {t.status !== 'approved' && (
                                             <button className="row-action-btn approve" onClick={() => onStatusChange(t.id, 'approved')}>Publish</button>
                                         )}

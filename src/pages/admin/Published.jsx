@@ -12,6 +12,7 @@ export default function Published() {
         const { data } = await supabase
             .from('testimonials').select('*')
             .eq('status', 'approved')
+            .order('featured', { ascending: false })
             .order('created_at', { ascending: false })
         setTestimonials(data || [])
         setLoading(false)
@@ -27,14 +28,25 @@ export default function Published() {
         setTestimonials(prev => prev.filter(t => t.id !== id))
     }
 
+    async function handleToggleFeatured(id, current) {
+        await supabase.from('testimonials').update({ featured: !current }).eq('id', id)
+        setTestimonials(prev => prev.map(t => t.id === id ? { ...t, featured: !current } : t))
+    }
+
+    const featured = testimonials.filter(t => t.featured)
+
     return (
         <div className="admin-page-content">
             <h2>✅ Published ({testimonials.length})</h2>
-            <p className="page-sub">Live testimonials visible on the public site.</p>
+            <p className="page-sub">
+                Live testimonials visible on the public site.
+                {featured.length > 0 && <> · <strong>{featured.length} featured ⭐</strong></>}
+            </p>
             <TestimonialTable
                 testimonials={testimonials}
                 onStatusChange={handleStatusChange}
                 onDelete={handleDelete}
+                onToggleFeatured={handleToggleFeatured}
                 loading={loading}
             />
         </div>

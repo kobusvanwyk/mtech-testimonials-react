@@ -898,3 +898,8 @@ a {
 .flagged-section { margin-bottom: 28px; }
 .flagged-heading { font-size: 1rem; margin-bottom: 12px; color: #991b1b; }
 .empty-state { background: white; border-radius: 12px; padding: 40px; text-align: center; color: #888; font-size: 1rem; }
+
+/* === FEATURED TOGGLE === */
+.row-action-btn.feature { background: #fef9c3; color: #854d0e; }
+.row-action-btn.unfeature { background: #fef3c7; color: #92400e; }
+
