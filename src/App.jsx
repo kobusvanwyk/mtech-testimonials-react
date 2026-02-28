@@ -1,8 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import Home from './pages/Home'
 import Submit from './pages/Submit'
 import Single from './pages/Single'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
 import AdminLayout from './pages/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
 import Pending from './pages/admin/Pending'
@@ -12,13 +15,26 @@ import EditTestimonial from './pages/admin/EditTestimonial'
 import Categories from './pages/admin/Categories'
 import './index.css'
 
+function PublicLayout({ children }) {
+    return (
+        <>
+            <Navbar />
+            <main className="main-content">{children}</main>
+            <Footer />
+        </>
+    )
+}
+
 function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<><Navbar /><main className="main-content"><Home /></main></>} />
-                <Route path="/submit" element={<><Navbar /><main className="main-content"><Submit /></main></>} />
-                <Route path="/testimonial/:id" element={<><Navbar /><main className="main-content"><Single /></main></>} />
+                <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+                <Route path="/submit" element={<PublicLayout><Submit /></PublicLayout>} />
+                <Route path="/testimonial/:id" element={<PublicLayout><Single /></PublicLayout>} />
+                <Route path="/terms" element={<PublicLayout><Terms /></PublicLayout>} />
+                <Route path="/privacy" element={<PublicLayout><Privacy /></PublicLayout>} />
+
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="dashboard" element={<Dashboard />} />

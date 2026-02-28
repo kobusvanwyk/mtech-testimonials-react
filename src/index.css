@@ -939,3 +939,87 @@ a {
 .modal-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
 .modal-gallery-img { width: 100%; height: 100px; object-fit: cover; border-radius: 6px; }
 .review-btn.preview { background: #e0e7ff; color: #3730a3; }
+
+/* === SITE FOOTER === */
+.site-footer { background: #1a1a2e; color: #aaa; margin-top: auto; }
+.footer-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 40px;
+    padding: 48px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: start;
+}
+@media (max-width: 768px) {
+    .footer-main { grid-template-columns: 1fr; padding: 32px 24px; gap: 28px; }
+}
+
+/* Footer brand / logo */
+.footer-logo { display: flex; align-items: center; gap: 14px; }
+.footer-logo-text { display: flex; flex-direction: column; gap: 4px; }
+.footer-logo-brand { font-size: 1.1rem; font-weight: 800; color: #fff; letter-spacing: 1px; }
+.footer-logo-badge {
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 1.5px;
+    color: #009b6b; border: 1px solid #009b6b; padding: 2px 8px;
+    border-radius: 4px; text-transform: uppercase;
+}
+
+/* Footer nav links */
+.footer-links { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
+.footer-link { color: #aaa; text-decoration: none; font-size: 0.92rem; transition: color 0.15s; }
+.footer-link:hover { color: #fff; }
+
+/* Footer disclaimer */
+.footer-disclaimer p { font-size: 0.83rem; line-height: 1.7; color: #888; }
+
+/* Footer bottom strip */
+.footer-bottom {
+    border-top: 1px solid #2a2a4a;
+    text-align: center;
+    padding: 16px 24px;
+    font-size: 0.8rem;
+    color: #555;
+}
+
+/* === LEGAL PAGES === */
+.legal-page { background: #f8f9fa; min-height: 60vh; }
+.legal-container {
+    max-width: 860px; margin: 0 auto;
+    padding: 48px 32px 64px;
+}
+.legal-container h1 {
+    font-size: 2rem; color: #1a1a2e; margin-bottom: 8px;
+}
+.legal-updated { color: #888; font-size: 0.88rem; margin-bottom: 36px; }
+.legal-section { margin-bottom: 36px; }
+.legal-section h2 {
+    font-size: 1.15rem; color: #1a1a2e; margin-bottom: 12px;
+    padding-bottom: 8px; border-bottom: 2px solid #e8e8e8;
+}
+.legal-section h3 { font-size: 0.98rem; color: #333; margin: 16px 0 8px; }
+.legal-section p { color: #444; line-height: 1.75; margin-bottom: 10px; font-size: 0.93rem; }
+.legal-section ul, .legal-section ol { color: #444; line-height: 1.75; padding-left: 20px; margin-bottom: 12px; font-size: 0.93rem; }
+.legal-section li { margin-bottom: 5px; }
+.legal-section a { color: #009b6b; }
+
+.legal-table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 0.88rem; }
+.legal-table th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; font-size: 0.82rem; }
+.legal-table td { padding: 10px 14px; border-bottom: 1px solid #efefef; color: #444; vertical-align: top; }
+.legal-table tr:last-child td { border-bottom: none; }
+.legal-table tr:nth-child(even) td { background: #fafafa; }
+
+.legal-warning { background: #fff8e1; border-left: 4px solid #f59e0b; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.88rem; color: #444; line-height: 1.6; }
+.legal-highlight { background: #e8f5e9; border-left: 4px solid #009b6b; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.88rem; color: #444; line-height: 1.6; }
+.legal-important { background: #fff3f3; border-left: 4px solid #e53935; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.88rem; color: #444; line-height: 1.6; }
+.legal-rights { background: #f0f7ff; border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
+.legal-rights p { margin-bottom: 8px; }
+.legal-acknowledgment { background: #f0f7ff; border-radius: 8px; padding: 18px 22px; }
+.legal-acknowledgment ul { margin-top: 10px; }
+.legal-retention { display: flex; flex-direction: column; gap: 10px; }
+.legal-retention div { background: #f9f9f9; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; color: #444; }
+.legal-footer-note {
+    text-align: center; margin-top: 48px; padding-top: 24px;
+    border-top: 2px solid #e0e0e0; color: #666; font-size: 0.9rem;
+}
+.legal-footer-note a { color: #009b6b; }
