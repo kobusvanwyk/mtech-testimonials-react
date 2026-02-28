@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import PreviewModal from '../../components/PreviewModal'
 
 export default function Pending() {
     const [testimonials, setTestimonials] = useState([])
     const [loading, setLoading] = useState(true)
+    const [previewing, setPreviewing] = useState(null)
 
     useEffect(() => { fetchPending() }, [])
 
@@ -50,16 +52,17 @@ export default function Pending() {
             {flagged.length > 0 && (
                 <div className="flagged-section">
                     <h3 className="flagged-heading">🚩 Needs Editing ({flagged.length})</h3>
-                    {flagged.map(t => <ReviewCard key={t.id} t={t} onStatus={handleStatus} onDelete={handleDelete} />)}
+                    {flagged.map(t => <ReviewCard key={t.id} t={t} onStatus={handleStatus} onDelete={handleDelete} onPreview={setPreviewing} />)}
                 </div>
             )}
 
-            {pending.map(t => <ReviewCard key={t.id} t={t} onStatus={handleStatus} onDelete={handleDelete} />)}
+            {pending.map(t => <ReviewCard key={t.id} t={t} onStatus={handleStatus} onDelete={handleDelete} onPreview={setPreviewing} />)}
+            {previewing && <PreviewModal testimonial={previewing} onClose={() => setPreviewing(null)} onPublish={() => { handleStatus(previewing.id, 'approved'); setPreviewing(null) }} />}
         </div>
     )
 }
 
-function ReviewCard({ t, onStatus, onDelete }) {
+function ReviewCard({ t, onStatus, onDelete, onPreview }) {
     const [expanded, setExpanded] = useState(false)
     const isFlagged = t.status === 'needs_editing'
 
@@ -94,6 +97,7 @@ function ReviewCard({ t, onStatus, onDelete }) {
             )}
 
             <div className="review-actions">
+                <button className="review-btn preview" onClick={() => onPreview(t)}>👁 Preview</button>
                 <button className="review-btn approve" onClick={() => onStatus(t.id, 'approved')}>✓ Publish</button>
                 <button className={`review-btn flag ${isFlagged ? 'flag-active' : ''}`} onClick={() => onStatus(t.id, isFlagged ? 'pending' : 'needs_editing')}>
                     {isFlagged ? '↩ Unflag' : '🚩 Needs Editing'}
