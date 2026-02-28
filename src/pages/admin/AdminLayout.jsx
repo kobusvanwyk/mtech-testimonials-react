@@ -113,6 +113,9 @@ export default function AdminLayout() {
                     <NavLink to="/admin/categories" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
                         🏷️ Categories
                     </NavLink>
+                    <NavLink to="/admin/legal" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
+                        📄 Legal Pages
+                    </NavLink>
                 </nav>
                 <div className="admin-sidebar-footer">
                     <a href="/" className="admin-nav-item" target="_blank">🌐 View Site</a>
