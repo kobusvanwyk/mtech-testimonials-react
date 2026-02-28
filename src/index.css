@@ -752,3 +752,36 @@ a {
     cursor: pointer; margin-top: 8px; transition: background 0.2s;
 }
 .btn-login:hover { background: #007a55; }
+
+/* === DASHBOARD === */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+.stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid #e0e0e0; }
+.stat-total { border-top-color: #1a1a2e; }
+.stat-pending { border-top-color: #f59e0b; }
+.stat-published { border-top-color: #009b6b; }
+.stat-month { border-top-color: #3b82f6; }
+.stat-editing { border-top-color: #ef4444; }
+.stat-number { font-size: 2.2rem; font-weight: 800; color: #1a1a2e; line-height: 1; }
+.stat-label { font-size: 0.82rem; color: #888; margin-top: 4px; }
+.stat-action { display: inline-block; margin-top: 8px; font-size: 0.8rem; color: #009b6b; font-weight: 600; }
+.dashboard-section { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.dashboard-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.dashboard-section-header h3 { font-size: 1.1rem; }
+.view-all-link { font-size: 0.85rem; color: #009b6b; font-weight: 600; }
+.recent-list { display: flex; flex-direction: column; gap: 0; }
+.recent-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.recent-item:last-child { border-bottom: none; }
+.recent-item-info { display: flex; flex-direction: column; gap: 3px; }
+.recent-title { font-weight: 600; font-size: 0.95rem; color: #1a1a2e; }
+.recent-author { font-size: 0.82rem; color: #999; }
+.recent-item-actions { display: flex; align-items: center; gap: 10px; }
+.btn-edit-small { background: #f0f4f0; color: #1a1a2e; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+.btn-edit-small:hover { background: #009b6b; color: white; }
+
+/* === STATUS BADGES === */
+.status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-approved { background: #d1fae5; color: #065f46; }
+.badge-unpublished { background: #f3f4f6; color: #374151; }
+.badge-needs-editing { background: #fee2e2; color: #991b1b; }
+.badge-rejected { background: #fce7f3; color: #9d174d; }
