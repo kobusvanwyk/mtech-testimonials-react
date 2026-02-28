@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
@@ -6,6 +6,14 @@ import 'quill/dist/quill.snow.css'
 const TABS = [
     { key: 'terms', label: '📄 Terms & Conditions' },
     { key: 'privacy', label: '🔒 Privacy Policy' },
+]
+
+const TOOLBAR = [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link'],
+    ['clean'],
 ]
 
 const FALLBACK = {
@@ -41,7 +49,7 @@ const FALLBACK = {
 <h2>2. How We Use Your Information</h2>
 <ul><li>To review and publish your testimonial</li><li>To contact you if clarification is needed</li><li>To categorise content by health conditions and products</li><li>To prevent spam and fraudulent submissions</li></ul>
 <h2>3. Public Disclosure</h2>
-<p><strong>Important:</strong> Published testimonials are PUBLIC. Your name (unless anonymous), health conditions, and testimonial content will be visible to anyone who visits our website.</p>
+<p><strong>Important:</strong> Published testimonials are PUBLIC. Your name (unless anonymous), health conditions, and content will be visible to anyone who visits our website.</p>
 <h2>4. We Do NOT</h2>
 <ul><li>Sell your personal data to third parties</li><li>Share your data for third-party marketing purposes</li></ul>
 <h2>5. Your Rights (POPIA &amp; GDPR)</h2>
@@ -57,120 +65,90 @@ const FALLBACK = {
 
 export default function LegalEditor() {
     const [activeTab, setActiveTab] = useState('terms')
-    const [content, setContent] = useState({ terms: '', privacy: '' })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const [preview, setPreview] = useState(false)
+    const [previewHtml, setPreviewHtml] = useState('')
 
+    // Single source of truth for all content — plain object, not state
+    const contentRef = useRef({ terms: FALLBACK.terms, privacy: FALLBACK.privacy })
+    const quillContainerRef = useRef(null)
     const quillRef = useRef(null)
-    const quillInstance = useRef(null)
-    const contentRef = useRef({ terms: '', privacy: '' })
 
-    // Fetch from Supabase on mount
+    // Load from Supabase once
     useEffect(() => {
         async function fetchContent() {
-            const { data } = await supabase
-                .from('site_content')
-                .select('key, content')
-                .in('key', ['terms', 'privacy'])
-            const fetched = { terms: FALLBACK.terms, privacy: FALLBACK.privacy }
-            if (data) data.forEach(row => { fetched[row.key] = row.content })
-            setContent(fetched)
-            contentRef.current = fetched
+            try {
+                const { data } = await supabase
+                    .from('site_content')
+                    .select('key, content')
+                    .in('key', ['terms', 'privacy'])
+                if (data) data.forEach(row => { contentRef.current[row.key] = row.content })
+            } catch (e) { /* use fallback */ }
             setLoading(false)
         }
         fetchContent()
     }, [])
 
-    // Init Quill once content is loaded
-    useEffect(() => {
-        if (loading || preview || quillInstance.current) return
-        if (!quillRef.current) return
-
-        const q = new Quill(quillRef.current, {
-            theme: 'snow',
-            modules: {
-                toolbar: [
-                    [{ header: [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline'],
-                    [{ list: 'ordered' }, { list: 'bullet' }],
-                    ['link'],
-                    ['clean'],
-                ],
-            },
-        })
-
-        q.root.innerHTML = contentRef.current[activeTab]
-
-        q.on('text-change', () => {
-            const html = q.root.innerHTML
-            contentRef.current[activeTab] = html
-            setContent(prev => ({ ...prev, [activeTab]: html }))
-            setSaved(false)
-        })
-
-        quillInstance.current = q
-    }, [loading, preview])
-
-    // When tab changes, flush current content then reload editor
-    function handleTabChange(key) {
-        if (quillInstance.current) {
-            contentRef.current[activeTab] = quillInstance.current.root.innerHTML
-            setContent(prev => ({ ...prev, [activeTab]: quillInstance.current.root.innerHTML }))
-            quillInstance.current.off('text-change')
-            quillInstance.current = null
-        }
-        setActiveTab(key)
-        setPreview(false)
-        setSaved(false)
-    }
-
-    // Re-init quill after tab change
+    // Mount / remount Quill whenever tab changes or preview is toggled off
     useEffect(() => {
         if (loading || preview) return
-        if (quillInstance.current || !quillRef.current) return
 
-        const q = new Quill(quillRef.current, {
+        // Destroy any existing instance first
+        if (quillRef.current) {
+            quillRef.current = null
+        }
+        if (!quillContainerRef.current) return
+
+        // Clear the container so Quill gets a fresh DOM node
+        quillContainerRef.current.innerHTML = ''
+
+        const editorDiv = document.createElement('div')
+        quillContainerRef.current.appendChild(editorDiv)
+
+        const q = new Quill(editorDiv, {
             theme: 'snow',
-            modules: {
-                toolbar: [
-                    [{ header: [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline'],
-                    [{ list: 'ordered' }, { list: 'bullet' }],
-                    ['link'],
-                    ['clean'],
-                ],
-            },
+            modules: { toolbar: TOOLBAR },
         })
 
         q.root.innerHTML = contentRef.current[activeTab]
+        quillRef.current = q
 
         q.on('text-change', () => {
-            const html = q.root.innerHTML
-            contentRef.current[activeTab] = html
-            setContent(prev => ({ ...prev, [activeTab]: html }))
-            setSaved(false)
+            contentRef.current[activeTab] = q.root.innerHTML
         })
 
-        quillInstance.current = q
+        // Cleanup: just null the ref, DOM cleanup happens via innerHTML = '' above
+        return () => {
+            quillRef.current = null
+        }
     }, [activeTab, preview, loading])
 
-    // Toggle preview: flush editor content first
+    function handleTabChange(key) {
+        if (key === activeTab) return
+        // Flush current editor content before switching
+        if (quillRef.current) {
+            contentRef.current[activeTab] = quillRef.current.root.innerHTML
+            quillRef.current = null
+        }
+        setPreview(false)
+        setSaved(false)
+        setActiveTab(key)
+    }
+
     function handlePreviewToggle() {
-        if (!preview && quillInstance.current) {
-            contentRef.current[activeTab] = quillInstance.current.root.innerHTML
-            setContent(prev => ({ ...prev, [activeTab]: quillInstance.current.root.innerHTML }))
-            quillInstance.current.off('text-change')
-            quillInstance.current = null
+        if (!preview && quillRef.current) {
+            contentRef.current[activeTab] = quillRef.current.root.innerHTML
+            setPreviewHtml(contentRef.current[activeTab])
+            quillRef.current = null
         }
         setPreview(p => !p)
     }
 
     async function handleSave() {
-        // Flush latest from editor
-        const currentHtml = quillInstance.current
-            ? quillInstance.current.root.innerHTML
+        const html = quillRef.current
+            ? quillRef.current.root.innerHTML
             : contentRef.current[activeTab]
 
         setSaving(true)
@@ -178,10 +156,11 @@ export default function LegalEditor() {
             const { error } = await supabase
                 .from('site_content')
                 .upsert(
-                    { key: activeTab, content: currentHtml, updated_at: new Date().toISOString() },
+                    { key: activeTab, content: html, updated_at: new Date().toISOString() },
                     { onConflict: 'key' }
                 )
             if (error) throw error
+            contentRef.current[activeTab] = html
             setSaved(true)
             setTimeout(() => setSaved(false), 3000)
         } catch (err) {
@@ -227,10 +206,10 @@ export default function LegalEditor() {
                 {preview ? (
                     <div
                         className="legal-preview-pane legal-content"
-                        dangerouslySetInnerHTML={{ __html: contentRef.current[activeTab] }}
+                        dangerouslySetInnerHTML={{ __html: previewHtml }}
                     />
                 ) : (
-                    <div ref={quillRef} />
+                    <div ref={quillContainerRef} className="quill-mount-point" />
                 )}
             </div>
 
