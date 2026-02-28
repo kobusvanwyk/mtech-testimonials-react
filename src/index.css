@@ -823,3 +823,35 @@ a {
 .filter-tab.active { background: #1a1a2e; color: white; }
 .filter-count { background: rgba(255,255,255,0.2); padding: 1px 6px; border-radius: 10px; font-size: 0.75rem; }
 .filter-tab:not(.active) .filter-count { background: #e5e7eb; color: #666; }
+
+/* === EDIT PAGE === */
+.edit-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+.edit-header h2 { flex: 1; margin-bottom: 0; }
+.edit-header-actions { display: flex; gap: 10px; }
+.btn-preview { background: #f3f4f6; color: #374151; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+.btn-save { background: #009b6b; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; }
+.btn-save:hover:not(:disabled) { background: #007a55; }
+.btn-save:disabled { background: #ccc; cursor: not-allowed; }
+.edit-grid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .edit-grid { grid-template-columns: 1fr; } }
+.edit-main, .edit-sidebar { display: flex; flex-direction: column; gap: 20px; }
+.edit-section { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.edit-label { display: block; font-weight: 700; font-size: 0.85rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.edit-input { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+.edit-input:focus { border-color: #009b6b; }
+.edit-input:disabled { background: #f9f9f9; color: #aaa; }
+.edit-textarea { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; outline: none; resize: vertical; font-family: inherit; line-height: 1.7; transition: border-color 0.2s; }
+.edit-textarea:focus { border-color: #009b6b; }
+.edit-select { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; outline: none; background: white; cursor: pointer; }
+.edit-row { display: flex; gap: 12px; align-items: center; }
+.edit-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; white-space: nowrap; cursor: pointer; }
+.edit-image-preview { margin-bottom: 10px; }
+.edit-image-preview img { width: 100%; border-radius: 8px; margin-bottom: 6px; }
+.edit-meta { color: #888; font-size: 0.9rem; }
+.gallery-manage { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+.gallery-manage-item img { width: 100%; height: 80px; object-fit: cover; border-radius: 6px; }
+.gallery-manage-actions { display: flex; gap: 4px; margin-top: 4px; }
+.gallery-manage-actions button { flex: 1; background: #f3f4f6; border: none; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+.gallery-manage-actions button:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-remove-gallery { background: #fee2e2 !important; color: #991b1b; }
+.edit-footer { margin-top: 24px; display: flex; justify-content: flex-end; }
