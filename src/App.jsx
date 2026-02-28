@@ -6,6 +6,7 @@ import Submit from './pages/Submit'
 import Single from './pages/Single'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
+import SearchResults from './pages/SearchResults'
 import AdminLayout from './pages/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
 import Pending from './pages/admin/Pending'
@@ -35,6 +36,7 @@ function App() {
                 <Route path="/testimonial/:id" element={<PublicLayout><Single /></PublicLayout>} />
                 <Route path="/terms" element={<PublicLayout><Terms /></PublicLayout>} />
                 <Route path="/privacy" element={<PublicLayout><Privacy /></PublicLayout>} />
+                <Route path="/search" element={<PublicLayout><SearchResults /></PublicLayout>} />
 
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<Navigate to="/admin/dashboard" replace />} />
