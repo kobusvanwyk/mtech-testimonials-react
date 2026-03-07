@@ -11,10 +11,11 @@ export default function Single({ shareMode = false }) {
 
     useEffect(() => {
         async function fetchTestimonial() {
-            // Support both old numeric IDs and new slugs gracefully
-            const isNumeric = /^\d+$/.test(slug)
+            // If it looks like a UUID or numeric ID, look up by id — otherwise by slug
+            const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+                      || /^\d+$/.test(slug)
             const query = supabase.from('testimonials').select('*')
-            const { data } = await (isNumeric
+            const { data } = await (isId
                 ? query.eq('id', slug).single()
                 : query.eq('slug', slug).single())
             setTestimonial(data)
