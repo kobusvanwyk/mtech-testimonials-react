@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronDown, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useProducts, useConditions } from '../lib/ProductsContext'
@@ -18,7 +18,6 @@ function useIsMobile() {
 
 // ── Bottom sheet (mobile) ─────────────────────────────────────────────────────
 function BottomSheet({ title, items, counts = {}, open, onClose, onSelect }) {
-    // Prevent body scroll when open
     useEffect(() => {
         if (open) document.body.style.overflow = 'hidden'
         else       document.body.style.overflow = ''
@@ -29,24 +28,18 @@ function BottomSheet({ title, items, counts = {}, open, onClose, onSelect }) {
 
     return (
         <>
-            {/* Backdrop */}
             <div className="bs-backdrop" onClick={onClose} />
-
-            {/* Sheet */}
             <div className="bs-sheet">
-                {/* Drag handle */}
                 <div className="bs-handle" />
-
-                {/* Header */}
                 <div className="bs-header">
                     <span className="bs-title">{title}</span>
-                    <button className="bs-close" onClick={onClose}>
-                        <X size={20} />
-                    </button>
+                    <button className="bs-close" onClick={onClose}><X size={20} /></button>
                 </div>
-
-                {/* Items */}
                 <div className="bs-list">
+                    {/* View All entry */}
+                    <button className="bs-item bs-item-all" onClick={() => { onSelect(null); onClose() }}>
+                        <span>All stories</span>
+                    </button>
                     {items.map(item => (
                         <button
                             key={item}
@@ -90,6 +83,14 @@ function DesktopDropdown({ label, items, counts = {}, onSelect }) {
             {open && (
                 <div className="nav-dropdown-menu">
                     <div className="nav-dropdown-scroll">
+                        {/* View All entry */}
+                        <button
+                            className="nav-dropdown-item nav-dropdown-item-all"
+                            onClick={() => { onSelect(null); setOpen(false) }}
+                        >
+                            <span>All stories</span>
+                        </button>
+                        <div className="nav-dropdown-divider" />
                         {items.map(item => (
                             <button
                                 key={item}
@@ -109,7 +110,7 @@ function DesktopDropdown({ label, items, counts = {}, onSelect }) {
     )
 }
 
-// ── Smart menu: desktop dropdown OR mobile bottom sheet ───────────────────────
+// ── Smart menu ────────────────────────────────────────────────────────────────
 function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect }) {
     const isMobile = useIsMobile()
     const [open, setOpen] = useState(false)
@@ -146,6 +147,30 @@ function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect }) {
     )
 }
 
+// ── Active filter chip ────────────────────────────────────────────────────────
+function ActiveFilterChip() {
+    const [searchParams, setSearchParams] = useSearchParams()
+    const activeFilter = searchParams.get('filter')
+
+    if (!activeFilter) return null
+
+    return (
+        <div className="filter-chip-bar">
+            <span className="filter-chip-label">Filtered by:</span>
+            <span className="filter-chip">
+                {activeFilter}
+                <button
+                    className="filter-chip-clear"
+                    onClick={() => setSearchParams({})}
+                    aria-label="Clear filter"
+                >
+                    <X size={12} />
+                </button>
+            </span>
+        </div>
+    )
+}
+
 // ── Navbar ────────────────────────────────────────────────────────────────────
 export default function Navbar() {
     const products   = useProducts()
@@ -172,7 +197,8 @@ export default function Navbar() {
     }, [])
 
     function handleFilter(value) {
-        navigate(`/?filter=${encodeURIComponent(value)}`)
+        if (value) navigate(`/?filter=${encodeURIComponent(value)}`)
+        else       navigate('/')
     }
 
     return (
@@ -205,6 +231,9 @@ export default function Navbar() {
                     />
                 </div>
             </nav>
+
+            {/* Active filter chip — shows on any page when ?filter= is in URL */}
+            <ActiveFilterChip />
         </>
     )
 }
