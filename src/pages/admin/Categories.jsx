@@ -1,33 +1,74 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Tag, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Tag, Plus, Pencil, Trash2, Check, X, GitMerge } from 'lucide-react'
 
-// ── Reusable section for managing a DB-backed list ────────────────────────────
-function CategorySection({ title, table, color }) {
-    const [items, setItems]         = useState([])  // { id, name, active, sort_order, _count }
+// ── Merge warning banner ──────────────────────────────────────────────────────
+function MergeWarning({ duplicateGroups, onMerge }) {
+    if (!duplicateGroups.length) return null
+    return (
+        <div className="merge-warning">
+            <strong>⚠ Duplicate conditions detected</strong>
+            <p>The following conditions appear to be the same (different capitalisation). Use Merge to combine them into one.</p>
+            {duplicateGroups.map(group => (
+                <MergeGroup key={group[0].name} group={group} onMerge={onMerge} />
+            ))}
+        </div>
+    )
+}
+
+function MergeGroup({ group, onMerge }) {
+    // Default winner = whichever has the most testimonials; tie = first alphabetically
+    const sorted = [...group].sort((a, b) => (b._count - a._count) || a.name.localeCompare(b.name))
+    const [winner, setWinner] = useState(sorted[0].name)
+
+    return (
+        <div className="merge-group">
+            <div className="merge-variants">
+                {group.map(item => (
+                    <label key={item.name} className={`merge-option ${winner === item.name ? 'selected' : ''}`}>
+                        <input
+                            type="radio"
+                            name={`merge-${group[0].name}`}
+                            value={item.name}
+                            checked={winner === item.name}
+                            onChange={() => setWinner(item.name)}
+                        />
+                        <span className="tag tag-condition">{item.name}</span>
+                        <span className="merge-count">{item._count} testimonial{item._count !== 1 ? 's' : ''}</span>
+                    </label>
+                ))}
+            </div>
+            <button className="merge-btn" onClick={() => onMerge(group, winner)}>
+                <GitMerge size={13} /> Keep "{winner}"
+            </button>
+        </div>
+    )
+}
+
+// ── Reusable section ──────────────────────────────────────────────────────────
+function CategorySection({ title, table, color, onDataChange }) {
+    const [items, setItems]         = useState([])
     const [loading, setLoading]     = useState(true)
     const [editingId, setEditingId] = useState(null)
     const [editValue, setEditValue] = useState('')
     const [addValue, setAddValue]   = useState('')
     const [adding, setAdding]       = useState(false)
     const [saving, setSaving]       = useState(false)
-    const [message, setMessage]     = useState(null)  // { text, type: 'success'|'error' }
+    const [message, setMessage]     = useState(null)
     const addInputRef = useRef()
 
     useEffect(() => { fetchItems() }, [])
 
     async function fetchItems() {
-        // Fetch items from their own table
         const { data: tableData } = await supabase
             .from(table)
             .select('id, name, active, sort_order')
             .order('sort_order')
             .order('name')
 
-        // Count how many testimonials use each item
         const { data: testimonials } = await supabase
             .from('testimonials')
-            .select(`${table === 'products' ? 'products' : 'conditions'}`)
+            .select(table === 'products' ? 'products' : 'conditions')
 
         const countMap = {}
         ;(testimonials || []).forEach(t => {
@@ -35,22 +76,32 @@ function CategorySection({ title, table, color }) {
             ;(field || []).forEach(v => { countMap[v] = (countMap[v] || 0) + 1 })
         })
 
-        setItems((tableData || []).map(item => ({ ...item, _count: countMap[item.name] || 0 })))
+        const result = (tableData || []).map(item => ({ ...item, _count: countMap[item.name] || 0 }))
+        setItems(result)
         setLoading(false)
+        if (onDataChange) onDataChange(result)
     }
 
     function flash(text, type = 'success') {
         setMessage({ text, type })
-        setTimeout(() => setMessage(null), 4000)
+        setTimeout(() => setMessage(null), 5000)
     }
 
     async function handleAdd() {
         const name = addValue.trim()
         if (!name) return
+
+        // Case-insensitive duplicate check
+        const duplicate = items.find(i => i.name.toLowerCase() === name.toLowerCase())
+        if (duplicate) {
+            flash(`"${duplicate.name}" already exists.`, 'error')
+            return
+        }
+
         setSaving(true)
         const { error } = await supabase.from(table).insert({ name, active: true, sort_order: 0 })
         if (error) {
-            flash(error.message.includes('unique') ? `"${name}" already exists.` : error.message, 'error')
+            flash(error.message, 'error')
         } else {
             flash(`Added "${name}"`)
             setAddValue('')
@@ -63,13 +114,18 @@ function CategorySection({ title, table, color }) {
     async function handleRename(item) {
         const name = editValue.trim()
         if (!name || name === item.name) { setEditingId(null); return }
-        setSaving(true)
 
-        // 1. Update the master table
+        // Case-insensitive duplicate check (exclude self)
+        const duplicate = items.find(i => i.id !== item.id && i.name.toLowerCase() === name.toLowerCase())
+        if (duplicate) {
+            flash(`"${duplicate.name}" already exists. Use Merge instead.`, 'error')
+            return
+        }
+
+        setSaving(true)
         const { error } = await supabase.from(table).update({ name }).eq('id', item.id)
         if (error) { flash(error.message, 'error'); setSaving(false); return }
 
-        // 2. Update the name in all testimonials that use it
         const field = table === 'products' ? 'products' : 'conditions'
         const { data: affected } = await supabase
             .from('testimonials')
@@ -88,7 +144,6 @@ function CategorySection({ title, table, color }) {
     }
 
     async function handleDelete(item) {
-        const label = table === 'products' ? 'product' : 'condition'
         if (!window.confirm(
             item._count > 0
                 ? `Remove "${item.name}" from ${item._count} testimonial(s) and delete it? This cannot be undone.`
@@ -96,8 +151,6 @@ function CategorySection({ title, table, color }) {
         )) return
 
         setSaving(true)
-
-        // Remove from testimonials if used
         if (item._count > 0) {
             const field = table === 'products' ? 'products' : 'conditions'
             const { data: affected } = await supabase
@@ -110,12 +163,49 @@ function CategorySection({ title, table, color }) {
             }
         }
 
-        // Delete from master table
         await supabase.from(table).delete().eq('id', item.id)
         flash(`Deleted "${item.name}"`)
         fetchItems()
         setSaving(false)
     }
+
+    // Merge: update all testimonials using any losing name → winner, then delete losers
+    async function handleMerge(group, winnerName) {
+        if (!window.confirm(`Merge all variants into "${winnerName}"? This will update all affected testimonials.`)) return
+        setSaving(true)
+
+        const field = table === 'products' ? 'products' : 'conditions'
+        const losers = group.filter(item => item.name !== winnerName)
+
+        for (const loser of losers) {
+            // Update testimonials
+            const { data: affected } = await supabase
+                .from('testimonials')
+                .select('id, ' + field)
+                .contains(field, [loser.name])
+            for (const t of (affected || [])) {
+                const updated = t[field].map(x => x === loser.name ? winnerName : x)
+                await supabase.from('testimonials').update({ [field]: updated }).eq('id', t.id)
+            }
+            // Delete the loser from master table
+            await supabase.from(table).delete().eq('id', loser.id)
+        }
+
+        flash(`Merged ${losers.length} variant(s) into "${winnerName}"`)
+        fetchItems()
+        setSaving(false)
+    }
+
+    // Detect case-insensitive duplicate groups (conditions only for now, but works for both)
+    const duplicateGroups = (() => {
+        const grouped = {}
+        items.forEach(item => {
+            const key = item.name.toLowerCase()
+            if (!grouped[key]) grouped[key] = []
+            grouped[key].push(item)
+        })
+        return Object.values(grouped).filter(g => g.length > 1)
+    })()
 
     function startEdit(item) {
         setEditingId(item.id)
@@ -142,6 +232,9 @@ function CategorySection({ title, table, color }) {
                     <Plus size={14} /> Add
                 </button>
             </div>
+
+            {/* Merge warnings */}
+            <MergeWarning duplicateGroups={duplicateGroups} onMerge={handleMerge} />
 
             {message && (
                 <div className={`cat-message ${message.type}`}>{message.text}</div>
@@ -236,18 +329,9 @@ export default function Categories() {
                 Manage health conditions and products used across all testimonials,
                 the submission form, and the navigation menu. Changes apply everywhere instantly.
             </p>
-
             <div className="categories-grid">
-                <CategorySection
-                    title="Health Conditions"
-                    table="conditions"
-                    color="condition"
-                />
-                <CategorySection
-                    title="Products"
-                    table="products"
-                    color="product"
-                />
+                <CategorySection title="Health Conditions" table="conditions" color="condition" />
+                <CategorySection title="Products"          table="products"   color="product"   />
             </div>
         </div>
     )
