@@ -102,13 +102,13 @@ export default function Navbar() {
                 <div className="navbar-links">
                     <DropdownMenu
                         label="View by Condition"
-                        items={conditions}
+                        items={conditions.filter(c => counts[c] > 0)}
                         counts={counts}
                         onSelect={handleFilter}
                     />
                     <DropdownMenu
                         label="View by Product"
-                        items={PRODUCTS}
+                        items={PRODUCTS.filter(p => counts[p] > 0)}
                         counts={counts}
                         onSelect={handleFilter}
                     />
