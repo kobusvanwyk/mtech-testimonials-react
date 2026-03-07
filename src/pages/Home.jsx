@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { PRODUCTS } from '../lib/constants'
+import { useProducts, useConditions } from '../lib/ProductsContext'
 import TestimonialCard from '../components/TestimonialCard'
 import SearchBar from '../components/SearchBar'
 import CategorySidebar from '../components/CategorySidebar'
 
 export default function Home() {
+    const PRODUCTS   = useProducts()
+    const CONDITIONS = useConditions()
     const [testimonials, setTestimonials] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchParams, setSearchParams] = useSearchParams()
@@ -43,7 +45,7 @@ export default function Home() {
           )
         : testimonials
 
-    const allConditions = [...new Set(testimonials.flatMap(t => t.conditions || []))].sort()
+
 
     if (loading) return <div className="loading">Loading stories...</div>
 
@@ -65,7 +67,7 @@ export default function Home() {
                 )}
             </div>
             <CategorySidebar
-                conditions={allConditions}
+                conditions={CONDITIONS}
                 products={PRODUCTS}
                 activeFilter={activeFilter}
                 onFilter={setActiveFilter}

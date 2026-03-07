@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useProducts, useConditions } from '../../lib/ProductsContext'
 import { ArrowLeft, ArrowRight, Eye, Check, X } from 'lucide-react'
-
-const PRODUCTS = [
-    'Ambrotose Complex', 'Advanced Ambrotose', 'Ambrotose AO',
-    'NutriVerus', 'Catalyst', 'Manapol', 'PLUS', 'OsoLean',
-    'GI-ProBalance', 'ImmunoSTART', 'BounceBack',
-    'Superfood Greens and Reds', 'TruPLENISH', 'Cardio Balance', 'Omega 3'
-]
 
 const STATUS_OPTIONS = [
     { value: 'pending', label: 'Pending' },
@@ -19,6 +13,8 @@ const STATUS_OPTIONS = [
 ]
 
 export default function EditTestimonial() {
+    const PRODUCTS = useProducts()
+    const CONDITIONS = useConditions()
     const { id } = useParams()
     const navigate = useNavigate()
     const [loading, setLoading] = useState(true)
@@ -159,20 +155,17 @@ export default function EditTestimonial() {
 
                     <div className="edit-section">
                         <label className="edit-label">Health Conditions</label>
-                        <div className="tag-input-area">
-                            {(form.conditions || []).map(c => (
-                                <span key={c} className="tag-pill">
-                                    {c} <button onClick={() => removeCondition(c)}><X size={10} /></button>
-                                </span>
+                        <div className="products-grid">
+                            {CONDITIONS.map(c => (
+                                <label key={c} className={`product-option ${(form.conditions || []).includes(c) ? 'selected' : ''}`}>
+                                    <input type="checkbox" checked={(form.conditions || []).includes(c)} onChange={() => {
+                                        const current = form.conditions || []
+                                        update('conditions', current.includes(c) ? current.filter(x => x !== c) : [...current, c])
+                                    }} />
+                                    <span className="product-check"><Check size={12} /></span>
+                                    {c}
+                                </label>
                             ))}
-                            <input
-                                className="tag-input"
-                                type="text"
-                                placeholder="Add condition..."
-                                value={conditionInput}
-                                onChange={e => setConditionInput(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addCondition() } }}
-                            />
                         </div>
                     </div>
 

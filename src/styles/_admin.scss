@@ -1324,3 +1324,48 @@
     &:disabled { opacity: 0.6; cursor: not-allowed; }
     &.saved { background: #38a169; }
 }
+
+// ── Categories page additions ─────────────────────────────────────────────────
+.cat-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.cat-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover { background: var(--primary-dark); }
+}
+
+.cat-message {
+    &.success { background: #d1fae5; color: #065f46; }
+    &.error   { background: #fee2e2; color: #991b1b; }
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.cat-unused {
+    color: var(--text-hint);
+    font-style: italic;
+    font-size: var(--text-sm);
+}
+
+.category-row.adding {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}

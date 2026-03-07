@@ -1,150 +1,253 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Tag } from 'lucide-react'
+import { Tag, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 
-export default function Categories() {
-    const [testimonials, setTestimonials] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [editingCondition, setEditingCondition] = useState(null)
-    const [editingProduct, setEditingProduct] = useState(null)
-    const [renameValue, setRenameValue] = useState('')
-    const [saving, setSaving] = useState(false)
-    const [message, setMessage] = useState('')
+// ── Reusable section for managing a DB-backed list ────────────────────────────
+function CategorySection({ title, table, color }) {
+    const [items, setItems]         = useState([])  // { id, name, active, sort_order, _count }
+    const [loading, setLoading]     = useState(true)
+    const [editingId, setEditingId] = useState(null)
+    const [editValue, setEditValue] = useState('')
+    const [addValue, setAddValue]   = useState('')
+    const [adding, setAdding]       = useState(false)
+    const [saving, setSaving]       = useState(false)
+    const [message, setMessage]     = useState(null)  // { text, type: 'success'|'error' }
+    const addInputRef = useRef()
 
-    useEffect(() => { fetchAll() }, [])
+    useEffect(() => { fetchItems() }, [])
 
-    async function fetchAll() {
-        const { data } = await supabase.from('testimonials').select('id, conditions, products')
-        setTestimonials(data || [])
+    async function fetchItems() {
+        // Fetch items from their own table
+        const { data: tableData } = await supabase
+            .from(table)
+            .select('id, name, active, sort_order')
+            .order('sort_order')
+            .order('name')
+
+        // Count how many testimonials use each item
+        const { data: testimonials } = await supabase
+            .from('testimonials')
+            .select(`${table === 'products' ? 'products' : 'conditions'}`)
+
+        const countMap = {}
+        ;(testimonials || []).forEach(t => {
+            const field = table === 'products' ? t.products : t.conditions
+            ;(field || []).forEach(v => { countMap[v] = (countMap[v] || 0) + 1 })
+        })
+
+        setItems((tableData || []).map(item => ({ ...item, _count: countMap[item.name] || 0 })))
         setLoading(false)
     }
 
-    const conditionMap = {}
-    testimonials.forEach(t => {
-        (t.conditions || []).forEach(c => {
-            conditionMap[c] = (conditionMap[c] || 0) + 1
-        })
-    })
+    function flash(text, type = 'success') {
+        setMessage({ text, type })
+        setTimeout(() => setMessage(null), 4000)
+    }
 
-    const productMap = {}
-    testimonials.forEach(t => {
-        (t.products || []).forEach(p => {
-            productMap[p] = (productMap[p] || 0) + 1
-        })
-    })
-
-    const conditions = Object.entries(conditionMap).sort((a, b) => b[1] - a[1])
-    const products = Object.entries(productMap).sort((a, b) => b[1] - a[1])
-
-    async function renameCategory(type, oldName, newName) {
-        if (!newName.trim() || newName.trim() === oldName) {
-            setEditingCondition(null)
-            setEditingProduct(null)
-            return
-        }
+    async function handleAdd() {
+        const name = addValue.trim()
+        if (!name) return
         setSaving(true)
-        const field = type === 'condition' ? 'conditions' : 'products'
-        const affected = testimonials.filter(t => (t[field] || []).includes(oldName))
-        for (const t of affected) {
-            const updated = t[field].map(x => x === oldName ? newName.trim() : x)
-            await supabase.from('testimonials').update({ [field]: updated }).eq('id', t.id)
+        const { error } = await supabase.from(table).insert({ name, active: true, sort_order: 0 })
+        if (error) {
+            flash(error.message.includes('unique') ? `"${name}" already exists.` : error.message, 'error')
+        } else {
+            flash(`Added "${name}"`)
+            setAddValue('')
+            setAdding(false)
+            fetchItems()
         }
-        setMessage(`Renamed "${oldName}" → "${newName.trim()}" on ${affected.length} testimonial(s)`)
-        setTimeout(() => setMessage(''), 4000)
-        setEditingCondition(null)
-        setEditingProduct(null)
-        fetchAll()
         setSaving(false)
     }
 
-    async function deleteCategory(type, name) {
-        const field = type === 'condition' ? 'conditions' : 'products'
-        const affected = testimonials.filter(t => (t[field] || []).includes(name))
-        if (!window.confirm(`Remove "${name}" from ${affected.length} testimonial(s)? This cannot be undone.`)) return
+    async function handleRename(item) {
+        const name = editValue.trim()
+        if (!name || name === item.name) { setEditingId(null); return }
         setSaving(true)
-        for (const t of affected) {
-            const updated = (t[field] || []).filter(x => x !== name)
+
+        // 1. Update the master table
+        const { error } = await supabase.from(table).update({ name }).eq('id', item.id)
+        if (error) { flash(error.message, 'error'); setSaving(false); return }
+
+        // 2. Update the name in all testimonials that use it
+        const field = table === 'products' ? 'products' : 'conditions'
+        const { data: affected } = await supabase
+            .from('testimonials')
+            .select('id, ' + field)
+            .contains(field, [item.name])
+
+        for (const t of (affected || [])) {
+            const updated = t[field].map(x => x === item.name ? name : x)
             await supabase.from('testimonials').update({ [field]: updated }).eq('id', t.id)
         }
-        setMessage(`Deleted "${name}" from ${affected.length} testimonial(s)`)
-        setTimeout(() => setMessage(''), 4000)
-        fetchAll()
+
+        flash(`Renamed "${item.name}" → "${name}" on ${(affected || []).length} testimonial(s)`)
+        setEditingId(null)
+        fetchItems()
         setSaving(false)
     }
 
-    function startEdit(type, name) {
-        setRenameValue(name)
-        if (type === 'condition') { setEditingCondition(name); setEditingProduct(null) }
-        else { setEditingProduct(name); setEditingCondition(null) }
+    async function handleDelete(item) {
+        const label = table === 'products' ? 'product' : 'condition'
+        if (!window.confirm(
+            item._count > 0
+                ? `Remove "${item.name}" from ${item._count} testimonial(s) and delete it? This cannot be undone.`
+                : `Delete "${item.name}"? This cannot be undone.`
+        )) return
+
+        setSaving(true)
+
+        // Remove from testimonials if used
+        if (item._count > 0) {
+            const field = table === 'products' ? 'products' : 'conditions'
+            const { data: affected } = await supabase
+                .from('testimonials')
+                .select('id, ' + field)
+                .contains(field, [item.name])
+            for (const t of (affected || [])) {
+                const updated = t[field].filter(x => x !== item.name)
+                await supabase.from('testimonials').update({ [field]: updated }).eq('id', t.id)
+            }
+        }
+
+        // Delete from master table
+        await supabase.from(table).delete().eq('id', item.id)
+        flash(`Deleted "${item.name}"`)
+        fetchItems()
+        setSaving(false)
     }
 
-    function CategoryRow({ type, name, count }) {
-        const isEditing = type === 'condition' ? editingCondition === name : editingProduct === name
-        return (
-            <div className="category-row">
-                {isEditing ? (
+    function startEdit(item) {
+        setEditingId(item.id)
+        setEditValue(item.name)
+        setAdding(false)
+    }
+
+    function startAdd() {
+        setAdding(true)
+        setEditingId(null)
+        setAddValue('')
+        setTimeout(() => addInputRef.current?.focus(), 50)
+    }
+
+    if (loading) return <div className="loading">Loading…</div>
+
+    return (
+        <div className="edit-section">
+            <div className="cat-section-header">
+                <h3 className="cat-section-title">
+                    {title} <span className="cat-total">({items.length})</span>
+                </h3>
+                <button className="cat-add-btn" onClick={startAdd}>
+                    <Plus size={14} /> Add
+                </button>
+            </div>
+
+            {message && (
+                <div className={`cat-message ${message.type}`}>{message.text}</div>
+            )}
+
+            {/* Add new row */}
+            {adding && (
+                <div className="category-row adding">
                     <input
+                        ref={addInputRef}
                         className="category-rename-input"
-                        value={renameValue}
-                        autoFocus
-                        onChange={e => setRenameValue(e.target.value)}
+                        value={addValue}
+                        placeholder={`New ${table === 'products' ? 'product' : 'condition'} name…`}
+                        onChange={e => setAddValue(e.target.value)}
                         onKeyDown={e => {
-                            if (e.key === 'Enter') renameCategory(type, name, renameValue)
-                            if (e.key === 'Escape') { setEditingCondition(null); setEditingProduct(null) }
+                            if (e.key === 'Enter') handleAdd()
+                            if (e.key === 'Escape') setAdding(false)
                         }}
                     />
-                ) : (
-                    <span className={`category-name ${type === 'condition' ? 'tag-condition' : 'tag-product'}`}>{name}</span>
-                )}
-                <span className="category-count">{count} testimonial{count !== 1 ? 's' : ''}</span>
-                <div className="category-actions">
-                    {isEditing ? (
-                        <>
-                            <button className="cat-btn save" onClick={() => renameCategory(type, name, renameValue)} disabled={saving}>Save</button>
-                            <button className="cat-btn cancel" onClick={() => { setEditingCondition(null); setEditingProduct(null) }}>Cancel</button>
-                        </>
-                    ) : (
-                        <>
-                            <button className="cat-btn edit" onClick={() => startEdit(type, name)}>Rename</button>
-                            <button className="cat-btn delete" onClick={() => deleteCategory(type, name)}>Delete</button>
-                        </>
-                    )}
+                    <div className="category-actions">
+                        <button className="cat-btn save" onClick={handleAdd} disabled={saving || !addValue.trim()}>
+                            <Check size={13} /> Add
+                        </button>
+                        <button className="cat-btn cancel" onClick={() => setAdding(false)}>
+                            <X size={13} /> Cancel
+                        </button>
+                    </div>
                 </div>
-            </div>
-        )
-    }
+            )}
 
-    if (loading) return <div className="admin-page-content"><div className="loading">Loading...</div></div>
+            {items.length === 0 && !adding && (
+                <p className="table-empty">No {table} yet. Add one above.</p>
+            )}
 
+            {items.map(item => (
+                <div key={item.id} className="category-row">
+                    {editingId === item.id ? (
+                        <input
+                            className="category-rename-input"
+                            value={editValue}
+                            autoFocus
+                            onChange={e => setEditValue(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') handleRename(item)
+                                if (e.key === 'Escape') setEditingId(null)
+                            }}
+                        />
+                    ) : (
+                        <span className={`category-name tag tag-${color}`}>{item.name}</span>
+                    )}
+
+                    <span className="category-count">
+                        {item._count > 0
+                            ? `${item._count} testimonial${item._count !== 1 ? 's' : ''}`
+                            : <em className="cat-unused">unused</em>
+                        }
+                    </span>
+
+                    <div className="category-actions">
+                        {editingId === item.id ? (
+                            <>
+                                <button className="cat-btn save" onClick={() => handleRename(item)} disabled={saving}>
+                                    <Check size={13} /> Save
+                                </button>
+                                <button className="cat-btn cancel" onClick={() => setEditingId(null)}>
+                                    <X size={13} /> Cancel
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button className="cat-btn edit" onClick={() => startEdit(item)}>
+                                    <Pencil size={13} /> Rename
+                                </button>
+                                <button className="cat-btn delete" onClick={() => handleDelete(item)}>
+                                    <Trash2 size={13} /> Delete
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export default function Categories() {
     return (
         <div className="admin-page-content">
             <h2><Tag size={20} /> Categories</h2>
-            <p className="page-sub">Rename or delete condition and product tags used across all testimonials. Changes apply to every testimonial using that tag.</p>
-
-            {message && <div className="cat-message">{message}</div>}
+            <p className="page-sub">
+                Manage health conditions and products used across all testimonials,
+                the submission form, and the navigation menu. Changes apply everywhere instantly.
+            </p>
 
             <div className="categories-grid">
-                <div className="edit-section">
-                    <h3 className="cat-section-title">Health Conditions <span className="cat-total">({conditions.length})</span></h3>
-                    {conditions.length === 0 ? (
-                        <p className="table-empty">No conditions yet.</p>
-                    ) : (
-                        conditions.map(([name, count]) => (
-                            <CategoryRow key={name} type="condition" name={name} count={count} />
-                        ))
-                    )}
-                </div>
-
-                <div className="edit-section">
-                    <h3 className="cat-section-title">Products <span className="cat-total">({products.length})</span></h3>
-                    {products.length === 0 ? (
-                        <p className="table-empty">No products yet.</p>
-                    ) : (
-                        products.map(([name, count]) => (
-                            <CategoryRow key={name} type="product" name={name} count={count} />
-                        ))
-                    )}
-                </div>
+                <CategorySection
+                    title="Health Conditions"
+                    table="conditions"
+                    color="condition"
+                />
+                <CategorySection
+                    title="Products"
+                    table="products"
+                    color="product"
+                />
             </div>
         </div>
     )

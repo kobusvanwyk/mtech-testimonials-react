@@ -2,13 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { PRODUCTS } from '../lib/constants'
+import { useProducts, useConditions } from '../lib/ProductsContext'
 
 function DropdownMenu({ label, items, counts = {}, onSelect }) {
     const [open, setOpen] = useState(false)
     const ref = useRef()
 
-    // Close when clicking outside
     useEffect(() => {
         function handleClick(e) {
             if (ref.current && !ref.current.contains(e.target)) setOpen(false)
@@ -49,22 +48,18 @@ function DropdownMenu({ label, items, counts = {}, onSelect }) {
 }
 
 export default function Navbar() {
-    const [conditions, setConditions] = useState([])
-    const navigate = useNavigate()
-
+    const products   = useProducts()
+    const conditions = useConditions()
+    const navigate   = useNavigate()
     const [counts, setCounts] = useState({})
 
     useEffect(() => {
-        async function fetchData() {
+        async function fetchCounts() {
             const { data } = await supabase
                 .from('testimonials')
                 .select('conditions, products')
                 .eq('status', 'approved')
             if (data) {
-                const allConditions = [...new Set(data.flatMap(t => t.conditions || []))].sort()
-                setConditions(allConditions)
-
-                // Build counts map for both conditions and products
                 const countMap = {}
                 data.forEach(t => {
                     ;(t.conditions || []).forEach(c => { countMap[c] = (countMap[c] || 0) + 1 })
@@ -73,7 +68,7 @@ export default function Navbar() {
                 setCounts(countMap)
             }
         }
-        fetchData()
+        fetchCounts()
     }, [])
 
     function handleFilter(value) {
@@ -108,7 +103,7 @@ export default function Navbar() {
                     />
                     <DropdownMenu
                         label="View by Product"
-                        items={PRODUCTS.filter(p => counts[p] > 0)}
+                        items={products.filter(p => counts[p] > 0)}
                         counts={counts}
                         onSelect={handleFilter}
                     />
