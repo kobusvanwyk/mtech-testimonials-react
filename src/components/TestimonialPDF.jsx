@@ -173,14 +173,7 @@ const S = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
     },
-    galleryImage: {
-        width: 230,
-        height: 153,
-        objectFit: 'cover',
-        borderRadius: 6,
-        marginRight: 10,
-        marginBottom: 10,
-    },
+    // galleryImage is computed dynamically based on count — see render
 
     // ── Divider ──────────────────────────────────────
     divider: {
@@ -260,6 +253,22 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
     const paragraphs   = (t.story_text || '').split('\n').filter(p => p.trim())
     const gallery      = (t.gallery_urls || []).slice(0, 6)
 
+    // ── Dynamic gallery grid ──────────────────────────────────────────────────
+    // A4 content width = 595 - (44 * 2) = 507pt
+    const CONTENT_W = 507
+    const GAP       = 8
+    const cols      = gallery.length === 1 ? 1 : gallery.length === 2 ? 2 : 3
+    const imgW      = (CONTENT_W - GAP * (cols - 1)) / cols
+    const imgH      = cols === 1 ? Math.min(imgW * 0.6, 280) : imgW * 0.68
+    const galleryImageStyle = {
+        width:       imgW,
+        height:      imgH,
+        objectFit:   'cover',
+        borderRadius: 6,
+        marginRight:  GAP,
+        marginBottom: GAP,
+    }
+
     // ── Font scaling ──────────────────────────────────────────────────────────
     const charCount   = (t.story_text || '').length
     const threshold   = parseInt(settings.pdf_font_threshold, 10) || 1200
@@ -333,7 +342,7 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
                             <Text style={S.gallerySectionLabel}>Photos</Text>
                             <View style={S.galleryGrid}>
                                 {gallery.map((url, i) => (
-                                    <Image key={i} src={url} style={S.galleryImage} />
+                                    <Image key={i} src={url} style={galleryImageStyle} />
                                 ))}
                             </View>
                         </View>
