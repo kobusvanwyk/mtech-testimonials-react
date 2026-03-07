@@ -6,20 +6,16 @@
     margin: 0 auto;
     padding: 24px 16px;
 
-    @include md {
-        padding: 40px 16px;
-    }
+    @include md { padding: 40px 16px; }
 }
 
 .submit-container {
     background: white;
     border-radius: 16px;
-    padding: 24px 16px;  // mobile
+    padding: 24px 16px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 
-    @include md {
-        padding: 40px;
-    }
+    @include md { padding: 40px; }
 }
 
 .step-progress {
@@ -27,18 +23,16 @@
     gap: 8px;
     justify-content: center;
     margin-bottom: 12px;
-}
 
-.step-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #e0e0e0;
-    transition: background 0.3s;
-}
+    .step-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        transition: background 0.3s;
 
-.step-dot.active {
-    background: #03B09F;
+        &.active { background: #03B09F; }
+    }
 }
 
 .step-counter {
@@ -48,17 +42,26 @@
     margin-bottom: 28px;
 }
 
-.step h2 {
-    font-size: 1.5rem;
-    margin-bottom: 8px;
+.step {
+    h2 {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+    }
+
+    .step-desc {
+        color: #777;
+        margin-bottom: 20px;
+    }
+
+    .step-nav {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 24px;
+    }
 }
 
-.step-desc {
-    color: #777;
-    margin-bottom: 20px;
-}
-
-.form-input, .form-textarea {
+.form-input,
+.form-textarea {
     width: 100%;
     padding: 14px 16px;
     border: 2px solid #e0e0e0;
@@ -67,10 +70,8 @@
     margin-bottom: 16px;
     outline: none;
     transition: border-color 0.2s;
-}
 
-.form-input:focus, .form-textarea:focus {
-    border-color: #03B09F;
+    &:focus { border-color: #03B09F; }
 }
 
 .form-textarea {
@@ -91,12 +92,6 @@
     color: #555;
 }
 
-.step-nav {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 24px;
-}
-
 /* === TAG INPUT === */
 .tag-input-area {
     border: 2px solid #e0e0e0;
@@ -106,37 +101,35 @@
     flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 20px;
-}
 
-.tag-input-area:focus-within {
-    border-color: #03B09F;
-}
+    &:focus-within { border-color: #03B09F; }
 
-.tag-pill {
-    background: #e8f7fc;
-    color: #2a9fc5;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.88rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+    .tag-pill {
+        background: #e8f7fc;
+        color: #2a9fc5;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.88rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
 
-.tag-pill button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #2a9fc5;
-    font-size: 0.9rem;
-}
+        button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #2a9fc5;
+            font-size: 0.9rem;
+        }
+    }
 
-.tag-input {
-    border: none;
-    outline: none;
-    font-size: 0.95rem;
-    min-width: 200px;
-    flex: 1;
+    .tag-input {
+        border: none;
+        outline: none;
+        font-size: 0.95rem;
+        min-width: 200px;
+        flex: 1;
+    }
 }
 
 /* === PRODUCTS GRID === */
@@ -158,15 +151,13 @@
     gap: 8px;
     transition: all 0.15s;
     color: #444;
-}
 
-.product-option input {
-    display: none;
-}
+    input { display: none; }
 
-.product-option.selected {
-    border-color: #03B09F;
-    background: #e6f8f6;
-    color: #027268;
-    font-weight: 600;
+    &.selected {
+        border-color: #03B09F;
+        background: #e6f8f6;
+        color: #027268;
+        font-weight: 600;
+    }
 }

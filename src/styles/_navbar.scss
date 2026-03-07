@@ -5,7 +5,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;  // mobile
+    padding: 12px 16px;
     background: #fff;
     border-bottom: 2px solid #03B09F;
     position: sticky;
@@ -13,55 +13,43 @@
     z-index: 100;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-    @include md {
-        padding: 16px 32px;
+    @include md { padding: 16px 32px; }
+
+    &-brand {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
     }
-}
 
-.navbar-brand {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-}
+    &-logo {
+        height: 32px;
+        width: auto;
+        display: block;
 
-.navbar-logo {
-    height: 32px;   // mobile: slightly smaller
-    width: auto;
-    display: block;
-
-    @include md {
-        height: 40px;
+        @include md { height: 40px; }
     }
-}
 
-.logo {
-    height: 40px;
-}
+    &-links {
+        display: flex;
+        align-items: center;
+        gap: 14px;
 
-.navbar-links {
-    display: flex;
-    align-items: center;
-    gap: 14px;   // mobile: tighter gap
+        @include md { gap: 24px; }
 
-    @include md {
-        gap: 24px;
-    }
-}
+        a {
+            color: #555;
+            font-weight: 500;
+            font-size: 0.9rem;
 
-.navbar-links a {
-    color: #555;
-    font-weight: 500;
-    font-size: 0.9rem;
-
-    @include md {
-        font-size: 1rem;
+            @include md { font-size: 1rem; }
+        }
     }
 }
 
 .btn-submit-nav {
     background: #03B09F;
     color: white;
-    padding: 8px 14px;   // mobile: compact
+    padding: 8px 14px;
     border-radius: 24px;
     font-weight: 600;
     font-size: 0.85rem;
@@ -71,8 +59,6 @@
         padding: 10px 20px;
         font-size: 1rem;
     }
-}
 
-.btn-submit-nav:hover {
-    background: #028a7c;
+    &:hover { background: #028a7c; }
 }

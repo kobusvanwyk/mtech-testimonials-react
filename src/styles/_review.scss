@@ -1,37 +1,32 @@
-/* === REVIEW === */
+/* === REVIEW (submission step) === */
 .review-card {
     background: #f9f9f9;
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 24px;
-}
 
-.review-card h3 {
-    margin-bottom: 12px;
-}
+    h3 { margin-bottom: 12px; }
+    p  { margin-bottom: 8px; }
 
-.review-card p {
-    margin-bottom: 8px;
-}
-
-.review-story {
-    color: #555;
-    line-height: 1.7;
-    margin-top: 8px;
+    .review-story {
+        color: #555;
+        line-height: 1.7;
+        margin-top: 8px;
+    }
 }
 
 /* === SUCCESS === */
 .submit-success {
     text-align: center;
     padding: 80px 20px;
+
+    h2 {
+        font-size: 2rem;
+        margin-bottom: 12px;
+    }
 }
 
 .success-icon {
     font-size: 4rem;
     margin-bottom: 20px;
-}
-
-.submit-success h2 {
-    font-size: 2rem;
-    margin-bottom: 12px;
 }
