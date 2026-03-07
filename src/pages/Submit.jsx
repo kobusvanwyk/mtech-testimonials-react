@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProducts } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
@@ -148,9 +148,8 @@ export default function Submit() {
             <div className="submit-container">
                 <div className="step-progress">
                     {[1, 2, 3, 4, 5, 6, 7].map((n, i) => (
-                        <>
+                        <React.Fragment key={n}>
                             <div
-                                key={n}
                                 className={`step-dot ${step === n ? 'active' : step > n ? 'completed' : ''}`}
                                 onClick={() => step > n && setStep(n)}
                                 title={step > n ? `Go back to step ${n}` : undefined}
@@ -160,7 +159,7 @@ export default function Submit() {
                             {i < 6 && (
                                 <div key={`c${n}`} className={`step-connector ${step > n ? 'completed' : ''}`} />
                             )}
-                        </>
+                        </React.Fragment>
                     ))}
                 </div>
                 <p className="step-counter">Step {step} of 7</p>
@@ -349,7 +348,7 @@ export default function Submit() {
                                     onChange={handleGalleryChange}
                                     className="dropzone-input"
                                 />
-                                <Image size={32} className="dropzone-icon" />
+                                <svg className="dropzone-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="6" width="20" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8 6l1.5-2h5L16 6"/></svg>
                                 <span className="dropzone-main">Tap to add photos</span>
                                 <span className="dropzone-sub">or browse your device</span>
                                 <span className="dropzone-hint">JPG or PNG · Max 3MB each · Up to 8 photos</span>
