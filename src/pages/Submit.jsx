@@ -16,6 +16,8 @@ export default function Submit() {
     const [featuredImage, setFeaturedImage] = useState(null)
     const [galleryImages, setGalleryImages] = useState([])
     const [uploadProgress, setUploadProgress] = useState('')
+    const [terms, setTerms] = useState({ tc: false, privacy: false, consent: false })
+    const allTermsAccepted = terms.tc && terms.privacy && terms.consent
     const [form, setForm] = useState({
         title: '',
         person_name: '',
@@ -164,7 +166,7 @@ export default function Submit() {
         <div className="submit-page">
             <div className="submit-container">
                 <div className="step-progress">
-                    {[1, 2, 3, 4, 5, 6].map((n, i) => (
+                    {[1, 2, 3, 4, 5, 6, 7].map((n, i) => (
                         <>
                             <div
                                 key={n}
@@ -174,13 +176,13 @@ export default function Submit() {
                             >
                                 {step > n ? <Check size={14} /> : n}
                             </div>
-                            {i < 5 && (
+                            {i < 6 && (
                                 <div key={`c${n}`} className={`step-connector ${step > n ? 'completed' : ''}`} />
                             )}
                         </>
                     ))}
                 </div>
-                <p className="step-counter">Step {step} of 6</p>
+                <p className="step-counter">Step {step} of 7</p>
 
                 {/* STEP 1 */}
                 {step === 1 && (
@@ -412,8 +414,59 @@ export default function Submit() {
                     </div>
                 )}
 
-                {/* STEP 6 */}
+                {/* STEP 6 — TERMS */}
                 {step === 6 && (
+                    <div className="step">
+                        <h2>Before you submit...</h2>
+                        <p className="step-desc">Please review and accept the following:</p>
+
+                        <div className="terms-list">
+                            <label className={`terms-item ${terms.tc ? 'checked' : ''}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={terms.tc}
+                                    onChange={e => setTerms(t => ({ ...t, tc: e.target.checked }))}
+                                />
+                                <div className="terms-checkbox">{terms.tc && <Check size={12} />}</div>
+                                <span>I have read and agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms &amp; Conditions</a></span>
+                            </label>
+
+                            <label className={`terms-item ${terms.privacy ? 'checked' : ''}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={terms.privacy}
+                                    onChange={e => setTerms(t => ({ ...t, privacy: e.target.checked }))}
+                                />
+                                <div className="terms-checkbox">{terms.privacy && <Check size={12} />}</div>
+                                <span>I have read and understand the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a></span>
+                            </label>
+
+                            <label className={`terms-item ${terms.consent ? 'checked' : ''}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={terms.consent}
+                                    onChange={e => setTerms(t => ({ ...t, consent: e.target.checked }))}
+                                />
+                                <div className="terms-checkbox">{terms.consent && <Check size={12} />}</div>
+                                <span>I consent to the collection and use of my information as described</span>
+                            </label>
+                        </div>
+
+                        <div className="step-nav">
+                            <button className="btn-back" onClick={() => setStep(5)}><ArrowLeft size={15} /> Back</button>
+                            <button
+                                className="btn-next"
+                                disabled={!allTermsAccepted}
+                                onClick={() => setStep(7)}
+                            >
+                                Next <ArrowRight size={15} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* STEP 7 — REVIEW */}
+                {step === 7 && (
                     <div className="step">
                         <h2>Review your story</h2>
                         <div className="review-card">
@@ -428,7 +481,7 @@ export default function Submit() {
                         </div>
                         {uploadProgress && <p className="upload-progress">{uploadProgress}</p>}
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(5)}><ArrowLeft size={15} /> Back</button>
+                            <button className="btn-back" onClick={() => setStep(6)}><ArrowLeft size={15} /> Back</button>
                             <button className="btn-submit" onClick={handleSubmit} disabled={loading}>
                                 {loading ? 'Submitting...' : <><Check size={15} /> Submit Testimonial</>}
                             </button>
