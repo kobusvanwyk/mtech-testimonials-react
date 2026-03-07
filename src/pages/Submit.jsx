@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { ArrowLeft, ArrowRight, X, Check, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, X, Check, Sparkles, Image } from 'lucide-react'
 
 const PRODUCTS = [
     'Ambrotose Complex', 'Advanced Ambrotose', 'Ambrotose AO',
@@ -133,8 +133,20 @@ export default function Submit() {
         <div className="submit-page">
             <div className="submit-container">
                 <div className="step-progress">
-                    {[1, 2, 3, 4, 5, 6].map(n => (
-                        <div key={n} className={`step-dot ${step >= n ? 'active' : ''}`} />
+                    {[1, 2, 3, 4, 5, 6].map((n, i) => (
+                        <>
+                            <div
+                                key={n}
+                                className={`step-dot ${step === n ? 'active' : step > n ? 'completed' : ''}`}
+                                onClick={() => step > n && setStep(n)}
+                                title={step > n ? `Go back to step ${n}` : undefined}
+                            >
+                                {step > n ? <Check size={14} /> : n}
+                            </div>
+                            {i < 5 && (
+                                <div key={`c${n}`} className={`step-connector ${step > n ? 'completed' : ''}`} />
+                            )}
+                        </>
                     ))}
                 </div>
                 <p className="step-counter">Step {step} of 6</p>
@@ -144,6 +156,8 @@ export default function Submit() {
                     <div className="step">
                         <h2>Share a success story</h2>
                         <p className="step-desc">Give the story a short descriptive title that highlights the main benefit or outcome.</p>
+
+                        <label className="form-label">Story title</label>
                         <input
                             className="form-input"
                             type="text"
@@ -152,25 +166,29 @@ export default function Submit() {
                             onChange={e => updateForm('title', e.target.value)}
                             maxLength={120}
                         />
-                        <div className="anonymous-toggle">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={form.anonymous}
-                                    onChange={e => updateForm('anonymous', e.target.checked)}
-                                />
-                                &nbsp; Submit anonymously
-                            </label>
-                            <p>The person's name will be hidden from public view</p>
+
+                        <div
+                            className={`anonymous-toggle ${form.anonymous ? 'is-on' : ''}`}
+                            onClick={() => updateForm('anonymous', !form.anonymous)}
+                        >
+                            <div className="toggle-text">
+                                <strong>Submit anonymously</strong>
+                                <span>The person's name will be hidden from public view</span>
+                            </div>
+                            <div className={`toggle-switch ${form.anonymous ? 'on' : ''}`} />
                         </div>
+
                         {!form.anonymous && (
-                            <input
-                                className="form-input"
-                                type="text"
-                                placeholder="e.g. Maria van der Berg"
-                                value={form.person_name}
-                                onChange={e => updateForm('person_name', e.target.value)}
-                            />
+                            <>
+                                <label className="form-label">Full name</label>
+                                <input
+                                    className="form-input"
+                                    type="text"
+                                    placeholder="e.g. Maria van der Berg"
+                                    value={form.person_name}
+                                    onChange={e => updateForm('person_name', e.target.value)}
+                                />
+                            </>
                         )}
                         <button
                             className="btn-next"
@@ -187,6 +205,7 @@ export default function Submit() {
                     <div className="step">
                         <h2>Which health condition(s) does this relate to?</h2>
                         <p className="step-desc">Type a condition and press Enter or comma to add it. Add as many as you like.</p>
+                        <label className="form-label">Health conditions</label>
                         <div className="tag-input-area">
                             {form.conditions.map(c => (
                                 <span key={c} className="tag-pill">
@@ -258,6 +277,7 @@ export default function Submit() {
                     <div className="step">
                         <h2>Tell the story</h2>
                         <p className="step-desc">Write in your own words. What happened? How did it help?</p>
+                        <label className="form-label">Your story</label>
                         <textarea
                             className="form-textarea"
                             placeholder="Start typing your story here..."
