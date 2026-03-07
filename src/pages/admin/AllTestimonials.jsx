@@ -10,6 +10,7 @@ const STATUS_FILTERS = [
     { value: 'unpublished', label: 'Unpublished' },
     { value: 'needs_editing', label: 'Needs Editing' },
     { value: 'rejected', label: 'Rejected' },
+    { value: 'imported_pending', label: 'Imported Pending' },
 ]
 
 export default function AllTestimonials() {
@@ -39,7 +40,9 @@ export default function AllTestimonials() {
 
     const filtered = statusFilter === 'all'
         ? testimonials
-        : testimonials.filter(t => t.status === statusFilter)
+        : statusFilter === 'imported_pending'
+            ? testimonials.filter(t => t.is_imported && t.status === 'pending')
+            : testimonials.filter(t => t.status === statusFilter)
 
     return (
         <div className="admin-page-content">
@@ -55,7 +58,9 @@ export default function AllTestimonials() {
                         <span className="filter-count">
                             {f.value === 'all'
                                 ? testimonials.length
-                                : testimonials.filter(t => t.status === f.value).length}
+                                : f.value === 'imported_pending'
+                                    ? testimonials.filter(t => t.is_imported && t.status === 'pending').length
+                                    : testimonials.filter(t => t.status === f.value).length}
                         </span>
                     </button>
                 ))}
