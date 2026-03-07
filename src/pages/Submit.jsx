@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { generateUniqueSlug } from '../lib/slugify'
 import { ArrowLeft, ArrowRight, X, Check, Sparkles, Image } from 'lucide-react'
 
 const PRODUCTS = [
@@ -129,8 +130,10 @@ export default function Submit() {
             }
 
             setUploadProgress('Saving your story...')
+            const slug = await generateUniqueSlug(form.title)
             const { error } = await supabase.from('testimonials').insert([{
                 title: form.title,
+                slug,
                 person_name: form.anonymous ? null : form.person_name,
                 anonymous: form.anonymous,
                 conditions: form.conditions,
