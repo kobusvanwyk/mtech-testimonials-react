@@ -98,9 +98,6 @@ function ReviewCard({ t, onStatus, onDelete, onPreview }) {
                 <div className="review-story">{t.story_text}</div>
             )}
 
-            {t.featured_image_url && expanded && (
-                <img src={t.featured_image_url} alt="Featured" className="review-image" />
-            )}
 
             <div className="review-actions">
                 <button className="review-btn preview" onClick={() => onPreview(t)}><Eye size={14} /> Preview</button>

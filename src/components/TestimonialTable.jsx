@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, MinusCircle, Trash2, Star, Eye, Pencil, X } from 'lucide-react'
+import { Check, MinusCircle, Trash2, Eye, Pencil, X } from 'lucide-react'
 
-export default function TestimonialTable({ testimonials, onStatusChange, onDelete, onToggleFeatured, loading }) {
+export default function TestimonialTable({ testimonials, onStatusChange, onDelete, loading }) {
     const [selected, setSelected] = useState([])
     const [search, setSearch] = useState('')
 
@@ -81,7 +81,6 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                 <td><input type="checkbox" checked={selected.includes(t.id)} onChange={() => toggleSelect(t.id)} /></td>
                                 <td className="col-title">
                                     <Link to={`/admin/edit/${t.id}`}>{t.title}</Link>
-                                    {t.featured && <span className="featured-star" title="Featured"><Star size={14} fill="currentColor" /></span>}
                                     {t.is_imported && (
                                         <span className="badge-imported" title={`Imported from: ${t.imported_from}`}>
                                             imported
@@ -96,15 +95,6 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                 <td>
                                     <div className="row-actions">
                                         <Link to={`/admin/edit/${t.id}`} className="row-action-btn">Edit</Link>
-                                        {onToggleFeatured && (
-                                            <button
-                                                className={`row-action-btn ${t.featured ? 'unfeature' : 'feature'}`}
-                                                onClick={() => onToggleFeatured(t.id, t.featured)}
-                                                title={t.featured ? 'Remove from featured' : 'Pin to top'}
-                                            >
-                                                {t.featured ? <><Star size={12} /> Unpin</> : <><Star size={12} fill="none" /> Pin</>}
-                                            </button>
-                                        )}
                                         {t.status !== 'approved' && (
                                             <button className="row-action-btn approve" onClick={() => onStatusChange(t.id, 'approved')}>Publish</button>
                                         )}

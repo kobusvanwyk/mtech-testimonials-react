@@ -23,7 +23,6 @@ export default function Home() {
             .from('testimonials')
             .select('*')
             .eq('status', 'approved')
-            .order('featured', { ascending: false })
             .order('created_at', { ascending: false })
 
         if (!error) setTestimonials(data)

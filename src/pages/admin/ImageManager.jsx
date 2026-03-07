@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
     Images, LayoutGrid, AlignJustify, RefreshCw,
-    Star, Trash2, RefreshCcw, Link2, ExternalLink, Check, FileText
+    Trash2, RefreshCcw, Link2, ExternalLink, Check, FileText
 } from 'lucide-react'
 
 const BUCKET = 'testimonial-images'
@@ -42,31 +42,20 @@ export default function ImageManager() {
         try {
             const { data: testimonials } = await supabase
                 .from('testimonials')
-                .select('id, title, featured_image_url, gallery_urls, status')
+                .select('id, title, gallery_urls, status')
 
-            const [{ data: featuredFiles }, { data: galleryFiles }] = await Promise.all([
-                supabase.storage.from(BUCKET).list('featured', { limit: 500, sortBy: { column: 'created_at', order: 'desc' } }),
+            const [{ data: galleryFiles }] = await Promise.all([
                 supabase.storage.from(BUCKET).list('gallery', { limit: 500, sortBy: { column: 'created_at', order: 'desc' } }),
             ])
 
             const urlMap = {}
             ;(testimonials || []).forEach(t => {
-                if (t.featured_image_url) {
-                    urlMap[t.featured_image_url] = { id: t.id, title: t.title, type: 'featured', status: t.status }
-                }
                 ;(t.gallery_urls || []).forEach(url => {
                     urlMap[url] = { id: t.id, title: t.title, type: 'gallery', status: t.status }
                 })
             })
 
             const allImages = []
-
-            ;(featuredFiles || []).filter(f => f.name !== '.emptyFolderPlaceholder').forEach(f => {
-                const path = `featured/${f.name}`
-                const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
-                const testimonial = urlMap[publicUrl] || null
-                allImages.push({ id: path, path, name: f.name, url: publicUrl, size: f.metadata?.size || 0, createdAt: f.created_at || f.updated_at, folder: 'featured', testimonial, orphan: !testimonial })
-            })
 
             ;(galleryFiles || []).filter(f => f.name !== '.emptyFolderPlaceholder').forEach(f => {
                 const path = `gallery/${f.name}`
@@ -84,7 +73,6 @@ export default function ImageManager() {
 
     const displayed = images
         .filter(img => {
-            if (filter === 'featured') return img.folder === 'featured'
             if (filter === 'gallery') return img.folder === 'gallery'
             if (filter === 'orphans') return img.orphan
             return true
@@ -129,9 +117,8 @@ export default function ImageManager() {
         try {
             await supabase.storage.from(BUCKET).remove([img.path])
             if (inUse) {
-                const { data: t } = await supabase.from('testimonials').select('featured_image_url, gallery_urls').eq('id', img.testimonial.id).single()
+                const { data: t } = await supabase.from('testimonials').select('gallery_urls').eq('id', img.testimonial.id).single()
                 const updates = {}
-                if (t.featured_image_url === img.url) updates.featured_image_url = null
                 if ((t.gallery_urls || []).includes(img.url)) updates.gallery_urls = t.gallery_urls.filter(u => u !== img.url)
                 if (Object.keys(updates).length > 0) await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
             }
@@ -156,9 +143,8 @@ export default function ImageManager() {
         try {
             await supabase.storage.from(BUCKET).remove(toDelete.map(i => i.path))
             for (const img of toDelete.filter(i => !i.orphan)) {
-                const { data: t } = await supabase.from('testimonials').select('featured_image_url, gallery_urls').eq('id', img.testimonial.id).single()
+                const { data: t } = await supabase.from('testimonials').select('gallery_urls').eq('id', img.testimonial.id).single()
                 const updates = {}
-                if (t.featured_image_url === img.url) updates.featured_image_url = null
                 if ((t.gallery_urls || []).includes(img.url)) updates.gallery_urls = t.gallery_urls.filter(u => u !== img.url)
                 if (Object.keys(updates).length > 0) await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
             }
@@ -192,9 +178,8 @@ export default function ImageManager() {
             const { data: { publicUrl: newUrl } } = supabase.storage.from(BUCKET).getPublicUrl(newPath)
 
             if (!img.orphan) {
-                const { data: t } = await supabase.from('testimonials').select('featured_image_url, gallery_urls').eq('id', img.testimonial.id).single()
+                const { data: t } = await supabase.from('testimonials').select('gallery_urls').eq('id', img.testimonial.id).single()
                 const updates = {}
-                if (t.featured_image_url === img.url) updates.featured_image_url = newUrl
                 if ((t.gallery_urls || []).includes(img.url)) updates.gallery_urls = t.gallery_urls.map(u => u === img.url ? newUrl : u)
                 if (Object.keys(updates).length > 0) await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
             }
@@ -246,7 +231,6 @@ export default function ImageManager() {
 
             <div className="img-stats-bar">
                 <div className="img-stat"><span className="img-stat-value">{images.length}</span><span className="img-stat-label">Total Images</span></div>
-                <div className="img-stat"><span className="img-stat-value">{images.filter(i => i.folder === 'featured').length}</span><span className="img-stat-label">Featured</span></div>
                 <div className="img-stat"><span className="img-stat-value">{images.filter(i => i.folder === 'gallery').length}</span><span className="img-stat-label">Gallery</span></div>
                 <div className={`img-stat ${orphanCount > 0 ? 'img-stat-warn' : ''}`}><span className="img-stat-value">{orphanCount}</span><span className="img-stat-label">Orphans</span></div>
                 <div className="img-stat"><span className="img-stat-value">{formatBytes(totalSize)}</span><span className="img-stat-label">Total Size</span></div>
@@ -254,12 +238,11 @@ export default function ImageManager() {
 
             <div className="img-toolbar">
                 <div className="img-filter-tabs">
-                    {['all', 'featured', 'gallery', 'orphans'].map(f => (
+                    {['all', 'gallery', 'orphans'].map(f => (
                         <button key={f} className={`img-filter-tab ${filter === f ? 'active' : ''}`} onClick={() => { setFilter(f); clearSelection() }}>
                             {f.charAt(0).toUpperCase() + f.slice(1)}
                             <span className="img-filter-count">
                                 {f === 'all' && images.length}
-                                {f === 'featured' && images.filter(i => i.folder === 'featured').length}
                                 {f === 'gallery' && images.filter(i => i.folder === 'gallery').length}
                                 {f === 'orphans' && orphanCount}
                             </span>
@@ -309,7 +292,7 @@ export default function ImageManager() {
                             <div className="img-card-info">
                                 <div className="img-card-badges">
                                     <span className={`img-type-badge img-type-${img.folder}`}>
-                                        {img.folder === 'featured' ? <><Star size={11} /> Featured</> : <><Images size={11} /> Gallery</>}
+                                        <><Images size={11} /> Gallery</>
                                     </span>
                                     {img.orphan && <span className="img-orphan-badge">Orphan</span>}
                                 </div>
@@ -354,7 +337,7 @@ export default function ImageManager() {
                                 </td>
                                 <td>
                                     <span className={`img-type-badge img-type-${img.folder}`}>
-                                        {img.folder === 'featured' ? <><Star size={11} /> Featured</> : <><Images size={11} /> Gallery</>}
+                                        <><Images size={11} /> Gallery</>
                                     </span>
                                 </td>
                                 <td className="img-list-size">{formatBytes(img.size)}</td>

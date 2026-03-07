@@ -22,7 +22,6 @@ export default function EditTestimonial() {
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const [conditionInput, setConditionInput] = useState('')
-    const [newFeaturedImage, setNewFeaturedImage] = useState(null)
     const [newGalleryImages, setNewGalleryImages] = useState([])
     const [form, setForm] = useState(null)
 
@@ -81,10 +80,6 @@ export default function EditTestimonial() {
         try {
             let updates = { ...form }
 
-            if (newFeaturedImage) {
-                updates.featured_image_url = await uploadImage(newFeaturedImage, 'featured')
-            }
-
             if (newGalleryImages.length > 0) {
                 const newUrls = await Promise.all(newGalleryImages.map(f => uploadImage(f, 'gallery')))
                 updates.gallery_urls = [...(form.gallery_urls || []), ...newUrls]
@@ -103,7 +98,6 @@ export default function EditTestimonial() {
             }
 
             setSaved(true)
-            setNewFeaturedImage(null)
             setNewGalleryImages([])
             setTimeout(() => setSaved(false), 3000)
             fetchTestimonial()
@@ -193,38 +187,6 @@ export default function EditTestimonial() {
                         <select className="edit-select" value={form.status} onChange={e => update('status', e.target.value)}>
                             {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
-                    </div>
-
-                    <div className="edit-section">
-                        <div className="edit-label-row">
-                            <label className="edit-label">Featured Photo</label>
-                            <label className="edit-checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    checked={form.hide_featured_image || false}
-                                    onChange={e => update('hide_featured_image', e.target.checked)}
-                                />
-                                Hide image
-                            </label>
-                        </div>
-                        {form.featured_image_url && (
-                            <div className="edit-image-preview">
-                                <img src={form.featured_image_url} alt="Featured" />
-                                <button className="remove-image" onClick={() => update('featured_image_url', null)}>
-                                    <X size={13} /> Remove
-                                </button>
-                            </div>
-                        )}
-                        {newFeaturedImage && (
-                            <div className="edit-image-preview">
-                                <img src={URL.createObjectURL(newFeaturedImage)} alt="New featured" />
-                                <p className="upload-hint">New image (not saved yet)</p>
-                                <button className="remove-image" onClick={() => setNewFeaturedImage(null)}>
-                                    <X size={13} /> Cancel
-                                </button>
-                            </div>
-                        )}
-                        <input type="file" accept="image/*" onChange={e => setNewFeaturedImage(e.target.files[0])} className="file-input" />
                     </div>
 
                     <div className="edit-section">

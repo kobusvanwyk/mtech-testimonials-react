@@ -474,7 +474,6 @@
 
 .col-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .col-date { white-space: nowrap; color: var(--muted-dark); }
-.featured-star { margin-left: 6px; }
 
 .row-actions { display: flex; gap: 6px; }
 
@@ -885,7 +884,6 @@
     overflow-y: auto;
 }
 
-.modal-featured-image { width: 100%; max-height: 240px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 20px; }
 .modal-title          { font-size: 1.4rem; font-weight: 800; color: var(--dark-navy); margin-bottom: 8px; }
 .modal-author         { color: var(--muted-mid); font-size: 0.88rem; margin-bottom: 14px; }
 .modal-tags           { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }

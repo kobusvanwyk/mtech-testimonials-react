@@ -24,13 +24,6 @@ export default function PreviewModal({ testimonial, onClose, onPublish }) {
                     </div>
                 </div>
                 <div className="modal-body">
-                    {testimonial.featured_image_url && (
-                        <img
-                            src={testimonial.featured_image_url}
-                            alt="Featured"
-                            className="modal-featured-image"
-                        />
-                    )}
                     <h2 className="modal-title">{testimonial.title}</h2>
                     <p className="modal-author">
                         {testimonial.anonymous ? 'Anonymous' : testimonial.person_name}

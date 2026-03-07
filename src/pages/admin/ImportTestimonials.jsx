@@ -9,7 +9,7 @@ import {
 const REQUIRED_COLUMNS = ['title', 'story_text']
 const EXPECTED_COLUMNS = [
     'title', 'person_name', 'anonymous', 'conditions', 'products',
-    'story_text', 'date', 'featured_image_url', 'gallery_urls'
+    'story_text', 'date', 'gallery_urls'
 ]
 const BUCKET = 'testimonial-images'
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -55,7 +55,7 @@ function ImageUploaderPanel() {
 
         try {
             const ext = upload.file.name.split('.').pop()
-            const path = `featured/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+            const path = `gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
             const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(path, upload.file)
             if (uploadErr) throw uploadErr
             const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
@@ -263,7 +263,6 @@ function buildRecord(row, filename) {
         conditions,
         products,
         story_text: row.story_text.trim(),
-        featured_image_url: convertGoogleDriveUrl(row.featured_image_url?.trim() || null),
         gallery_urls,
         created_at,
         status: 'pending',
@@ -472,7 +471,7 @@ export default function ImportTestimonials() {
                                                 <td>{row.conditions || '—'}</td>
                                                 <td>{row.products || '—'}</td>
                                                 <td>{row.date || <em>Today</em>}</td>
-                                                <td>{(row.featured_image_url || row.gallery_urls) ? <Check size={13} className="import-check" /> : '—'}</td>
+                                                <td>{row.gallery_urls ? <Check size={13} className="import-check" /> : '—'}</td>
                                                 <td>
                                                     <button
                                                         className="import-expand-btn"

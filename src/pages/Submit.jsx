@@ -2,14 +2,13 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProducts } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
-import { ArrowLeft, ArrowRight, X, Check, Sparkles, Image } from 'lucide-react'
+import { ArrowLeft, ArrowRight, X, Check, Sparkles } from 'lucide-react'
 
 export default function Submit() {
     const PRODUCTS = useProducts()
     const [step, setStep] = useState(1)
     const [submitted, setSubmitted] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [featuredImage, setFeaturedImage] = useState(null)
     const [galleryImages, setGalleryImages] = useState([])
     const [uploadProgress, setUploadProgress] = useState('')
     const [terms, setTerms] = useState({ tc: false, privacy: false, consent: false })
@@ -62,21 +61,6 @@ export default function Submit() {
         return valid
     }
 
-    function handleFeaturedImageChange(e) {
-        const file = e.target.files[0]
-        if (!file) return
-        const valid = validateFiles([file])
-        if (valid.length) setFeaturedImage(valid[0])
-    }
-
-    function handleFeaturedDrop(e) {
-        e.preventDefault()
-        const file = e.dataTransfer.files[0]
-        if (!file) return
-        const valid = validateFiles([file])
-        if (valid.length) setFeaturedImage(valid[0])
-    }
-
     function handleGalleryChange(e) {
         const files = validateFiles(Array.from(e.target.files))
         const combined = [...galleryImages, ...files].slice(0, 8)
@@ -115,13 +99,7 @@ export default function Submit() {
         }
         setLoading(true)
         try {
-            let featured_image_url = null
             let gallery_urls = []
-
-            if (featuredImage) {
-                setUploadProgress('Uploading featured image...')
-                featured_image_url = await uploadImage(featuredImage, 'featured')
-            }
 
             if (galleryImages.length > 0) {
                 setUploadProgress(`Uploading ${galleryImages.length} gallery image(s)...`)
@@ -140,7 +118,6 @@ export default function Submit() {
                 conditions: form.conditions,
                 products: form.products,
                 story_text: form.story_text,
-                featured_image_url,
                 gallery_urls,
                 status: 'pending'
             }])
@@ -356,37 +333,8 @@ export default function Submit() {
                         <h2>Add photos</h2>
                         <p className="step-desc">A photo makes your story more personal. You can skip this step.</p>
 
-                        {/* Featured photo dropzone */}
-                        <label className="form-label">Featured photo</label>
-                        <p className="upload-hint">This is the main image shown on your story card.</p>
-                        {!featuredImage ? (
-                            <label
-                                className="dropzone"
-                                onDragOver={e => e.preventDefault()}
-                                onDrop={handleFeaturedDrop}
-                            >
-                                <input
-                                    type="file"
-                                    accept="image/jpeg,image/png"
-                                    onChange={handleFeaturedImageChange}
-                                    className="dropzone-input"
-                                />
-                                <Image size={32} className="dropzone-icon" />
-                                <span className="dropzone-main">Tap to add a photo</span>
-                                <span className="dropzone-sub">or drag and drop</span>
-                                <span className="dropzone-hint">JPG or PNG · Max 3MB</span>
-                            </label>
-                        ) : (
-                            <div className="image-preview">
-                                <img src={URL.createObjectURL(featuredImage)} alt="Featured preview" />
-                                <button className="remove-image" onClick={() => setFeaturedImage(null)}>
-                                    <X size={13} /> Remove
-                                </button>
-                            </div>
-                        )}
-
                         {/* Gallery dropzone */}
-                        <label className="form-label" style={{ marginTop: '24px' }}>Gallery photos</label>
+                        <label className="form-label">Gallery photos</label>
                         <p className="upload-hint">Extra photos shown on the full story page.</p>
                         {galleryImages.length < 8 && (
                             <label
@@ -492,7 +440,6 @@ export default function Submit() {
                             <p><strong>By:</strong> {form.anonymous ? 'Anonymous' : form.person_name}</p>
                             <p><strong>Conditions:</strong> {form.conditions.join(', ')}</p>
                             <p><strong>Products:</strong> {form.products.join(', ')}</p>
-                            {featuredImage && <p><strong>Featured photo:</strong> <Check size={13} /> Added</p>}
                             {galleryImages.length > 0 && <p><strong>Gallery photos:</strong> {galleryImages.length} added</p>}
                             <p><strong>Story:</strong></p>
                             <p className="review-story">{form.story_text}</p>
