@@ -261,8 +261,9 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
     const gallery      = (t.gallery_urls || []).slice(0, 6)
 
     // ── Font scaling ──────────────────────────────────────────────────────────
-    const charCount  = (t.story_text || '').length
-    const isCompact  = charCount > 1200
+    const charCount   = (t.story_text || '').length
+    const threshold   = parseInt(settings.pdf_font_threshold, 10) || 1200
+    const isCompact   = charCount > threshold
     const bodySize   = isCompact ? 9.5 : 11
     const titleSize  = isCompact ? 20  : 24
     const metaSize   = isCompact ? 9   : 10

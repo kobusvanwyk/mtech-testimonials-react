@@ -39,6 +39,12 @@ const PDF_FIELDS = [
         hint: 'A short line shown below the contact details (e.g. Mannatech – Transforming Lives Naturally).',
         type: 'text',
     },
+    {
+        key: 'pdf_font_threshold',
+        label: 'Compact Font Threshold (characters)',
+        hint: 'Testimonials longer than this character count will use a smaller font to save space. Default is 1200. Increase to keep normal size for longer stories, decrease to compact sooner.',
+        type: 'number',
+    },
 ]
 
 export default function PDFSettings() {

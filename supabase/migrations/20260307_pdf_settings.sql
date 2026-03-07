@@ -7,5 +7,6 @@ INSERT INTO site_settings (key, value) VALUES
   ('pdf_contact_phone',    ''),
   ('pdf_contact_email',    ''),
   ('pdf_contact_whatsapp', ''),
-  ('pdf_footer_tagline',   'Mannatech – Transforming Lives Naturally')
+  ('pdf_footer_tagline',   'Mannatech – Transforming Lives Naturally'),
+  ('pdf_font_threshold',   '1200')
 ON CONFLICT (key) DO NOTHING;
