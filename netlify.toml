@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback — all routes serve index.html so React Router works
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Bot traffic on testimonial pages → edge function for OG tags
+[[edge_functions]]
+  path = "/testimonial/*"
+  function = "og-check"
