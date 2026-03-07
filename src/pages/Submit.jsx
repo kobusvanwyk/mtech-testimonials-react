@@ -19,6 +19,7 @@ export default function Submit() {
     const [uploadProgress, setUploadProgress] = useState('')
     const [terms, setTerms] = useState({ tc: false, privacy: false, consent: false })
     const allTermsAccepted = terms.tc && terms.privacy && terms.consent
+    const [honeypot, setHoneypot] = useState('')
     const [form, setForm] = useState({
         title: '',
         person_name: '',
@@ -112,6 +113,11 @@ export default function Submit() {
     }
 
     async function handleSubmit() {
+        // Honeypot check — bots fill this, humans don't
+        if (honeypot) {
+            setSubmitted(true) // Silently pretend it succeeded
+            return
+        }
         setLoading(true)
         try {
             let featured_image_url = null
@@ -186,6 +192,20 @@ export default function Submit() {
                     ))}
                 </div>
                 <p className="step-counter">Step {step} of 7</p>
+
+                {/* Honeypot — hidden from real users, bots will fill it */}
+                <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', opacity: 0, pointerEvents: 'none' }} aria-hidden="true">
+                    <label htmlFor="website">Website</label>
+                    <input
+                        id="website"
+                        name="website"
+                        type="text"
+                        value={honeypot}
+                        onChange={e => setHoneypot(e.target.value)}
+                        tabIndex={-1}
+                        autoComplete="off"
+                    />
+                </div>
 
                 {/* STEP 1 */}
                 {step === 1 && (
