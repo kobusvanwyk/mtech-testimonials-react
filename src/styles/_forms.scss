@@ -264,3 +264,62 @@
         font-weight: 600;
     }
 }
+
+// === DROPZONE ===
+.dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 2px dashed var(--border-soft);
+    border-radius: var(--radius-lg);
+    padding: 32px 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 16px;
+    position: relative;
+
+    &:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+
+        .dropzone-icon { color: var(--primary); }
+    }
+
+    .dropzone-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .dropzone-icon {
+        color: var(--muted);
+        margin-bottom: 8px;
+        transition: color 0.2s;
+    }
+
+    .dropzone-main {
+        font-weight: 600;
+        color: var(--text-body);
+        font-size: 0.95rem;
+    }
+
+    .dropzone-sub {
+        color: var(--muted-dark);
+        font-size: 0.85rem;
+    }
+
+    .dropzone-hint {
+        color: var(--muted);
+        font-size: 0.78rem;
+        margin-top: 4px;
+    }
+}
+
+.upload-hint  { color: var(--muted-dark); font-size: var(--text-sm); margin-bottom: 10px; }
+.upload-count { color: var(--muted); font-size: var(--text-sm); margin-top: -4px; margin-bottom: 16px; }

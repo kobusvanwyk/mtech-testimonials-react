@@ -49,13 +49,44 @@ export default function Submit() {
         updateForm('products', updated)
     }
 
+    function validateFiles(files) {
+        const allowed = ['image/jpeg', 'image/png']
+        const maxSize = 3 * 1024 * 1024 // 3MB
+        const valid = []
+        const errors = []
+        files.forEach(f => {
+            if (!allowed.includes(f.type)) errors.push(`${f.name}: only JPG or PNG allowed`)
+            else if (f.size > maxSize) errors.push(`${f.name}: exceeds 3MB limit`)
+            else valid.push(f)
+        })
+        if (errors.length) alert(errors.join('\n'))
+        return valid
+    }
+
     function handleFeaturedImageChange(e) {
         const file = e.target.files[0]
-        if (file) setFeaturedImage(file)
+        if (!file) return
+        const valid = validateFiles([file])
+        if (valid.length) setFeaturedImage(valid[0])
+    }
+
+    function handleFeaturedDrop(e) {
+        e.preventDefault()
+        const file = e.dataTransfer.files[0]
+        if (!file) return
+        const valid = validateFiles([file])
+        if (valid.length) setFeaturedImage(valid[0])
     }
 
     function handleGalleryChange(e) {
-        const files = Array.from(e.target.files)
+        const files = validateFiles(Array.from(e.target.files))
+        const combined = [...galleryImages, ...files].slice(0, 8)
+        setGalleryImages(combined)
+    }
+
+    function handleGalleryDrop(e) {
+        e.preventDefault()
+        const files = validateFiles(Array.from(e.dataTransfer.files))
         const combined = [...galleryImages, ...files].slice(0, 8)
         setGalleryImages(combined)
     }
@@ -302,40 +333,62 @@ export default function Submit() {
                 {/* STEP 5 */}
                 {step === 5 && (
                     <div className="step">
-                        <h2>Almost done!</h2>
+                        <h2>Add photos</h2>
                         <p className="step-desc">A photo makes your story more personal. You can skip this step.</p>
 
-                        <div className="image-upload-section">
-                            <label className="upload-label">Featured Photo</label>
-                            <p className="upload-hint">This is the main image shown on your story card.</p>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFeaturedImageChange}
-                                className="file-input"
-                            />
-                            {featuredImage && (
-                                <div className="image-preview">
-                                    <img src={URL.createObjectURL(featuredImage)} alt="Featured preview" />
-                                    <button className="remove-image" onClick={() => setFeaturedImage(null)}>
-                                        <X size={13} /> Remove
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                        {/* Featured photo dropzone */}
+                        <label className="form-label">Featured photo</label>
+                        <p className="upload-hint">This is the main image shown on your story card.</p>
+                        {!featuredImage ? (
+                            <label
+                                className="dropzone"
+                                onDragOver={e => e.preventDefault()}
+                                onDrop={handleFeaturedDrop}
+                            >
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png"
+                                    onChange={handleFeaturedImageChange}
+                                    className="dropzone-input"
+                                />
+                                <Image size={32} className="dropzone-icon" />
+                                <span className="dropzone-main">Tap to add a photo</span>
+                                <span className="dropzone-sub">or drag and drop</span>
+                                <span className="dropzone-hint">JPG or PNG · Max 3MB</span>
+                            </label>
+                        ) : (
+                            <div className="image-preview">
+                                <img src={URL.createObjectURL(featuredImage)} alt="Featured preview" />
+                                <button className="remove-image" onClick={() => setFeaturedImage(null)}>
+                                    <X size={13} /> Remove
+                                </button>
+                            </div>
+                        )}
 
-                        <div className="image-upload-section">
-                            <label className="upload-label">Gallery Photos (up to 8)</label>
-                            <p className="upload-hint">Extra photos shown on the full story page.</p>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={handleGalleryChange}
-                                className="file-input"
-                                disabled={galleryImages.length >= 8}
-                            />
-                            {galleryImages.length > 0 && (
+                        {/* Gallery dropzone */}
+                        <label className="form-label" style={{ marginTop: '24px' }}>Gallery photos</label>
+                        <p className="upload-hint">Extra photos shown on the full story page.</p>
+                        {galleryImages.length < 8 && (
+                            <label
+                                className="dropzone"
+                                onDragOver={e => e.preventDefault()}
+                                onDrop={handleGalleryDrop}
+                            >
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png"
+                                    multiple
+                                    onChange={handleGalleryChange}
+                                    className="dropzone-input"
+                                />
+                                <Image size={32} className="dropzone-icon" />
+                                <span className="dropzone-main">Tap to add photos</span>
+                                <span className="dropzone-sub">or browse your device</span>
+                                <span className="dropzone-hint">JPG or PNG · Max 3MB each · Up to 8 photos</span>
+                            </label>
+                        )}
+                        {galleryImages.length > 0 && (
+                            <>
                                 <div className="gallery-preview">
                                     {galleryImages.map((img, i) => (
                                         <div key={i} className="gallery-preview-item">
@@ -346,14 +399,14 @@ export default function Submit() {
                                         </div>
                                     ))}
                                 </div>
-                            )}
-                            <p className="upload-count">{galleryImages.length}/8 photos added</p>
-                        </div>
+                                <p className="upload-count">{galleryImages.length}/8 photos added</p>
+                            </>
+                        )}
 
                         <div className="step-nav">
                             <button className="btn-back" onClick={() => setStep(4)}><ArrowLeft size={15} /> Back</button>
                             <button className="btn-next" onClick={() => setStep(6)}>
-                                {featuredImage || galleryImages.length > 0 ? <>Next <ArrowRight size={15} /></> : <>Next <ArrowRight size={15} /></>}
+                                Next <ArrowRight size={15} />
                             </button>
                         </div>
                     </div>
