@@ -17,6 +17,7 @@ import Categories from './pages/admin/Categories'
 import ImageManager from './pages/admin/ImageManager'
 import ImportTestimonials from './pages/admin/ImportTestimonials'
 import Settings from './pages/admin/Settings'
+import PDFSettings from './pages/admin/PDFSettings'
 
 function PublicLayout({ children }) {
     return (
@@ -61,6 +62,7 @@ function App() {
                     <Route path="images" element={<ImageManager />} />
                     <Route path="import" element={<ImportTestimonials />} />
                     <Route path="settings" element={<Settings />} />
+                    <Route path="pdf-settings" element={<PDFSettings />} />
                 </Route>
             </Routes>
         </BrowserRouter>
