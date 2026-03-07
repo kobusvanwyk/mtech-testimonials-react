@@ -160,6 +160,9 @@ export default function ImportTestimonials() {
         <div className="admin-page-content">
             <div className="edit-header">
                 <h2>Bulk Import Testimonials</h2>
+                <a href="/sample-import.csv" download className="btn-preview">
+                    <FileText size={14} /> Download Sample CSV
+                </a>
             </div>
 
             {/* Format guide */}
