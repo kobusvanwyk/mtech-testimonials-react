@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { FileText, Save, Check, ExternalLink } from 'lucide-react'
+import { invalidatePDFSettingsCache } from '../../components/PDFDownloadButton'
 
 const PDF_FIELDS = [
     {
@@ -78,6 +79,7 @@ export default function PDFSettings() {
         if (error) {
             setError('Failed to save: ' + error.message)
         } else {
+            invalidatePDFSettingsCache()
             setSaved(true)
             setTimeout(() => setSaved(false), 2500)
         }

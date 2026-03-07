@@ -18,6 +18,27 @@ const PDF_KEYS = [
 let settingsCache = null
 let settingsPromise = null
 
+export function invalidatePDFSettingsCache() {
+    settingsCache = null
+    settingsPromise = null
+}
+
+async function fetchImageAsBase64(url) {
+    try {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        return await new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result)
+            reader.onerror = reject
+            reader.readAsDataURL(blob)
+        })
+    } catch {
+        console.warn('PDF logo fetch failed — skipping logo:', url)
+        return null
+    }
+}
+
 function loadPDFSettings() {
     if (settingsCache) return Promise.resolve(settingsCache)
     if (settingsPromise) return settingsPromise
@@ -25,9 +46,14 @@ function loadPDFSettings() {
         .from('site_settings')
         .select('key, value')
         .in('key', PDF_KEYS)
-        .then(({ data }) => {
+        .then(async ({ data }) => {
             const map = {}
             ;(data || []).forEach(r => { map[r.key] = r.value })
+            // Pre-convert logo to base64 to avoid CORS issues in react-pdf
+            if (map.pdf_logo_url?.trim()) {
+                const b64 = await fetchImageAsBase64(map.pdf_logo_url)
+                if (b64) map.pdf_logo_url = b64
+            }
             settingsCache = map
             return map
         })
@@ -50,8 +76,17 @@ export function PDFDownloadButton({ testimonial, variant = 'full', className = '
         if (!settings) return
         setDownloading(true)
         try {
+            // Convert gallery images to base64 to avoid CORS issues
+            const galleryUrls = testimonial.gallery_urls || []
+            const galleryBase64 = await Promise.all(
+                galleryUrls.map(url => fetchImageAsBase64(url).then(b64 => b64 || url))
+            )
+            const testimonialWithBase64 = {
+                ...testimonial,
+                gallery_urls: galleryBase64,
+            }
             const blob = await pdf(
-                <TestimonialPDF testimonial={testimonial} settings={settings} />
+                <TestimonialPDF testimonial={testimonialWithBase64} settings={settings} />
             ).toBlob()
             const url = URL.createObjectURL(blob)
             const a   = document.createElement('a')
