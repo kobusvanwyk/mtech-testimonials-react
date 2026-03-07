@@ -16,6 +16,7 @@ import EditTestimonial from './pages/admin/EditTestimonial'
 import Categories from './pages/admin/Categories'
 import ImageManager from './pages/admin/ImageManager'
 import ImportTestimonials from './pages/admin/ImportTestimonials'
+import Settings from './pages/admin/Settings'
 
 function PublicLayout({ children }) {
     return (
@@ -57,6 +58,7 @@ function App() {
                     <Route path="categories" element={<Categories />} />
                     <Route path="images" element={<ImageManager />} />
                     <Route path="import" element={<ImportTestimonials />} />
+                    <Route path="settings" element={<Settings />} />
                 </Route>
             </Routes>
         </BrowserRouter>
