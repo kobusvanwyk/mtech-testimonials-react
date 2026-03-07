@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { Check, X, CheckCircle } from 'lucide-react'
 
-// Set a simple admin password here (for basic protection)
 const ADMIN_PASSWORD = 'mannatech2024'
 
 export default function Admin() {
@@ -67,7 +67,9 @@ export default function Admin() {
     return (
         <div className="admin-page">
             <h2>Pending Testimonials ({pending.length})</h2>
-            {pending.length === 0 && <p>No pending testimonials. All caught up! ✅</p>}
+            {pending.length === 0 && (
+                <p><CheckCircle size={16} /> No pending testimonials. All caught up!</p>
+            )}
             {pending.map(t => (
                 <div key={t.id} className="admin-card">
                     <h3>{t.title}</h3>
@@ -77,17 +79,11 @@ export default function Admin() {
                     <p><strong>Story:</strong></p>
                     <div className="admin-story">{t.story_text}</div>
                     <div className="admin-actions">
-                        <button
-                            className="btn-approve"
-                            onClick={() => updateStatus(t.id, 'approved')}
-                        >
-                            ✓ Approve
+                        <button className="btn-approve" onClick={() => updateStatus(t.id, 'approved')}>
+                            <Check size={14} /> Approve
                         </button>
-                        <button
-                            className="btn-reject"
-                            onClick={() => updateStatus(t.id, 'rejected')}
-                        >
-                            ✕ Reject
+                        <button className="btn-reject" onClick={() => updateStatus(t.id, 'rejected')}>
+                            <X size={14} /> Reject
                         </button>
                     </div>
                 </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PreviewModal from '../../components/PreviewModal'
+import { Eye, Check, Flag, Pencil, X, Trash2, ChevronDown, ChevronUp, Undo2, CheckCircle, Clock } from 'lucide-react'
 
 export default function Pending() {
     const [testimonials, setTestimonials] = useState([])
@@ -42,16 +43,16 @@ export default function Pending() {
 
     return (
         <div className="admin-page-content">
-            <h2>⏳ Pending Review</h2>
+            <h2><Clock size={20} /> Pending Review</h2>
             <p className="page-sub">New submissions waiting for your review. Publish, flag for editing, or reject.</p>
 
             {testimonials.length === 0 && (
-                <div className="empty-state">✅ All caught up! No pending submissions.</div>
+                <div className="empty-state"><CheckCircle size={20} /> All caught up! No pending submissions.</div>
             )}
 
             {flagged.length > 0 && (
                 <div className="flagged-section">
-                    <h3 className="flagged-heading">🚩 Needs Editing ({flagged.length})</h3>
+                    <h3 className="flagged-heading"><Flag size={16} /> Needs Editing ({flagged.length})</h3>
                     {flagged.map(t => <ReviewCard key={t.id} t={t} onStatus={handleStatus} onDelete={handleDelete} onPreview={setPreviewing} />)}
                 </div>
             )}
@@ -75,11 +76,11 @@ function ReviewCard({ t, onStatus, onDelete, onPreview }) {
                         {t.anonymous ? 'Anonymous' : t.person_name}
                         {' · '}
                         {new Date(t.created_at).toLocaleDateString('en-ZA')}
-                        {isFlagged && <span className="flagged-label">🚩 Needs Editing</span>}
+                        {isFlagged && <span className="flagged-label"><Flag size={12} /> Needs Editing</span>}
                     </p>
                 </div>
                 <button className="expand-btn" onClick={() => setExpanded(e => !e)}>
-                    {expanded ? 'Collapse ▲' : 'Expand ▼'}
+                    {expanded ? <><ChevronUp size={14} /> Collapse</> : <><ChevronDown size={14} /> Expand</>}
                 </button>
             </div>
 
@@ -97,14 +98,14 @@ function ReviewCard({ t, onStatus, onDelete, onPreview }) {
             )}
 
             <div className="review-actions">
-                <button className="review-btn preview" onClick={() => onPreview(t)}>👁 Preview</button>
-                <button className="review-btn approve" onClick={() => onStatus(t.id, 'approved')}>✓ Publish</button>
+                <button className="review-btn preview" onClick={() => onPreview(t)}><Eye size={14} /> Preview</button>
+                <button className="review-btn approve" onClick={() => onStatus(t.id, 'approved')}><Check size={14} /> Publish</button>
                 <button className={`review-btn flag ${isFlagged ? 'flag-active' : ''}`} onClick={() => onStatus(t.id, isFlagged ? 'pending' : 'needs_editing')}>
-                    {isFlagged ? '↩ Unflag' : '🚩 Needs Editing'}
+                    {isFlagged ? <><Undo2 size={14} /> Unflag</> : <><Flag size={14} /> Needs Editing</>}
                 </button>
-                <Link to={`/admin/edit/${t.id}`} className="review-btn edit">✎ Edit</Link>
-                <button className="review-btn reject" onClick={() => onStatus(t.id, 'rejected')}>✕ Reject</button>
-                <button className="review-btn delete" onClick={() => window.confirm('Delete permanently?') && onDelete(t.id)}>🗑</button>
+                <Link to={`/admin/edit/${t.id}`} className="review-btn edit"><Pencil size={14} /> Edit</Link>
+                <button className="review-btn reject" onClick={() => onStatus(t.id, 'rejected')}><X size={14} /> Reject</button>
+                <button className="review-btn delete" onClick={() => window.confirm('Delete permanently?') && onDelete(t.id)}><Trash2 size={14} /></button>
             </div>
         </div>
     )

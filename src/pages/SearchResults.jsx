@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import TestimonialCard from '../components/TestimonialCard'
+import { ArrowLeft } from 'lucide-react'
 
 export default function SearchResults() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -86,7 +87,9 @@ export default function SearchResults() {
                     {results.length === 0 ? (
                         <div className="no-results">
                             <p>No stories found matching "<strong>{query}</strong>".</p>
-                            <Link to="/" className="btn-primary">← Browse all stories</Link>
+                            <Link to="/" className="btn-primary">
+                                <ArrowLeft size={15} /> Browse all stories
+                            </Link>
                         </div>
                     ) : (
                         <div className="testimonials-grid">

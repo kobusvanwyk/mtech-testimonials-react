@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { Tag } from 'lucide-react'
 
 export default function Categories() {
     const [testimonials, setTestimonials] = useState([])
@@ -18,7 +19,6 @@ export default function Categories() {
         setLoading(false)
     }
 
-    // Build unique conditions with usage counts
     const conditionMap = {}
     testimonials.forEach(t => {
         (t.conditions || []).forEach(c => {
@@ -26,7 +26,6 @@ export default function Categories() {
         })
     })
 
-    // Build unique products with usage counts
     const productMap = {}
     testimonials.forEach(t => {
         (t.products || []).forEach(p => {
@@ -45,16 +44,11 @@ export default function Categories() {
         }
         setSaving(true)
         const field = type === 'condition' ? 'conditions' : 'products'
-
-        // Find all testimonials that use this category
         const affected = testimonials.filter(t => (t[field] || []).includes(oldName))
-
-        // Update each one
         for (const t of affected) {
             const updated = t[field].map(x => x === oldName ? newName.trim() : x)
             await supabase.from('testimonials').update({ [field]: updated }).eq('id', t.id)
         }
-
         setMessage(`Renamed "${oldName}" → "${newName.trim()}" on ${affected.length} testimonial(s)`)
         setTimeout(() => setMessage(''), 4000)
         setEditingCondition(null)
@@ -67,7 +61,6 @@ export default function Categories() {
         const field = type === 'condition' ? 'conditions' : 'products'
         const affected = testimonials.filter(t => (t[field] || []).includes(name))
         if (!window.confirm(`Remove "${name}" from ${affected.length} testimonial(s)? This cannot be undone.`)) return
-
         setSaving(true)
         for (const t of affected) {
             const updated = (t[field] || []).filter(x => x !== name)
@@ -125,7 +118,7 @@ export default function Categories() {
 
     return (
         <div className="admin-page-content">
-            <h2>🏷️ Categories</h2>
+            <h2><Tag size={20} /> Categories</h2>
             <p className="page-sub">Rename or delete condition and product tags used across all testimonials. Changes apply to every testimonial using that tag.</p>
 
             {message && <div className="cat-message">{message}</div>}

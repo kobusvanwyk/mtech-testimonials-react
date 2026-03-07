@@ -1,133 +1,104 @@
-import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-
-const ADMIN_PASSWORD = 'mannatech2024'
+import {
+    LayoutDashboard, Clock, CheckCircle, List, Tag,
+    FileText, Images, Globe, LogOut, Lock
+} from 'lucide-react'
 
 export default function AdminLayout() {
-    const [authed, setAuthed] = useState(
-        sessionStorage.getItem('adminAuthed') === 'true'
-    )
+    const [authed, setAuthed]   = useState(false)
     const [password, setPassword] = useState('')
-    const [error, setError] = useState(false)
-    const [quickSearch, setQuickSearch] = useState('')
-    const [quickResults, setQuickResults] = useState([])
-    const [searching, setSearching] = useState(false)
-    const navigate = useNavigate()
+    const [error, setError]     = useState('')
+    const navigate  = useNavigate()
+    const location  = useLocation()
+    const ADMIN_PWD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123'
 
-    function handleLogin() {
-        if (password === ADMIN_PASSWORD) {
-            sessionStorage.setItem('adminAuthed', 'true')
+    useEffect(() => {
+        setAuthed(sessionStorage.getItem('admin_authed') === 'true')
+    }, [])
+
+    function handleLogin(e) {
+        e.preventDefault()
+        if (password === ADMIN_PWD) {
+            sessionStorage.setItem('admin_authed', 'true')
             setAuthed(true)
-            navigate('/admin/dashboard')
+            setError('')
         } else {
-            setError(true)
+            setError('Incorrect password.')
         }
     }
 
-    async function handleQuickSearch(q) {
-        setQuickSearch(q)
-        if (!q.trim()) { setQuickResults([]); return }
-        setSearching(true)
-        const { data } = await supabase
-            .from('testimonials')
-            .select('id, title, status')
-            .or(`title.ilike.%${q}%,person_name.ilike.%${q}%`)
-            .limit(6)
-        setQuickResults(data || [])
-        setSearching(false)
-    }
-
     function handleLogout() {
-        sessionStorage.removeItem('adminAuthed')
+        sessionStorage.removeItem('admin_authed')
         setAuthed(false)
-        setPassword('')
+        navigate('/admin')
     }
 
-    if (!authed) {
-        return (
-            <div className="admin-login">
-                <div className="admin-login-box">
-                    <div className="admin-login-logo">🔒</div>
-                    <h2>Admin Access</h2>
-                    <p className="admin-login-sub">Mannatech Testimonials</p>
+    if (!authed) return (
+        <div className="admin-login">
+            <div className="admin-login-box">
+                <div className="admin-login-logo"><Lock size={40} /></div>
+                <h2>Admin Login</h2>
+                <p className="admin-login-sub">Enter your password to continue</p>
+                <form onSubmit={handleLogin}>
                     <input
                         type="password"
-                        placeholder="Enter password"
+                        placeholder="Password"
                         value={password}
-                        onChange={e => { setPassword(e.target.value); setError(false) }}
-                        onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                        onChange={e => setPassword(e.target.value)}
                         className={error ? 'input-error' : ''}
+                        autoFocus
                     />
-                    {error && <p className="error-msg">Incorrect password</p>}
-                    <button className="btn-login" onClick={handleLogin}>Login</button>
-                </div>
+                    {error && <p className="error-msg">{error}</p>}
+                    <button type="submit" className="btn-login">Sign In</button>
+                </form>
             </div>
-        )
-    }
+        </div>
+    )
+
+    const nav = [
+        { to: '/admin',            label: 'Dashboard',       icon: <LayoutDashboard size={16} /> },
+        { to: '/admin/pending',    label: 'Pending',         icon: <Clock size={16} /> },
+        { to: '/admin/published',  label: 'Published',       icon: <CheckCircle size={16} /> },
+        { to: '/admin/all',        label: 'All Testimonials',icon: <List size={16} /> },
+        null,
+        { to: '/admin/categories', label: 'Categories',      icon: <Tag size={16} /> },
+        { to: '/admin/legal',      label: 'Legal Pages',     icon: <FileText size={16} /> },
+        { to: '/admin/images',     label: 'Image Manager',   icon: <Images size={16} /> },
+    ]
 
     return (
         <div className="admin-layout">
             <aside className="admin-sidebar">
                 <div className="admin-sidebar-header">
-                    <span className="admin-sidebar-title">Admin Panel</span>
-                </div>
-                <div className="admin-search-wrap">
-                    <input
-                        type="text"
-                        placeholder="Quick find..."
-                        value={quickSearch}
-                        onChange={e => handleQuickSearch(e.target.value)}
-                        className="admin-quick-search"
-                    />
-                    {quickResults.length > 0 && (
-                        <div className="admin-search-results">
-                            {quickResults.map(r => (
-                                <NavLink
-                                    key={r.id}
-                                    to={`/admin/edit/${r.id}`}
-                                    className="admin-search-result"
-                                    onClick={() => { setQuickSearch(''); setQuickResults([]) }}
-                                >
-                                    <span className="qs-title">{r.title}</span>
-                                    <span className={`qs-status status-badge badge-${r.status === 'approved' ? 'approved' : r.status === 'pending' ? 'pending' : 'unpublished'}`}>{r.status}</span>
-                                </NavLink>
-                            ))}
-                        </div>
-                    )}
+                    <span className="admin-sidebar-title">MTech Admin</span>
                 </div>
                 <nav className="admin-nav">
-                    <NavLink to="/admin/dashboard" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
-                        📊 Dashboard
-                    </NavLink>
-                    <NavLink to="/admin/pending" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
-                        ⏳ Pending
-                    </NavLink>
-                    <NavLink to="/admin/published" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
-                        ✅ Published
-                    </NavLink>
-                    <NavLink to="/admin/all" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
-                        📋 All Testimonials
-                    </NavLink>
-                    <div className="admin-nav-divider" />
-                    <NavLink to="/admin/categories" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
-                        🏷️ Categories
-                    </NavLink>
-                    <NavLink to="/admin/legal" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
-                        📄 Legal Pages
-                    </NavLink>
-                    <NavLink to="/admin/images" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
-                        🖼️ Image Manager
-                    </NavLink>
+                    {nav.map((item, i) =>
+                        item === null
+                            ? <div key={i} className="admin-nav-divider" />
+                            : <Link
+                                key={item.to}
+                                to={item.to}
+                                className={`admin-nav-item ${location.pathname === item.to ? 'active' : ''}`}
+                              >
+                                {item.icon} {item.label}
+                              </Link>
+                    )}
                 </nav>
                 <div className="admin-sidebar-footer">
-                    <a href="/" className="admin-nav-item" target="_blank">🌐 View Site</a>
-                    <button className="admin-logout" onClick={handleLogout}>🚪 Logout</button>
+                    <a href="/" className="admin-nav-item" target="_blank">
+                        <Globe size={16} /> View Site
+                    </a>
+                    <button className="admin-logout" onClick={handleLogout}>
+                        <LogOut size={16} /> Logout
+                    </button>
                 </div>
             </aside>
-            <div className="admin-main">
+            <main className="admin-main">
                 <Outlet />
-            </div>
+            </main>
         </div>
     )
 }

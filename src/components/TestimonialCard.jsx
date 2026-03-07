@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 
 export default function TestimonialCard({ testimonial: t }) {
     return (
@@ -25,7 +26,7 @@ export default function TestimonialCard({ testimonial: t }) {
                     ))}
                 </div>
                 <Link to={`/testimonial/${t.id}`} className="card-read-more">
-                    Read full story →
+                    Read full story <ArrowRight size={14} />
                 </Link>
             </div>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { X, ArrowRight } from 'lucide-react'
 
 export default function SearchBar() {
     const [query, setQuery] = useState('')
@@ -11,7 +12,6 @@ export default function SearchBar() {
     const wrapperRef = useRef(null)
     const navigate = useNavigate()
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         function handleClickOutside(e) {
             if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -22,7 +22,6 @@ export default function SearchBar() {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
-    // Debounced autocomplete search
     useEffect(() => {
         if (!query.trim()) {
             setResults([])
@@ -42,8 +41,6 @@ export default function SearchBar() {
                 .or(`title.ilike.%${q}%,person_name.ilike.%${q}%,story_text.ilike.%${q}%`)
                 .limit(6)
 
-            // Also client-side filter for condition/product tag matches
-            // (Supabase can't do array contains on a text search easily)
             const { data: tagData } = await supabase
                 .from('testimonials')
                 .select('id, title, person_name, story_text, conditions, products')
@@ -55,7 +52,6 @@ export default function SearchBar() {
                 t.products?.some(p => p.toLowerCase().includes(q))
             )
 
-            // Merge and deduplicate by id, cap at 6
             const seen = new Set()
             const merged = [...(data || []), ...tagMatches].filter(t => {
                 if (seen.has(t.id)) return false
@@ -74,9 +70,7 @@ export default function SearchBar() {
             setOpen(false)
             navigate(`/search?q=${encodeURIComponent(query.trim())}`)
         }
-        if (e.key === 'Escape') {
-            setOpen(false)
-        }
+        if (e.key === 'Escape') setOpen(false)
     }
 
     function handleSearch() {
@@ -111,7 +105,9 @@ export default function SearchBar() {
                     autoComplete="off"
                 />
                 {query && (
-                    <button className="search-clear" onClick={() => { setQuery(''); setResults([]); setOpen(false) }}>✕</button>
+                    <button className="search-clear" onClick={() => { setQuery(''); setResults([]); setOpen(false) }}>
+                        <X size={14} />
+                    </button>
                 )}
                 <button className="search-btn" onClick={handleSearch}>Search</button>
             </div>
@@ -142,7 +138,7 @@ export default function SearchBar() {
                     ))}
                     {!loading && results.length > 0 && (
                         <div className="search-dropdown-footer" onMouseDown={handleSearch}>
-                            See all results for "<strong>{query}</strong>" →
+                            See all results for "<strong>{query}</strong>" <ArrowRight size={13} />
                         </div>
                     )}
                 </div>

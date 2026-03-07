@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Check, X } from 'lucide-react'
 
 export default function PreviewModal({ testimonial, onClose, onPublish }) {
     useEffect(() => {
@@ -15,9 +16,11 @@ export default function PreviewModal({ testimonial, onClose, onPublish }) {
                     <h3>Preview</h3>
                     <div className="modal-header-actions">
                         {onPublish && (
-                            <button className="btn-publish-modal" onClick={onPublish}>✓ Publish Now</button>
+                            <button className="btn-publish-modal" onClick={onPublish}>
+                                <Check size={14} /> Publish Now
+                            </button>
                         )}
-                        <button className="modal-close" onClick={onClose}>✕</button>
+                        <button className="modal-close" onClick={onClose}><X size={16} /></button>
                     </div>
                 </div>
                 <div className="modal-body">

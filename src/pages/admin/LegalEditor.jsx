@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
+import { FileText, Lock, Pencil, Eye, Check } from 'lucide-react'
 
 const TABS = [
-    { key: 'terms', label: '📄 Terms & Conditions' },
-    { key: 'privacy', label: '🔒 Privacy Policy' },
+    { key: 'terms',   label: 'Terms & Conditions', icon: <FileText size={14} /> },
+    { key: 'privacy', label: 'Privacy Policy',      icon: <Lock size={14} /> },
 ]
 
 const TOOLBAR = [
@@ -68,23 +69,18 @@ export default function LegalEditor() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
-    const [mode, setMode] = useState('edit') // 'edit' | 'html' | 'preview'
+    const [mode, setMode] = useState('edit')
     const [previewHtml, setPreviewHtml] = useState('')
     const [htmlSource, setHtmlSource] = useState('')
 
-    // Single source of truth for all content — plain object, not state
     const contentRef = useRef({ terms: FALLBACK.terms, privacy: FALLBACK.privacy })
     const quillContainerRef = useRef(null)
     const quillRef = useRef(null)
 
-    // Load from Supabase once
     useEffect(() => {
         async function fetchContent() {
             try {
-                const { data } = await supabase
-                    .from('site_content')
-                    .select('key, content')
-                    .in('key', ['terms', 'privacy'])
+                const { data } = await supabase.from('site_content').select('key, content').in('key', ['terms', 'privacy'])
                 if (data) data.forEach(row => { contentRef.current[row.key] = row.content })
             } catch (e) { /* use fallback */ }
             setLoading(false)
@@ -92,50 +88,24 @@ export default function LegalEditor() {
         fetchContent()
     }, [])
 
-    // Mount / remount Quill whenever tab changes or returning to edit mode
     useEffect(() => {
         if (loading || mode !== 'edit') return
-
-        // Destroy any existing instance first
-        if (quillRef.current) {
-            quillRef.current = null
-        }
+        if (quillRef.current) quillRef.current = null
         if (!quillContainerRef.current) return
-
-        // Clear the container so Quill gets a fresh DOM node
         quillContainerRef.current.innerHTML = ''
-
         const editorDiv = document.createElement('div')
         quillContainerRef.current.appendChild(editorDiv)
-
-        const q = new Quill(editorDiv, {
-            theme: 'snow',
-            modules: { toolbar: TOOLBAR },
-        })
-
+        const q = new Quill(editorDiv, { theme: 'snow', modules: { toolbar: TOOLBAR } })
         q.root.innerHTML = contentRef.current[activeTab]
         quillRef.current = q
-
-        q.on('text-change', () => {
-            contentRef.current[activeTab] = q.root.innerHTML
-        })
-
-        // Cleanup: just null the ref, DOM cleanup happens via innerHTML = '' above
-        return () => {
-            quillRef.current = null
-        }
+        q.on('text-change', () => { contentRef.current[activeTab] = q.root.innerHTML })
+        return () => { quillRef.current = null }
     }, [activeTab, mode, loading])
 
     function handleTabChange(key) {
         if (key === activeTab) return
-        // Flush current editor content before switching
-        if (quillRef.current) {
-            contentRef.current[activeTab] = quillRef.current.root.innerHTML
-            quillRef.current = null
-        }
-        if (mode === 'html') {
-            contentRef.current[activeTab] = htmlSource
-        }
+        if (quillRef.current) { contentRef.current[activeTab] = quillRef.current.root.innerHTML; quillRef.current = null }
+        if (mode === 'html') contentRef.current[activeTab] = htmlSource
         setMode('edit')
         setSaved(false)
         setActiveTab(key)
@@ -143,24 +113,10 @@ export default function LegalEditor() {
 
     function handleModeChange(newMode) {
         if (newMode === mode) return
-
-        // Flush content out of whatever mode we're leaving
-        if (mode === 'edit' && quillRef.current) {
-            contentRef.current[activeTab] = quillRef.current.root.innerHTML
-            quillRef.current = null
-        }
-        if (mode === 'html') {
-            contentRef.current[activeTab] = htmlSource
-        }
-
-        // Prep the incoming mode
-        if (newMode === 'html') {
-            setHtmlSource(contentRef.current[activeTab])
-        }
-        if (newMode === 'preview') {
-            setPreviewHtml(contentRef.current[activeTab])
-        }
-
+        if (mode === 'edit' && quillRef.current) { contentRef.current[activeTab] = quillRef.current.root.innerHTML; quillRef.current = null }
+        if (mode === 'html') contentRef.current[activeTab] = htmlSource
+        if (newMode === 'html') setHtmlSource(contentRef.current[activeTab])
+        if (newMode === 'preview') setPreviewHtml(contentRef.current[activeTab])
         setSaved(false)
         setMode(newMode)
     }
@@ -174,12 +130,10 @@ export default function LegalEditor() {
 
         setSaving(true)
         try {
-            const { error } = await supabase
-                .from('site_content')
-                .upsert(
-                    { key: activeTab, content: html, updated_at: new Date().toISOString() },
-                    { onConflict: 'key' }
-                )
+            const { error } = await supabase.from('site_content').upsert(
+                { key: activeTab, content: html, updated_at: new Date().toISOString() },
+                { onConflict: 'key' }
+            )
             if (error) throw error
             contentRef.current[activeTab] = html
             setSaved(true)
@@ -194,28 +148,25 @@ export default function LegalEditor() {
 
     if (loading) return <div className="admin-page-content"><div className="loading">Loading...</div></div>
 
+    const saveLabel = saving ? 'Saving...' : saved ? <><Check size={14} /> Saved!</> : 'Save Changes'
+
     return (
         <div className="admin-page-content">
             <div className="edit-header">
-                <h2>📝 Legal Pages</h2>
+                <h2><FileText size={20} /> Legal Pages</h2>
                 <div className="edit-header-actions">
                     <div className="mode-toggle-group">
-                        <button
-                            className={`mode-toggle-btn ${mode === 'edit' ? 'active' : ''}`}
-                            onClick={() => handleModeChange('edit')}
-                        >✎ Edit</button>
-                        <button
-                            className={`mode-toggle-btn ${mode === 'html' ? 'active' : ''}`}
-                            onClick={() => handleModeChange('html')}
-                        >{'</>'} HTML</button>
-                        <button
-                            className={`mode-toggle-btn ${mode === 'preview' ? 'active' : ''}`}
-                            onClick={() => handleModeChange('preview')}
-                        >👁 Preview</button>
+                        <button className={`mode-toggle-btn ${mode === 'edit' ? 'active' : ''}`} onClick={() => handleModeChange('edit')}>
+                            <Pencil size={13} /> Edit
+                        </button>
+                        <button className={`mode-toggle-btn ${mode === 'html' ? 'active' : ''}`} onClick={() => handleModeChange('html')}>
+                            {'</>'}  HTML
+                        </button>
+                        <button className={`mode-toggle-btn ${mode === 'preview' ? 'active' : ''}`} onClick={() => handleModeChange('preview')}>
+                            <Eye size={13} /> Preview
+                        </button>
                     </div>
-                    <button className="btn-save" onClick={handleSave} disabled={saving}>
-                        {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
-                    </button>
+                    <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>
                 </div>
             </div>
 
@@ -226,17 +177,14 @@ export default function LegalEditor() {
                         className={`legal-tab ${activeTab === tab.key ? 'active' : ''}`}
                         onClick={() => handleTabChange(tab.key)}
                     >
-                        {tab.label}
+                        {tab.icon} {tab.label}
                     </button>
                 ))}
             </div>
 
             <div className="legal-editor-wrap">
                 {mode === 'preview' && (
-                    <div
-                        className="legal-preview-pane legal-content"
-                        dangerouslySetInnerHTML={{ __html: previewHtml }}
-                    />
+                    <div className="legal-preview-pane legal-content" dangerouslySetInnerHTML={{ __html: previewHtml }} />
                 )}
                 {mode === 'html' && (
                     <textarea
@@ -252,12 +200,8 @@ export default function LegalEditor() {
             </div>
 
             <div className="edit-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
-                <p className="legal-editor-hint">
-                    Changes go live on the public site immediately after saving.
-                </p>
-                <button className="btn-save" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
-                </button>
+                <p className="legal-editor-hint">Changes go live on the public site immediately after saving.</p>
+                <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>
             </div>
         </div>
     )

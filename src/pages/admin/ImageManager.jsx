@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import {
+    Images, LayoutGrid, AlignJustify, RefreshCw,
+    Star, Trash2, RefreshCcw, Link2, ExternalLink, Check, FileText
+} from 'lucide-react'
 
 const BUCKET = 'testimonial-images'
 
@@ -19,9 +23,9 @@ function formatDate(dateStr) {
 export default function ImageManager() {
     const [images, setImages] = useState([])
     const [loading, setLoading] = useState(true)
-    const [view, setView] = useState('grid') // 'grid' | 'list'
-    const [filter, setFilter] = useState('all') // 'all' | 'featured' | 'gallery' | 'orphans'
-    const [sort, setSort] = useState('date') // 'date' | 'size'
+    const [view, setView] = useState('grid')
+    const [filter, setFilter] = useState('all')
+    const [sort, setSort] = useState('date')
     const [selected, setSelected] = useState(new Set())
     const [bulkDeleting, setBulkDeleting] = useState(false)
     const [replacingId, setReplacingId] = useState(null)
@@ -36,18 +40,15 @@ export default function ImageManager() {
     async function loadImages() {
         setLoading(true)
         try {
-            // Load all testimonials for cross-referencing
             const { data: testimonials } = await supabase
                 .from('testimonials')
                 .select('id, title, featured_image_url, gallery_urls, status')
 
-            // List files in both folders
             const [{ data: featuredFiles }, { data: galleryFiles }] = await Promise.all([
                 supabase.storage.from(BUCKET).list('featured', { limit: 500, sortBy: { column: 'created_at', order: 'desc' } }),
                 supabase.storage.from(BUCKET).list('gallery', { limit: 500, sortBy: { column: 'created_at', order: 'desc' } }),
             ])
 
-            // Build URL → testimonial lookup map
             const urlMap = {}
             ;(testimonials || []).forEach(t => {
                 if (t.featured_image_url) {
@@ -58,41 +59,20 @@ export default function ImageManager() {
                 })
             })
 
-            // Build unified image list
             const allImages = []
 
             ;(featuredFiles || []).filter(f => f.name !== '.emptyFolderPlaceholder').forEach(f => {
                 const path = `featured/${f.name}`
                 const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
                 const testimonial = urlMap[publicUrl] || null
-                allImages.push({
-                    id: path,
-                    path,
-                    name: f.name,
-                    url: publicUrl,
-                    size: f.metadata?.size || 0,
-                    createdAt: f.created_at || f.updated_at,
-                    folder: 'featured',
-                    testimonial,
-                    orphan: !testimonial,
-                })
+                allImages.push({ id: path, path, name: f.name, url: publicUrl, size: f.metadata?.size || 0, createdAt: f.created_at || f.updated_at, folder: 'featured', testimonial, orphan: !testimonial })
             })
 
             ;(galleryFiles || []).filter(f => f.name !== '.emptyFolderPlaceholder').forEach(f => {
                 const path = `gallery/${f.name}`
                 const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
                 const testimonial = urlMap[publicUrl] || null
-                allImages.push({
-                    id: path,
-                    path,
-                    name: f.name,
-                    url: publicUrl,
-                    size: f.metadata?.size || 0,
-                    createdAt: f.created_at || f.updated_at,
-                    folder: 'gallery',
-                    testimonial,
-                    orphan: !testimonial,
-                })
+                allImages.push({ id: path, path, name: f.name, url: publicUrl, size: f.metadata?.size || 0, createdAt: f.created_at || f.updated_at, folder: 'gallery', testimonial, orphan: !testimonial })
             })
 
             setImages(allImages)
@@ -102,7 +82,6 @@ export default function ImageManager() {
         setLoading(false)
     }
 
-    // Filtered + sorted images
     const displayed = images
         .filter(img => {
             if (filter === 'featured') return img.folder === 'featured'
@@ -115,11 +94,9 @@ export default function ImageManager() {
             return new Date(b.createdAt) - new Date(a.createdAt)
         })
 
-    // Stats
     const totalSize = images.reduce((sum, i) => sum + (i.size || 0), 0)
     const orphanCount = images.filter(i => i.orphan).length
 
-    // Selection
     function toggleSelect(id) {
         setSelected(prev => {
             const next = new Set(prev)
@@ -135,14 +112,12 @@ export default function ImageManager() {
 
     function clearSelection() { setSelected(new Set()) }
 
-    // Copy URL
     async function copyUrl(img) {
         await navigator.clipboard.writeText(img.url)
         setCopiedId(img.id)
         setTimeout(() => setCopiedId(null), 2000)
     }
 
-    // Delete single
     async function deleteImage(img) {
         const inUse = !img.orphan
         const msg = inUse
@@ -153,25 +128,13 @@ export default function ImageManager() {
         setDeletingId(img.id)
         try {
             await supabase.storage.from(BUCKET).remove([img.path])
-
-            // If in use, clear from testimonial record
             if (inUse) {
-                const { data: t } = await supabase
-                    .from('testimonials')
-                    .select('featured_image_url, gallery_urls')
-                    .eq('id', img.testimonial.id)
-                    .single()
-
+                const { data: t } = await supabase.from('testimonials').select('featured_image_url, gallery_urls').eq('id', img.testimonial.id).single()
                 const updates = {}
                 if (t.featured_image_url === img.url) updates.featured_image_url = null
-                if ((t.gallery_urls || []).includes(img.url)) {
-                    updates.gallery_urls = t.gallery_urls.filter(u => u !== img.url)
-                }
-                if (Object.keys(updates).length > 0) {
-                    await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
-                }
+                if ((t.gallery_urls || []).includes(img.url)) updates.gallery_urls = t.gallery_urls.filter(u => u !== img.url)
+                if (Object.keys(updates).length > 0) await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
             }
-
             setImages(prev => prev.filter(i => i.id !== img.id))
             setSelected(prev => { const n = new Set(prev); n.delete(img.id); return n })
         } catch (err) {
@@ -181,7 +144,6 @@ export default function ImageManager() {
         setDeletingId(null)
     }
 
-    // Bulk delete
     async function bulkDelete() {
         const toDelete = images.filter(i => selected.has(i.id))
         const inUseCount = toDelete.filter(i => !i.orphan).length
@@ -192,27 +154,14 @@ export default function ImageManager() {
 
         setBulkDeleting(true)
         try {
-            const paths = toDelete.map(i => i.path)
-            await supabase.storage.from(BUCKET).remove(paths)
-
-            // Update any affected testimonials
-            const inUse = toDelete.filter(i => !i.orphan)
-            for (const img of inUse) {
-                const { data: t } = await supabase
-                    .from('testimonials')
-                    .select('featured_image_url, gallery_urls')
-                    .eq('id', img.testimonial.id)
-                    .single()
+            await supabase.storage.from(BUCKET).remove(toDelete.map(i => i.path))
+            for (const img of toDelete.filter(i => !i.orphan)) {
+                const { data: t } = await supabase.from('testimonials').select('featured_image_url, gallery_urls').eq('id', img.testimonial.id).single()
                 const updates = {}
                 if (t.featured_image_url === img.url) updates.featured_image_url = null
-                if ((t.gallery_urls || []).includes(img.url)) {
-                    updates.gallery_urls = t.gallery_urls.filter(u => u !== img.url)
-                }
-                if (Object.keys(updates).length > 0) {
-                    await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
-                }
+                if ((t.gallery_urls || []).includes(img.url)) updates.gallery_urls = t.gallery_urls.filter(u => u !== img.url)
+                if (Object.keys(updates).length > 0) await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
             }
-
             const deletedIds = new Set(toDelete.map(i => i.id))
             setImages(prev => prev.filter(i => !deletedIds.has(i.id)))
             setSelected(new Set())
@@ -223,7 +172,6 @@ export default function ImageManager() {
         setBulkDeleting(false)
     }
 
-    // Replace image
     function triggerReplace(img) {
         replaceTargetRef.current = img
         replaceInputRef.current.click()
@@ -239,43 +187,20 @@ export default function ImageManager() {
         try {
             const ext = file.name.split('.').pop()
             const newPath = `${img.folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-
-            // Upload new file
             const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(newPath, file)
             if (uploadErr) throw uploadErr
-
             const { data: { publicUrl: newUrl } } = supabase.storage.from(BUCKET).getPublicUrl(newPath)
 
-            // Update testimonial record if in use
             if (!img.orphan) {
-                const { data: t } = await supabase
-                    .from('testimonials')
-                    .select('featured_image_url, gallery_urls')
-                    .eq('id', img.testimonial.id)
-                    .single()
-
+                const { data: t } = await supabase.from('testimonials').select('featured_image_url, gallery_urls').eq('id', img.testimonial.id).single()
                 const updates = {}
                 if (t.featured_image_url === img.url) updates.featured_image_url = newUrl
-                if ((t.gallery_urls || []).includes(img.url)) {
-                    updates.gallery_urls = t.gallery_urls.map(u => u === img.url ? newUrl : u)
-                }
-                if (Object.keys(updates).length > 0) {
-                    await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
-                }
+                if ((t.gallery_urls || []).includes(img.url)) updates.gallery_urls = t.gallery_urls.map(u => u === img.url ? newUrl : u)
+                if (Object.keys(updates).length > 0) await supabase.from('testimonials').update(updates).eq('id', img.testimonial.id)
             }
 
-            // Delete old file from storage
             await supabase.storage.from(BUCKET).remove([img.path])
-
-            // Update local state
-            setImages(prev => prev.map(i => i.id === img.id ? {
-                ...i,
-                id: newPath,
-                path: newPath,
-                name: newPath.split('/').pop(),
-                url: newUrl,
-                createdAt: new Date().toISOString(),
-            } : i))
+            setImages(prev => prev.map(i => i.id === img.id ? { ...i, id: newPath, path: newPath, name: newPath.split('/').pop(), url: newUrl, createdAt: new Date().toISOString() } : i))
         } catch (err) {
             alert('Error replacing image.')
             console.error(err)
@@ -284,70 +209,53 @@ export default function ImageManager() {
         replaceTargetRef.current = null
     }
 
+    // Shared action buttons for both grid and list views
+    function ActionButtons({ img, size = 16 }) {
+        return (
+            <>
+                <button className="img-action-btn" onClick={() => triggerReplace(img)} disabled={replacingId === img.id} title="Replace image">
+                    <RefreshCcw size={size} />
+                </button>
+                <button className="img-action-btn" onClick={() => copyUrl(img)} title="Copy URL">
+                    {copiedId === img.id ? <Check size={size} /> : <Link2 size={size} />}
+                </button>
+                <button className="img-action-btn" onClick={() => window.open(img.url, '_blank')} title="Open full size">
+                    <ExternalLink size={size} />
+                </button>
+                <button className="img-action-btn img-action-delete" onClick={() => deleteImage(img)} disabled={deletingId === img.id} title="Delete image">
+                    <Trash2 size={size} />
+                </button>
+            </>
+        )
+    }
+
     if (loading) return <div className="admin-page-content"><div className="loading">Loading images…</div></div>
 
     return (
         <div className="admin-page-content">
-            {/* Hidden replace input */}
-            <input
-                ref={replaceInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handleReplaceFile}
-            />
+            <input ref={replaceInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleReplaceFile} />
 
-            {/* Header */}
             <div className="edit-header">
-                <h2>🖼️ Image Manager</h2>
+                <h2><Images size={20} /> Image Manager</h2>
                 <div className="edit-header-actions">
-                    <button
-                        className={`btn-icon ${view === 'grid' ? 'active' : ''}`}
-                        onClick={() => setView('grid')}
-                        title="Grid view"
-                    >⊞</button>
-                    <button
-                        className={`btn-icon ${view === 'list' ? 'active' : ''}`}
-                        onClick={() => setView('list')}
-                        title="List view"
-                    >☰</button>
-                    <button className="btn-secondary" onClick={loadImages}>↻ Refresh</button>
+                    <button className={`btn-icon ${view === 'grid' ? 'active' : ''}`} onClick={() => setView('grid')} title="Grid view"><LayoutGrid size={16} /></button>
+                    <button className={`btn-icon ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')} title="List view"><AlignJustify size={16} /></button>
+                    <button className="btn-secondary" onClick={loadImages}><RefreshCw size={14} /> Refresh</button>
                 </div>
             </div>
 
-            {/* Stats bar */}
             <div className="img-stats-bar">
-                <div className="img-stat">
-                    <span className="img-stat-value">{images.length}</span>
-                    <span className="img-stat-label">Total Images</span>
-                </div>
-                <div className="img-stat">
-                    <span className="img-stat-value">{images.filter(i => i.folder === 'featured').length}</span>
-                    <span className="img-stat-label">Featured</span>
-                </div>
-                <div className="img-stat">
-                    <span className="img-stat-value">{images.filter(i => i.folder === 'gallery').length}</span>
-                    <span className="img-stat-label">Gallery</span>
-                </div>
-                <div className={`img-stat ${orphanCount > 0 ? 'img-stat-warn' : ''}`}>
-                    <span className="img-stat-value">{orphanCount}</span>
-                    <span className="img-stat-label">Orphans</span>
-                </div>
-                <div className="img-stat">
-                    <span className="img-stat-value">{formatBytes(totalSize)}</span>
-                    <span className="img-stat-label">Total Size</span>
-                </div>
+                <div className="img-stat"><span className="img-stat-value">{images.length}</span><span className="img-stat-label">Total Images</span></div>
+                <div className="img-stat"><span className="img-stat-value">{images.filter(i => i.folder === 'featured').length}</span><span className="img-stat-label">Featured</span></div>
+                <div className="img-stat"><span className="img-stat-value">{images.filter(i => i.folder === 'gallery').length}</span><span className="img-stat-label">Gallery</span></div>
+                <div className={`img-stat ${orphanCount > 0 ? 'img-stat-warn' : ''}`}><span className="img-stat-value">{orphanCount}</span><span className="img-stat-label">Orphans</span></div>
+                <div className="img-stat"><span className="img-stat-value">{formatBytes(totalSize)}</span><span className="img-stat-label">Total Size</span></div>
             </div>
 
-            {/* Filters + sort + bulk actions */}
             <div className="img-toolbar">
                 <div className="img-filter-tabs">
                     {['all', 'featured', 'gallery', 'orphans'].map(f => (
-                        <button
-                            key={f}
-                            className={`img-filter-tab ${filter === f ? 'active' : ''}`}
-                            onClick={() => { setFilter(f); clearSelection() }}
-                        >
+                        <button key={f} className={`img-filter-tab ${filter === f ? 'active' : ''}`} onClick={() => { setFilter(f); clearSelection() }}>
                             {f.charAt(0).toUpperCase() + f.slice(1)}
                             <span className="img-filter-count">
                                 {f === 'all' && images.length}
@@ -359,11 +267,7 @@ export default function ImageManager() {
                     ))}
                 </div>
                 <div className="img-toolbar-right">
-                    <select
-                        className="img-sort-select"
-                        value={sort}
-                        onChange={e => setSort(e.target.value)}
-                    >
+                    <select className="img-sort-select" value={sort} onChange={e => setSort(e.target.value)}>
                         <option value="date">Sort: Newest first</option>
                         <option value="size">Sort: Largest first</option>
                     </select>
@@ -375,22 +279,16 @@ export default function ImageManager() {
                 </div>
             </div>
 
-            {/* Bulk action bar */}
             {selected.size > 0 && (
                 <div className="img-bulk-bar">
                     <span>{selected.size} image{selected.size !== 1 ? 's' : ''} selected</span>
                     <button className="btn-secondary" onClick={clearSelection}>Clear selection</button>
-                    <button
-                        className="btn-danger"
-                        onClick={bulkDelete}
-                        disabled={bulkDeleting}
-                    >
-                        {bulkDeleting ? 'Deleting…' : `🗑 Delete selected`}
+                    <button className="btn-danger" onClick={bulkDelete} disabled={bulkDeleting}>
+                        <Trash2 size={14} /> {bulkDeleting ? 'Deleting…' : 'Delete selected'}
                     </button>
                 </div>
             )}
 
-            {/* Results count */}
             <p className="results-count">{displayed.length} image{displayed.length !== 1 ? 's' : ''}</p>
 
             {displayed.length === 0 ? (
@@ -398,84 +296,40 @@ export default function ImageManager() {
             ) : view === 'grid' ? (
                 <div className="img-grid">
                     {displayed.map(img => (
-                        <div
-                            key={img.id}
-                            className={`img-card ${selected.has(img.id) ? 'selected' : ''} ${img.orphan ? 'orphan' : ''}`}
-                        >
+                        <div key={img.id} className={`img-card ${selected.has(img.id) ? 'selected' : ''} ${img.orphan ? 'orphan' : ''}`}>
                             <div className="img-card-check">
-                                <input
-                                    type="checkbox"
-                                    checked={selected.has(img.id)}
-                                    onChange={() => toggleSelect(img.id)}
-                                />
+                                <input type="checkbox" checked={selected.has(img.id)} onChange={() => toggleSelect(img.id)} />
                             </div>
-
                             <div className="img-card-thumb" onClick={() => window.open(img.url, '_blank')}>
                                 <img src={img.url} alt={img.name} loading="lazy" />
                                 {(replacingId === img.id || deletingId === img.id) && (
-                                    <div className="img-card-overlay">
-                                        {replacingId === img.id ? 'Replacing…' : 'Deleting…'}
-                                    </div>
+                                    <div className="img-card-overlay">{replacingId === img.id ? 'Replacing…' : 'Deleting…'}</div>
                                 )}
                             </div>
-
                             <div className="img-card-info">
                                 <div className="img-card-badges">
                                     <span className={`img-type-badge img-type-${img.folder}`}>
-                                        {img.folder === 'featured' ? '★ Featured' : '⊞ Gallery'}
+                                        {img.folder === 'featured' ? <><Star size={11} /> Featured</> : <><Images size={11} /> Gallery</>}
                                     </span>
                                     {img.orphan && <span className="img-orphan-badge">Orphan</span>}
                                 </div>
-
                                 <div className="img-card-name" title={img.name}>{img.name}</div>
-                                <div className="img-card-meta">
-                                    {formatBytes(img.size)} · {formatDate(img.createdAt)}
-                                </div>
-
+                                <div className="img-card-meta">{formatBytes(img.size)} · {formatDate(img.createdAt)}</div>
                                 {img.testimonial ? (
-                                    <button
-                                        className="img-testimonial-link"
-                                        onClick={() => navigate(`/admin/edit/${img.testimonial.id}`)}
-                                        title="Open testimonial in editor"
-                                    >
-                                        📝 {img.testimonial.title}
+                                    <button className="img-testimonial-link" onClick={() => navigate(`/admin/edit/${img.testimonial.id}`)} title="Open testimonial in editor">
+                                        <FileText size={12} /> {img.testimonial.title}
                                     </button>
                                 ) : (
                                     <span className="img-no-testimonial">Not used</span>
                                 )}
                             </div>
-
                             <div className="img-card-actions">
-                                <button
-                                    className="img-action-btn"
-                                    onClick={() => triggerReplace(img)}
-                                    disabled={replacingId === img.id}
-                                    title="Replace image"
-                                >🔄</button>
-                                <button
-                                    className="img-action-btn"
-                                    onClick={() => copyUrl(img)}
-                                    title="Copy URL"
-                                >
-                                    {copiedId === img.id ? '✓' : '🔗'}
-                                </button>
-                                <button
-                                    className="img-action-btn"
-                                    onClick={() => window.open(img.url, '_blank')}
-                                    title="Open full size"
-                                >↗</button>
-                                <button
-                                    className="img-action-btn img-action-delete"
-                                    onClick={() => deleteImage(img)}
-                                    disabled={deletingId === img.id}
-                                    title="Delete image"
-                                >🗑</button>
+                                <ActionButtons img={img} size={15} />
                             </div>
                         </div>
                     ))}
                 </div>
             ) : (
-                // List view
                 <table className="img-list-table">
                     <thead>
                         <tr>
@@ -492,39 +346,23 @@ export default function ImageManager() {
                     <tbody>
                         {displayed.map(img => (
                             <tr key={img.id} className={`${selected.has(img.id) ? 'selected' : ''} ${img.orphan ? 'orphan-row' : ''}`}>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={selected.has(img.id)}
-                                        onChange={() => toggleSelect(img.id)}
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        src={img.url}
-                                        alt=""
-                                        className="img-list-thumb"
-                                        onClick={() => window.open(img.url, '_blank')}
-                                    />
-                                </td>
+                                <td><input type="checkbox" checked={selected.has(img.id)} onChange={() => toggleSelect(img.id)} /></td>
+                                <td><img src={img.url} alt="" className="img-list-thumb" onClick={() => window.open(img.url, '_blank')} /></td>
                                 <td>
                                     <div className="img-list-name" title={img.name}>{img.name}</div>
                                     {img.orphan && <span className="img-orphan-badge">Orphan</span>}
                                 </td>
                                 <td>
                                     <span className={`img-type-badge img-type-${img.folder}`}>
-                                        {img.folder === 'featured' ? '★ Featured' : '⊞ Gallery'}
+                                        {img.folder === 'featured' ? <><Star size={11} /> Featured</> : <><Images size={11} /> Gallery</>}
                                     </span>
                                 </td>
                                 <td className="img-list-size">{formatBytes(img.size)}</td>
                                 <td className="img-list-date">{formatDate(img.createdAt)}</td>
                                 <td>
                                     {img.testimonial ? (
-                                        <button
-                                            className="img-testimonial-link"
-                                            onClick={() => navigate(`/admin/edit/${img.testimonial.id}`)}
-                                        >
-                                            📝 {img.testimonial.title}
+                                        <button className="img-testimonial-link" onClick={() => navigate(`/admin/edit/${img.testimonial.id}`)}>
+                                            <FileText size={12} /> {img.testimonial.title}
                                         </button>
                                     ) : (
                                         <span className="img-no-testimonial">Not used</span>
@@ -532,28 +370,7 @@ export default function ImageManager() {
                                 </td>
                                 <td>
                                     <div className="img-list-actions">
-                                        <button
-                                            className="img-action-btn"
-                                            onClick={() => triggerReplace(img)}
-                                            disabled={replacingId === img.id}
-                                            title="Replace"
-                                        >{replacingId === img.id ? '…' : '🔄'}</button>
-                                        <button
-                                            className="img-action-btn"
-                                            onClick={() => copyUrl(img)}
-                                            title="Copy URL"
-                                        >{copiedId === img.id ? '✓' : '🔗'}</button>
-                                        <button
-                                            className="img-action-btn"
-                                            onClick={() => window.open(img.url, '_blank')}
-                                            title="Open"
-                                        >↗</button>
-                                        <button
-                                            className="img-action-btn img-action-delete"
-                                            onClick={() => deleteImage(img)}
-                                            disabled={deletingId === img.id}
-                                            title="Delete"
-                                        >{deletingId === img.id ? '…' : '🗑'}</button>
+                                        <ActionButtons img={img} size={14} />
                                     </div>
                                 </td>
                             </tr>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { ArrowLeft } from 'lucide-react'
 
 export default function Single() {
     const { id } = useParams()
@@ -27,7 +28,7 @@ export default function Single() {
 
     return (
         <div className="single-page">
-            <Link to="/" className="back-link">← Back to all stories</Link>
+            <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all stories</Link>
             <article className="single-article">
                 {t.featured_image_url && (
                     <img src={t.featured_image_url} alt={t.title} className="single-image" />

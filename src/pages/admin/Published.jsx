@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import TestimonialTable from '../../components/TestimonialTable'
+import { CheckCircle, Star } from 'lucide-react'
 
 export default function Published() {
     const [testimonials, setTestimonials] = useState([])
@@ -37,10 +38,10 @@ export default function Published() {
 
     return (
         <div className="admin-page-content">
-            <h2>✅ Published ({testimonials.length})</h2>
+            <h2><CheckCircle size={20} /> Published ({testimonials.length})</h2>
             <p className="page-sub">
                 Live testimonials visible on the public site.
-                {featured.length > 0 && <> · <strong>{featured.length} featured ⭐</strong></>}
+                {featured.length > 0 && <> · <strong>{featured.length} featured <Star size={13} /></strong></>}
             </p>
             <TestimonialTable
                 testimonials={testimonials}

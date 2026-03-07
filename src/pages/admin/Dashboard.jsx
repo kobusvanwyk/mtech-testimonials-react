@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { ArrowRight } from 'lucide-react'
 
 export default function Dashboard() {
     const [stats, setStats] = useState(null)
@@ -15,10 +16,8 @@ export default function Dashboard() {
     async function fetchStats() {
         const { data } = await supabase.from('testimonials').select('status, created_at')
         if (!data) return
-
         const now = new Date()
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-
         setStats({
             total: data.length,
             pending: data.filter(t => t.status === 'pending').length,
@@ -65,7 +64,11 @@ export default function Dashboard() {
                 <div className="stat-card stat-pending">
                     <div className="stat-number">{stats.pending}</div>
                     <div className="stat-label">Pending Review</div>
-                    {stats.pending > 0 && <Link to="/admin/pending" className="stat-action">Review now →</Link>}
+                    {stats.pending > 0 && (
+                        <Link to="/admin/pending" className="stat-action">
+                            Review now <ArrowRight size={13} />
+                        </Link>
+                    )}
                 </div>
                 <div className="stat-card stat-published">
                     <div className="stat-number">{stats.published}</div>
@@ -79,7 +82,9 @@ export default function Dashboard() {
                     <div className="stat-card stat-editing">
                         <div className="stat-number">{stats.needsEditing}</div>
                         <div className="stat-label">Needs Editing</div>
-                        <Link to="/admin/all?filter=needs_editing" className="stat-action">View →</Link>
+                        <Link to="/admin/all?filter=needs_editing" className="stat-action">
+                            View <ArrowRight size={13} />
+                        </Link>
                     </div>
                 )}
             </div>
@@ -87,7 +92,9 @@ export default function Dashboard() {
             <div className="dashboard-section">
                 <div className="dashboard-section-header">
                     <h3>Recent Submissions</h3>
-                    <Link to="/admin/all" className="view-all-link">View all →</Link>
+                    <Link to="/admin/all" className="view-all-link">
+                        View all <ArrowRight size={13} />
+                    </Link>
                 </div>
                 <div className="recent-list">
                     {recent.map(t => (

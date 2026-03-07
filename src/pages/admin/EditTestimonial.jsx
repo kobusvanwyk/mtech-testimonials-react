@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { ArrowLeft, ArrowRight, Eye, Check, X } from 'lucide-react'
 
 const PRODUCTS = [
     'Ambrotose Complex', 'Advanced Ambrotose', 'Ambrotose AO',
@@ -92,11 +93,7 @@ export default function EditTestimonial() {
                 updates.gallery_urls = [...(form.gallery_urls || []), ...newUrls]
             }
 
-            // Append edit history entry
-            const historyEntry = {
-                at: new Date().toISOString(),
-                note: `Status: ${updates.status}`
-            }
+            const historyEntry = { at: new Date().toISOString(), note: `Status: ${updates.status}` }
             updates.edit_history = [...(form.edit_history || []), historyEntry]
 
             delete updates.id
@@ -121,16 +118,18 @@ export default function EditTestimonial() {
     if (loading) return <div className="admin-page-content"><div className="loading">Loading...</div></div>
     if (!form) return <div className="admin-page-content"><p>Testimonial not found.</p></div>
 
+    const saveLabel = saving ? 'Saving...' : saved ? <><Check size={14} /> Saved!</> : 'Save Changes'
+
     return (
         <div className="admin-page-content">
             <div className="edit-header">
-                <Link to="/admin/all" className="back-link">← Back</Link>
+                <Link to="/admin/all" className="back-link"><ArrowLeft size={15} /> Back</Link>
                 <h2>Edit Testimonial</h2>
                 <div className="edit-header-actions">
-                    <Link to={`/testimonial/${id}`} target="_blank" className="btn-preview">👁 Preview</Link>
-                    <button className="btn-save" onClick={handleSave} disabled={saving}>
-                        {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
-                    </button>
+                    <Link to={`/testimonial/${id}`} target="_blank" className="btn-preview">
+                        <Eye size={14} /> Preview
+                    </Link>
+                    <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>
                 </div>
             </div>
 
@@ -163,7 +162,7 @@ export default function EditTestimonial() {
                         <div className="tag-input-area">
                             {(form.conditions || []).map(c => (
                                 <span key={c} className="tag-pill">
-                                    {c} <button onClick={() => removeCondition(c)}>✕</button>
+                                    {c} <button onClick={() => removeCondition(c)}><X size={10} /></button>
                                 </span>
                             ))}
                             <input
@@ -204,14 +203,18 @@ export default function EditTestimonial() {
                         {form.featured_image_url && (
                             <div className="edit-image-preview">
                                 <img src={form.featured_image_url} alt="Featured" />
-                                <button className="remove-image" onClick={() => update('featured_image_url', null)}>✕ Remove</button>
+                                <button className="remove-image" onClick={() => update('featured_image_url', null)}>
+                                    <X size={13} /> Remove
+                                </button>
                             </div>
                         )}
                         {newFeaturedImage && (
                             <div className="edit-image-preview">
                                 <img src={URL.createObjectURL(newFeaturedImage)} alt="New featured" />
                                 <p className="upload-hint">New image (not saved yet)</p>
-                                <button className="remove-image" onClick={() => setNewFeaturedImage(null)}>✕ Cancel</button>
+                                <button className="remove-image" onClick={() => setNewFeaturedImage(null)}>
+                                    <X size={13} /> Cancel
+                                </button>
                             </div>
                         )}
                         <input type="file" accept="image/*" onChange={e => setNewFeaturedImage(e.target.files[0])} className="file-input" />
@@ -225,9 +228,9 @@ export default function EditTestimonial() {
                                     <div key={url} className="gallery-manage-item">
                                         <img src={url} alt={`Gallery ${i + 1}`} />
                                         <div className="gallery-manage-actions">
-                                            <button onClick={() => moveGalleryImage(i, -1)} disabled={i === 0} title="Move left">←</button>
-                                            <button onClick={() => moveGalleryImage(i, 1)} disabled={i === (form.gallery_urls.length - 1)} title="Move right">→</button>
-                                            <button onClick={() => removeGalleryImage(url)} className="btn-remove-gallery" title="Remove">✕</button>
+                                            <button onClick={() => moveGalleryImage(i, -1)} disabled={i === 0} title="Move left"><ArrowLeft size={13} /></button>
+                                            <button onClick={() => moveGalleryImage(i, 1)} disabled={i === (form.gallery_urls.length - 1)} title="Move right"><ArrowRight size={13} /></button>
+                                            <button onClick={() => removeGalleryImage(url)} className="btn-remove-gallery" title="Remove"><X size={13} /></button>
                                         </div>
                                     </div>
                                 ))}
@@ -265,9 +268,7 @@ export default function EditTestimonial() {
             </div>
 
             <div className="edit-footer">
-                <button className="btn-save" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
-                </button>
+                <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>
             </div>
         </div>
     )

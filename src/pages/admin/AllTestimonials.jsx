@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import TestimonialTable from '../../components/TestimonialTable'
+import { List } from 'lucide-react'
 
 const STATUS_FILTERS = [
     { value: 'all', label: 'All' },
@@ -42,7 +43,7 @@ export default function AllTestimonials() {
 
     return (
         <div className="admin-page-content">
-            <h2>📋 All Testimonials</h2>
+            <h2><List size={20} /> All Testimonials</h2>
             <div className="status-filter-bar">
                 {STATUS_FILTERS.map(f => (
                     <button

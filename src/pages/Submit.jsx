@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { ArrowLeft, ArrowRight, X, Check, Sparkles } from 'lucide-react'
 
 const PRODUCTS = [
     'Ambrotose Complex', 'Advanced Ambrotose', 'Ambrotose AO',
@@ -121,7 +122,7 @@ export default function Submit() {
     if (submitted) {
         return (
             <div className="submit-success">
-                <div className="success-icon">🎉</div>
+                <div className="success-icon"><Sparkles size={48} /></div>
                 <h2>Thank you for sharing your story!</h2>
                 <p>Your testimonial has been submitted and will be reviewed before publishing.</p>
             </div>
@@ -138,7 +139,7 @@ export default function Submit() {
                 </div>
                 <p className="step-counter">Step {step} of 6</p>
 
-                {/* STEP 1: Title & Name */}
+                {/* STEP 1 */}
                 {step === 1 && (
                     <div className="step">
                         <h2>Tell us about your experience</h2>
@@ -175,12 +176,12 @@ export default function Submit() {
                             disabled={!form.title || (!form.anonymous && !form.person_name)}
                             onClick={() => setStep(2)}
                         >
-                            Next →
+                            Next <ArrowRight size={15} />
                         </button>
                     </div>
                 )}
 
-                {/* STEP 2: Health Conditions */}
+                {/* STEP 2 */}
                 {step === 2 && (
                     <div className="step">
                         <h2>Which health condition(s) does this relate to?</h2>
@@ -188,8 +189,8 @@ export default function Submit() {
                         <div className="tag-input-area">
                             {form.conditions.map(c => (
                                 <span key={c} className="tag-pill">
-                  {c} <button onClick={() => removeCondition(c)}>✕</button>
-                </span>
+                                    {c} <button onClick={() => removeCondition(c)}><X size={10} /></button>
+                                </span>
                             ))}
                             <input
                                 className="tag-input"
@@ -206,19 +207,19 @@ export default function Submit() {
                             />
                         </div>
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(1)}>← Back</button>
+                            <button className="btn-back" onClick={() => setStep(1)}><ArrowLeft size={15} /> Back</button>
                             <button
                                 className="btn-next"
                                 disabled={form.conditions.length === 0}
                                 onClick={() => setStep(3)}
                             >
-                                Next →
+                                Next <ArrowRight size={15} />
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 3: Products */}
+                {/* STEP 3 */}
                 {step === 3 && (
                     <div className="step">
                         <h2>Which Mannatech product(s) are you sharing about?</h2>
@@ -239,19 +240,19 @@ export default function Submit() {
                             ))}
                         </div>
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(2)}>← Back</button>
+                            <button className="btn-back" onClick={() => setStep(2)}><ArrowLeft size={15} /> Back</button>
                             <button
                                 className="btn-next"
                                 disabled={form.products.length === 0}
                                 onClick={() => setStep(4)}
                             >
-                                Next →
+                                Next <ArrowRight size={15} />
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 4: Story */}
+                {/* STEP 4 */}
                 {step === 4 && (
                     <div className="step">
                         <h2>Tell your story</h2>
@@ -265,19 +266,19 @@ export default function Submit() {
                         />
                         <p className="char-count">{form.story_text.length} characters</p>
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(3)}>← Back</button>
+                            <button className="btn-back" onClick={() => setStep(3)}><ArrowLeft size={15} /> Back</button>
                             <button
                                 className="btn-next"
                                 disabled={form.story_text.length < 50}
                                 onClick={() => setStep(5)}
                             >
-                                Next →
+                                Next <ArrowRight size={15} />
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 5: Images */}
+                {/* STEP 5 */}
                 {step === 5 && (
                     <div className="step">
                         <h2>Add photos (optional)</h2>
@@ -295,7 +296,9 @@ export default function Submit() {
                             {featuredImage && (
                                 <div className="image-preview">
                                     <img src={URL.createObjectURL(featuredImage)} alt="Featured preview" />
-                                    <button className="remove-image" onClick={() => setFeaturedImage(null)}>✕ Remove</button>
+                                    <button className="remove-image" onClick={() => setFeaturedImage(null)}>
+                                        <X size={13} /> Remove
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -316,7 +319,9 @@ export default function Submit() {
                                     {galleryImages.map((img, i) => (
                                         <div key={i} className="gallery-preview-item">
                                             <img src={URL.createObjectURL(img)} alt={`Gallery ${i + 1}`} />
-                                            <button className="remove-image" onClick={() => removeGalleryImage(i)}>✕</button>
+                                            <button className="remove-image" onClick={() => removeGalleryImage(i)}>
+                                                <X size={12} />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -325,15 +330,15 @@ export default function Submit() {
                         </div>
 
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(4)}>← Back</button>
+                            <button className="btn-back" onClick={() => setStep(4)}><ArrowLeft size={15} /> Back</button>
                             <button className="btn-next" onClick={() => setStep(6)}>
-                                {featuredImage || galleryImages.length > 0 ? 'Next →' : 'Skip →'}
+                                {featuredImage || galleryImages.length > 0 ? <>Next <ArrowRight size={15} /></> : <>Skip <ArrowRight size={15} /></>}
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 6: Review & Submit */}
+                {/* STEP 6 */}
                 {step === 6 && (
                     <div className="step">
                         <h2>Review your story</h2>
@@ -342,16 +347,16 @@ export default function Submit() {
                             <p><strong>By:</strong> {form.anonymous ? 'Anonymous' : form.person_name}</p>
                             <p><strong>Conditions:</strong> {form.conditions.join(', ')}</p>
                             <p><strong>Products:</strong> {form.products.join(', ')}</p>
-                            {featuredImage && <p><strong>Featured photo:</strong> ✓ Added</p>}
+                            {featuredImage && <p><strong>Featured photo:</strong> <Check size={13} /> Added</p>}
                             {galleryImages.length > 0 && <p><strong>Gallery photos:</strong> {galleryImages.length} added</p>}
                             <p><strong>Story:</strong></p>
                             <p className="review-story">{form.story_text}</p>
                         </div>
                         {uploadProgress && <p className="upload-progress">{uploadProgress}</p>}
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(5)}>← Back</button>
+                            <button className="btn-back" onClick={() => setStep(5)}><ArrowLeft size={15} /> Back</button>
                             <button className="btn-submit" onClick={handleSubmit} disabled={loading}>
-                                {loading ? 'Submitting...' : '✓ Submit My Story'}
+                                {loading ? 'Submitting...' : <><Check size={15} /> Submit My Story</>}
                             </button>
                         </div>
                     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Check, MinusCircle, Trash2, Star, Eye, Pencil, X } from 'lucide-react'
 
 export default function TestimonialTable({ testimonials, onStatusChange, onDelete, onToggleFeatured, loading }) {
     const [selected, setSelected] = useState([])
@@ -51,9 +52,9 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                 {selected.length > 0 && (
                     <div className="bulk-actions">
                         <span className="bulk-count">{selected.length} selected</span>
-                        <button className="btn-bulk-approve" onClick={() => { selected.forEach(id => onStatusChange(id, 'approved')); setSelected([]) }}>✓ Publish All</button>
-                        <button className="btn-bulk-unpublish" onClick={() => { selected.forEach(id => onStatusChange(id, 'unpublished')); setSelected([]) }}>⊘ Unpublish All</button>
-                        <button className="btn-bulk-delete" onClick={() => { if (window.confirm(`Delete ${selected.length} testimonials?`)) { selected.forEach(id => onDelete(id)); setSelected([]) } }}>🗑 Delete All</button>
+                        <button className="btn-bulk-approve"   onClick={() => { selected.forEach(id => onStatusChange(id, 'approved'));   setSelected([]) }}><Check size={14} /> Publish All</button>
+                        <button className="btn-bulk-unpublish" onClick={() => { selected.forEach(id => onStatusChange(id, 'unpublished')); setSelected([]) }}><MinusCircle size={14} /> Unpublish All</button>
+                        <button className="btn-bulk-delete"    onClick={() => { if (window.confirm(`Delete ${selected.length} testimonials?`)) { selected.forEach(id => onDelete(id)); setSelected([]) } }}><Trash2 size={14} /> Delete All</button>
                     </div>
                 )}
             </div>
@@ -80,7 +81,7 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                 <td><input type="checkbox" checked={selected.includes(t.id)} onChange={() => toggleSelect(t.id)} /></td>
                                 <td className="col-title">
                                     <Link to={`/admin/edit/${t.id}`}>{t.title}</Link>
-                                    {t.featured && <span className="featured-star" title="Featured">⭐</span>}
+                                    {t.featured && <span className="featured-star" title="Featured"><Star size={14} fill="currentColor" /></span>}
                                 </td>
                                 <td>{t.anonymous ? <em>Anonymous</em> : t.person_name}</td>
                                 <td className="col-tags">{t.conditions?.map(c => <span key={c} className="tag tag-condition">{c}</span>)}</td>
@@ -96,7 +97,7 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                                 onClick={() => onToggleFeatured(t.id, t.featured)}
                                                 title={t.featured ? 'Remove from featured' : 'Pin to top'}
                                             >
-                                                {t.featured ? '★ Unpin' : '☆ Pin'}
+                                                {t.featured ? <><Star size={12} /> Unpin</> : <><Star size={12} fill="none" /> Pin</>}
                                             </button>
                                         )}
                                         {t.status !== 'approved' && (

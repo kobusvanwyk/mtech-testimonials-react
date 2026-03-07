@@ -1,3 +1,5 @@
+import { X } from 'lucide-react'
+
 export default function CategorySidebar({ conditions, products, activeFilter, onFilter, testimonials }) {
     function countFor(label) {
         return testimonials.filter(t =>
@@ -11,7 +13,7 @@ export default function CategorySidebar({ conditions, products, activeFilter, on
                 <h4 className="sidebar-heading">Browse by Condition</h4>
                 {activeFilter && (
                     <button className="sidebar-clear" onClick={() => onFilter(null)}>
-                        ✕ Clear filter
+                        <X size={12} /> Clear filter
                     </button>
                 )}
                 <ul className="sidebar-list">
