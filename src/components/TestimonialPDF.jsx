@@ -9,21 +9,11 @@ import {
 } from '@react-pdf/renderer'
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
-Font.register({
-    family: 'Inter',
-    fonts: [
-        {
-            src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2',
-            fontWeight: 400,
-        },
-        {
-            src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZ9hiJ-Ek-_EeA.woff2',
-            fontWeight: 700,
-        },
-    ],
-})
+// Using react-pdf built-in fonts (Helvetica) — always available, no network
+// dependency. Custom TTF fonts can be added later by bundling the .ttf file
+// inside the project (e.g. src/assets/fonts/Inter.ttf) and registering via
+// Font.register({ family: 'Inter', src: interTtf }) where interTtf is imported.
 
-// Hyphenation off — cleaner for short testimonial text
 Font.registerHyphenationCallback(word => [word])
 
 // ─── Colours ─────────────────────────────────────────────────────────────────
@@ -47,9 +37,9 @@ const S = StyleSheet.create({
     // Page
     page: {
         backgroundColor: C.white,
-        fontFamily: 'Inter',
+        fontFamily: 'Helvetica',
         fontSize: 11,
-        paddingBottom: 80,       // space for fixed footer
+        paddingBottom: 80,
     },
 
     // ── Top accent bar ──────────────────────────────
@@ -74,10 +64,10 @@ const S = StyleSheet.create({
     },
     testimonialLabel: {
         fontSize: 9,
+        fontFamily: 'Helvetica-Bold',
         color: C.primary,
         textTransform: 'uppercase',
         letterSpacing: 2,
-        fontWeight: 700,
     },
     logo: {
         width: 130,
@@ -87,15 +77,15 @@ const S = StyleSheet.create({
     },
     logoFallback: {
         fontSize: 15,
+        fontFamily: 'Helvetica-Bold',
         color: C.primary,
-        fontWeight: 700,
         letterSpacing: 1.5,
     },
 
     // ── Title ────────────────────────────────────────
     title: {
         fontSize: 24,
-        fontWeight: 700,
+        fontFamily: 'Helvetica-Bold',
         color: C.dark,
         lineHeight: 1.25,
         marginBottom: 10,
@@ -138,13 +128,13 @@ const S = StyleSheet.create({
     },
     chipTextCondition: {
         fontSize: 8.5,
+        fontFamily: 'Helvetica-Bold',
         color: C.primaryDark,
-        fontWeight: 700,
     },
     chipTextProduct: {
         fontSize: 8.5,
+        fontFamily: 'Helvetica-Bold',
         color: '#6d8000',
-        fontWeight: 700,
     },
 
     // ── Body text ────────────────────────────────────
@@ -161,8 +151,8 @@ const S = StyleSheet.create({
     },
     gallerySectionLabel: {
         fontSize: 9,
+        fontFamily: 'Helvetica-Bold',
         color: C.muted,
-        fontWeight: 700,
         textTransform: 'uppercase',
         letterSpacing: 1.2,
         marginBottom: 10,
@@ -201,8 +191,8 @@ const S = StyleSheet.create({
     },
     footerContactLabel: {
         fontSize: 8,
+        fontFamily: 'Helvetica-Bold',
         color: C.footerText,
-        fontWeight: 700,
         textTransform: 'uppercase',
         letterSpacing: 1.5,
         marginBottom: 6,
@@ -220,7 +210,6 @@ const S = StyleSheet.create({
     footerContactItem: {
         fontSize: 10,
         color: C.white,
-        fontWeight: 400,
     },
     footerTagline: {
         fontSize: 8.5,
