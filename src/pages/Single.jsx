@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { ArrowLeft, Share2, Check, Pencil } from 'lucide-react'
+import { PDFDownloadButton } from '../components/PDFDownloadButton'
 
 export default function Single({ shareMode = false }) {
     const { slug } = useParams()
@@ -48,11 +49,14 @@ export default function Single({ shareMode = false }) {
             {!shareMode && (
                 <div className="single-top-bar">
                     <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all stories</Link>
-                    {isAdmin && (
-                        <Link to={`/admin/edit/${t.id}`} className="btn-edit-admin">
-                            <Pencil size={14} /> Edit
-                        </Link>
-                    )}
+                    <div className="single-top-bar-actions">
+                        <PDFDownloadButton testimonial={t} />
+                        {isAdmin && (
+                            <Link to={`/admin/edit/${t.id}`} className="btn-edit-admin">
+                                <Pencil size={14} /> Edit
+                            </Link>
+                        )}
+                    </div>
                 </div>
             )}
 

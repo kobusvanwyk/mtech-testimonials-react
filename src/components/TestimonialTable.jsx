@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, MinusCircle, Trash2, Eye, Pencil, X } from 'lucide-react'
+import { PDFDownloadButton } from './PDFDownloadButton'
 
 export default function TestimonialTable({ testimonials, onStatusChange, onDelete, loading }) {
     const [selected, setSelected] = useState([])
@@ -101,6 +102,7 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                         {t.status === 'approved' && (
                                             <button className="row-action-btn unpublish" onClick={() => onStatusChange(t.id, 'unpublished')}>Unpublish</button>
                                         )}
+                                        <PDFDownloadButton testimonial={t} variant="icon" />
                                         <button className="row-action-btn delete" onClick={() => window.confirm('Delete this testimonial?') && onDelete(t.id)}>Delete</button>
                                     </div>
                                 </td>

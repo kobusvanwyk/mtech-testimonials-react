@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useProducts, useConditions } from '../../lib/ProductsContext'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import { ArrowLeft, ArrowRight, Eye, Check, X } from 'lucide-react'
+import { PDFDownloadButton } from '../../components/PDFDownloadButton'
 
 const STATUS_OPTIONS = [
     { value: 'pending', label: 'Pending' },
@@ -123,6 +124,7 @@ export default function EditTestimonial() {
                     <Link to={`/testimonial/${form.slug || id}`} target="_blank" className="btn-preview">
                         <Eye size={14} /> Preview
                     </Link>
+                    {form && <PDFDownloadButton testimonial={form} />}
                     <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>
                 </div>
             </div>

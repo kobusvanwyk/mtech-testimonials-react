@@ -147,3 +147,37 @@
     margin: 0 auto;
     padding: 40px 20px 60px;
 }
+
+// ─── Top bar actions group ───────────────────────────────────────────────────
+.single-top-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+// ─── PDF Download button ─────────────────────────────────────────────────────
+.btn-pdf-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--primary);
+    background: white;
+    color: var(--primary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+
+    &:hover:not(:disabled) {
+        background: var(--primary);
+        color: white;
+    }
+
+    &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+}
