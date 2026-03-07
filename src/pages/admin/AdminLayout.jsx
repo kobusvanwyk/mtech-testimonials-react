@@ -12,7 +12,7 @@ export default function AdminLayout() {
     const [error, setError]     = useState('')
     const navigate  = useNavigate()
     const location  = useLocation()
-    const ADMIN_PWD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123'
+    const ADMIN_PWD = import.meta.env.VITE_ADMIN_PASSWORD || 'mannatech2024'
 
     useEffect(() => {
         setAuthed(sessionStorage.getItem('admin_authed') === 'true')
