@@ -82,6 +82,11 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                 <td className="col-title">
                                     <Link to={`/admin/edit/${t.id}`}>{t.title}</Link>
                                     {t.featured && <span className="featured-star" title="Featured"><Star size={14} fill="currentColor" /></span>}
+                                    {t.is_imported && (
+                                        <span className="badge-imported" title={`Imported from: ${t.imported_from}`}>
+                                            imported
+                                        </span>
+                                    )}
                                 </td>
                                 <td>{t.anonymous ? <em>Anonymous</em> : t.person_name}</td>
                                 <td className="col-tags">{t.conditions?.map(c => <span key={c} className="tag tag-condition">{c}</span>)}</td>
