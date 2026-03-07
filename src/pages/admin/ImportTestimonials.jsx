@@ -17,10 +17,14 @@ function convertGoogleDriveUrl(url) {
 }
 
 function parseCSV(text) {
-    const lines = text.trim().split('\n')
+    // Normalise Windows line endings
+    const lines = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
     if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row.')
 
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase())
+    // Auto-detect delimiter: semicolon or comma
+    const delimiter = lines[0].includes(';') ? ';' : ','
+
+    const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase())
 
     const missing = REQUIRED_COLUMNS.filter(c => !headers.includes(c))
     if (missing.length) throw new Error(`Missing required columns: ${missing.join(', ')}`)
@@ -30,7 +34,7 @@ function parseCSV(text) {
         const line = lines[i].trim()
         if (!line) continue
 
-        // Handle quoted fields with commas inside
+        // Handle quoted fields with delimiter inside
         const values = []
         let current = ''
         let inQuotes = false
@@ -38,7 +42,7 @@ function parseCSV(text) {
             const ch = line[c]
             if (ch === '"') {
                 inQuotes = !inQuotes
-            } else if (ch === ',' && !inQuotes) {
+            } else if (ch === delimiter && !inQuotes) {
                 values.push(current.trim())
                 current = ''
             } else {
