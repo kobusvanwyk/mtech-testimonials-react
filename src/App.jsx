@@ -14,6 +14,7 @@ import Published from './pages/admin/Published'
 import AllTestimonials from './pages/admin/AllTestimonials'
 import EditTestimonial from './pages/admin/EditTestimonial'
 import Categories from './pages/admin/Categories'
+import ImageManager from './pages/admin/ImageManager'
 import ImportTestimonials from './pages/admin/ImportTestimonials'
 
 function PublicLayout({ children }) {
