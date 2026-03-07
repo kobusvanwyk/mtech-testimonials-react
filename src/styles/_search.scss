@@ -9,9 +9,9 @@
 .search-input {
     width: 100%;
     padding: 14px 20px;
-    border-radius: 28px;
+    border-radius: var(--radius-pill);
     border: 2px solid var(--border-soft);
-    font-size: 1rem;
+    font-size: var(--text-base);
     outline: none;
     transition: border-color 0.2s;
 
@@ -26,7 +26,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--muted-mid);
 
     &:hover { color: var(--slate-light); }

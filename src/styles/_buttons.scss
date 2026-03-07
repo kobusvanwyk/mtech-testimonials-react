@@ -4,9 +4,9 @@
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 28px;
+    border-radius: var(--radius-pill);
     padding: 12px 28px;
-    font-size: 1rem;
+    font-size: var(--text-base);
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
@@ -18,9 +18,9 @@
 .btn-back {
     background: none;
     border: 2px solid var(--border-soft);
-    border-radius: 28px;
+    border-radius: var(--radius-pill);
     padding: 12px 28px;
-    font-size: 1rem;
+    font-size: var(--text-base);
     cursor: pointer;
     color: var(--text-secondary);
     transition: border-color 0.2s;

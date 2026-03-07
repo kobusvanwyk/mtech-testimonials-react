@@ -41,7 +41,7 @@
             font-weight: 500;
             font-size: 0.9rem;
 
-            @include md { font-size: 1rem; }
+            @include md { font-size: var(--text-base); }
         }
     }
 }
@@ -50,14 +50,14 @@
     background: var(--primary);
     color: white;
     padding: 8px 14px;
-    border-radius: 24px;
+    border-radius: var(--radius-pill);
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     white-space: nowrap;
 
     @include md {
         padding: 10px 20px;
-        font-size: 1rem;
+        font-size: var(--text-base);
     }
 
     &:hover { background: var(--primary-dark); }
