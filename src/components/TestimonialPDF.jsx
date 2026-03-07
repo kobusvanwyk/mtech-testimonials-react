@@ -254,11 +254,21 @@ function buildContactItems(settings) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function TestimonialPDF({ testimonial: t, settings = {} }) {
-    const hasLogo     = !!settings.pdf_logo_url?.trim()
+    const hasLogo      = !!settings.pdf_logo_url?.trim()
     const contactItems = buildContactItems(settings)
-    const hasFooter   = contactItems.length > 0 || !!settings.pdf_footer_tagline?.trim()
-    const paragraphs  = (t.story_text || '').split('\n').filter(p => p.trim())
-    const gallery     = (t.gallery_urls || []).slice(0, 6)
+    const hasFooter    = contactItems.length > 0 || !!settings.pdf_footer_tagline?.trim()
+    const paragraphs   = (t.story_text || '').split('\n').filter(p => p.trim())
+    const gallery      = (t.gallery_urls || []).slice(0, 6)
+
+    // ── Font scaling ──────────────────────────────────────────────────────────
+    const charCount  = (t.story_text || '').length
+    const isCompact  = charCount > 1200
+    const bodySize   = isCompact ? 9.5 : 11
+    const titleSize  = isCompact ? 20  : 24
+    const metaSize   = isCompact ? 9   : 10
+    const paraStyle  = { ...S.paragraph,  fontSize: bodySize  }
+    const titleStyle = { ...S.title,      fontSize: titleSize }
+    const metaStyle  = { ...S.meta,       fontSize: metaSize  }
 
     return (
         <Document
@@ -284,11 +294,11 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
                     </View>
 
                     {/* Title */}
-                    <Text style={S.title}>{t.title || 'Testimonial'}</Text>
+                    <Text style={titleStyle}>{t.title || 'Testimonial'}</Text>
                     <View style={S.titleUnderline} />
 
                     {/* Meta */}
-                    <Text style={S.meta}>
+                    <Text style={metaStyle}>
                         By {t.anonymous ? 'Anonymous' : (t.person_name || 'Unknown')}
                         {'   ·   '}
                         {formatDate(t.created_at)}
@@ -312,7 +322,7 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
 
                     {/* Story body */}
                     {paragraphs.map((para, i) => (
-                        <Text key={i} style={S.paragraph}>{para}</Text>
+                        <Text key={i} style={paraStyle}>{para}</Text>
                     ))}
 
                     {/* Gallery */}
