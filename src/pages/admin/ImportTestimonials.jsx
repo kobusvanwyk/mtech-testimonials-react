@@ -194,7 +194,18 @@ export default function ImportTestimonials() {
 
             {/* Upload area */}
             {!preview && !importResult && (
-                <label className="import-dropzone" onDragOver={e => e.preventDefault()}>
+                <label
+                className="import-dropzone"
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => {
+                    e.preventDefault()
+                    const f = e.dataTransfer.files[0]
+                    if (f) {
+                        if (fileRef.current) fileRef.current.value = ''
+                        handleFileChange({ target: { files: [f] } })
+                    }
+                }}
+            >
                     <input
                         ref={fileRef}
                         type="file"
