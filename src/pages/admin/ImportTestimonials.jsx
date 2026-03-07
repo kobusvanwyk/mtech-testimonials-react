@@ -9,6 +9,13 @@ const EXPECTED_COLUMNS = [
     'story_text', 'date', 'featured_image_url', 'gallery_urls'
 ]
 
+function convertGoogleDriveUrl(url) {
+    if (!url) return url
+    const match = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
+    if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`
+    return url
+}
+
 function parseCSV(text) {
     const lines = text.trim().split('\n')
     if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row.')
@@ -62,7 +69,7 @@ function buildRecord(row, filename) {
     const anonymous = row.anonymous?.toLowerCase() === 'true'
     const conditions = row.conditions ? row.conditions.split('|').map(s => s.trim()).filter(Boolean) : []
     const products = row.products ? row.products.split('|').map(s => s.trim()).filter(Boolean) : []
-    const gallery_urls = row.gallery_urls ? row.gallery_urls.split('|').map(s => s.trim()).filter(Boolean) : []
+    const gallery_urls = row.gallery_urls ? row.gallery_urls.split('|').map(s => convertGoogleDriveUrl(s.trim())).filter(Boolean) : []
     const created_at = row.date?.trim() ? new Date(row.date.trim()).toISOString() : new Date().toISOString()
 
     return {
@@ -72,7 +79,7 @@ function buildRecord(row, filename) {
         conditions,
         products,
         story_text: row.story_text.trim(),
-        featured_image_url: row.featured_image_url?.trim() || null,
+        featured_image_url: convertGoogleDriveUrl(row.featured_image_url?.trim() || null),
         gallery_urls,
         created_at,
         status: 'pending',
@@ -180,7 +187,7 @@ export default function ImportTestimonials() {
                     <li>Use <code>|</code> to separate multiple values: <code>Arthritis|Fatigue</code></li>
                     <li>Set <code>anonymous</code> to <code>true</code> or <code>false</code></li>
                     <li>Use <code>YYYY-MM-DD</code> for dates — leave blank to use today</li>
-                    <li>Use full URLs for images — leave blank if none</li>
+                    <li>Images: use full URLs, or paste a Google Drive share link directly — it will be converted automatically</li>
                     <li>All imports are saved as <strong>Pending</strong> for your review</li>
                 </ul>
             </div>
