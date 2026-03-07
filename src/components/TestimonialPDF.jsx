@@ -352,7 +352,7 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
 
                 {/* ── Footer ── */}
                 {hasFooter && (
-                    <View style={S.footer} fixed>
+                    <View style={S.footer}>
                         <View style={S.footerDivider} />
                         {contactItems.length > 0 && (
                             <>
