@@ -1,13 +1,193 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { generateUniqueSlug } from '../../lib/slugify'
-import { Upload, FileText, Check, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
+import {
+    Upload, FileText, Check, X, AlertTriangle,
+    ChevronDown, ChevronUp, Images, Copy, Loader, ChevronRight
+} from 'lucide-react'
 
 const REQUIRED_COLUMNS = ['title', 'story_text']
 const EXPECTED_COLUMNS = [
     'title', 'person_name', 'anonymous', 'conditions', 'products',
     'story_text', 'date', 'featured_image_url', 'gallery_urls'
 ]
+const BUCKET = 'testimonial-images'
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
+
+// ── Image Uploader Panel ──────────────────────────────────────────────────────
+
+function ImageUploaderPanel() {
+    const [open, setOpen] = useState(false)
+    const [uploads, setUploads] = useState([])   // { id, file, status, url, error }
+    const [dragging, setDragging] = useState(false)
+    const [copiedId, setCopiedId] = useState(null)
+    const inputRef = useRef()
+
+    function handleFiles(files) {
+        const newUploads = Array.from(files).map(file => ({
+            id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            file,
+            status: 'pending',   // pending | uploading | done | error
+            url: null,
+            error: null,
+        }))
+        setUploads(prev => [...prev, ...newUploads])
+        newUploads.forEach(u => uploadFile(u))
+    }
+
+    async function uploadFile(upload) {
+        // Validate
+        if (!ACCEPTED_IMAGE_TYPES.includes(upload.file.type)) {
+            return setUploads(prev => prev.map(u =>
+                u.id === upload.id ? { ...u, status: 'error', error: 'Invalid file type' } : u
+            ))
+        }
+        if (upload.file.size > MAX_IMAGE_SIZE) {
+            return setUploads(prev => prev.map(u =>
+                u.id === upload.id ? { ...u, status: 'error', error: 'File too large (max 5MB)' } : u
+            ))
+        }
+
+        setUploads(prev => prev.map(u =>
+            u.id === upload.id ? { ...u, status: 'uploading' } : u
+        ))
+
+        try {
+            const ext = upload.file.name.split('.').pop()
+            const path = `featured/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+            const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(path, upload.file)
+            if (uploadErr) throw uploadErr
+            const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
+            setUploads(prev => prev.map(u =>
+                u.id === upload.id ? { ...u, status: 'done', url: publicUrl } : u
+            ))
+        } catch (err) {
+            setUploads(prev => prev.map(u =>
+                u.id === upload.id ? { ...u, status: 'error', error: err.message } : u
+            ))
+        }
+    }
+
+    function copyUrl(upload) {
+        navigator.clipboard.writeText(upload.url)
+        setCopiedId(upload.id)
+        setTimeout(() => setCopiedId(null), 2000)
+    }
+
+    function removeUpload(id) {
+        setUploads(prev => prev.filter(u => u.id !== id))
+    }
+
+    const doneCount = uploads.filter(u => u.status === 'done').length
+    const pendingCount = uploads.filter(u => ['pending', 'uploading'].includes(u.status)).length
+
+    return (
+        <div className="img-upload-panel">
+            <button className="img-upload-toggle" onClick={() => setOpen(o => !o)}>
+                <Images size={16} />
+                <span>Upload Images for Import</span>
+                {doneCount > 0 && <span className="img-upload-badge">{doneCount} ready</span>}
+                {pendingCount > 0 && <span className="img-upload-badge uploading">{pendingCount} uploading…</span>}
+                {open ? <ChevronUp size={15} className="toggle-chevron" /> : <ChevronRight size={15} className="toggle-chevron" />}
+            </button>
+
+            {open && (
+                <div className="img-upload-body">
+                    <p className="img-upload-hint">
+                        Upload images here first, then copy their URLs into your CSV.
+                        Images are saved to Supabase Storage and will be stable permanent links.
+                    </p>
+
+                    {/* Drop zone */}
+                    <label
+                        className={`img-upload-dropzone ${dragging ? 'dragging' : ''}`}
+                        onDragOver={e => { e.preventDefault(); setDragging(true) }}
+                        onDragLeave={() => setDragging(false)}
+                        onDrop={e => {
+                            e.preventDefault()
+                            setDragging(false)
+                            handleFiles(e.dataTransfer.files)
+                        }}
+                    >
+                        <input
+                            ref={inputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="dropzone-input"
+                            onChange={e => handleFiles(e.target.files)}
+                        />
+                        <Upload size={28} className="dropzone-icon" />
+                        <span className="dropzone-main">Click or drag images here</span>
+                        <span className="dropzone-sub">JPG, PNG, WebP, GIF — max 5MB each</span>
+                    </label>
+
+                    {/* Upload list */}
+                    {uploads.length > 0 && (
+                        <div className="img-upload-list">
+                            {uploads.map(u => (
+                                <div key={u.id} className={`img-upload-row ${u.status}`}>
+                                    {/* Thumbnail */}
+                                    <div className="img-upload-thumb">
+                                        {u.status === 'done'
+                                            ? <img src={u.url} alt={u.file.name} />
+                                            : <div className="img-upload-thumb-placeholder">
+                                                {u.status === 'uploading' && <Loader size={16} className="spin" />}
+                                                {u.status === 'error' && <AlertTriangle size={16} />}
+                                                {u.status === 'pending' && <Upload size={16} />}
+                                            </div>
+                                        }
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="img-upload-info">
+                                        <span className="img-upload-name">{u.file.name}</span>
+                                        {u.status === 'done' && (
+                                            <span className="img-upload-url">{u.url}</span>
+                                        )}
+                                        {u.status === 'uploading' && (
+                                            <span className="img-upload-status-text">Uploading…</span>
+                                        )}
+                                        {u.status === 'pending' && (
+                                            <span className="img-upload-status-text">Waiting…</span>
+                                        )}
+                                        {u.status === 'error' && (
+                                            <span className="img-upload-error-text">{u.error}</span>
+                                        )}
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="img-upload-actions">
+                                        {u.status === 'done' && (
+                                            <button
+                                                className={`img-upload-copy ${copiedId === u.id ? 'copied' : ''}`}
+                                                onClick={() => copyUrl(u)}
+                                                title="Copy URL"
+                                            >
+                                                {copiedId === u.id ? <Check size={14} /> : <Copy size={14} />}
+                                                {copiedId === u.id ? 'Copied!' : 'Copy URL'}
+                                            </button>
+                                        )}
+                                        <button
+                                            className="img-upload-remove"
+                                            onClick={() => removeUpload(u.id)}
+                                            title="Remove"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ── CSV Parsing ───────────────────────────────────────────────────────────────
 
 function convertGoogleDriveUrl(url) {
     if (!url) return url
@@ -24,7 +204,7 @@ function parseCSV(text) {
     // Auto-detect delimiter: semicolon or comma
     const delimiter = lines[0].includes(';') ? ';' : ','
 
-    const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase())
+    const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^\"|\"$/g, '').toLowerCase())
 
     const missing = REQUIRED_COLUMNS.filter(c => !headers.includes(c))
     if (missing.length) throw new Error(`Missing required columns: ${missing.join(', ')}`)
@@ -60,7 +240,7 @@ function parseCSV(text) {
     return rows
 }
 
-function validateRow(row, index) {
+function validateRow(row) {
     const errors = []
     if (!row.title?.trim()) errors.push('Title is required')
     if (!row.story_text?.trim()) errors.push('Story text is required')
@@ -92,12 +272,14 @@ function buildRecord(row, filename) {
     }
 }
 
+// ── Main Component ────────────────────────────────────────────────────────────
+
 export default function ImportTestimonials() {
     const [file, setFile] = useState(null)
-    const [preview, setPreview] = useState(null)  // { valid, invalid, filename }
+    const [preview, setPreview] = useState(null)
     const [parseError, setParseError] = useState(null)
     const [importing, setImporting] = useState(false)
-    const [importResult, setImportResult] = useState(null)  // { imported, failed }
+    const [importResult, setImportResult] = useState(null)
     const [expandedRow, setExpandedRow] = useState(null)
     const fileRef = useRef()
 
@@ -176,7 +358,10 @@ export default function ImportTestimonials() {
                 </a>
             </div>
 
-            {/* Format guide */}
+            {/* ── Image Uploader Panel ── */}
+            <ImageUploaderPanel />
+
+            {/* ── Format guide ── */}
             <div className="import-guide">
                 <h3><FileText size={15} /> Expected CSV format</h3>
                 <div className="import-columns">
@@ -191,25 +376,25 @@ export default function ImportTestimonials() {
                     <li>Use <code>|</code> to separate multiple values: <code>Arthritis|Fatigue</code></li>
                     <li>Set <code>anonymous</code> to <code>true</code> or <code>false</code></li>
                     <li>Use <code>YYYY-MM-DD</code> for dates — leave blank to use today</li>
-                    <li>Images: use full URLs, or paste a Google Drive share link directly — it will be converted automatically</li>
+                    <li>For images: upload them using the panel above, then paste the copied URLs into your CSV</li>
                     <li>All imports are saved as <strong>Pending</strong> for your review</li>
                 </ul>
             </div>
 
-            {/* Upload area */}
+            {/* ── Upload area ── */}
             {!preview && !importResult && (
                 <label
-                className="import-dropzone"
-                onDragOver={e => e.preventDefault()}
-                onDrop={e => {
-                    e.preventDefault()
-                    const f = e.dataTransfer.files[0]
-                    if (f) {
-                        if (fileRef.current) fileRef.current.value = ''
-                        handleFileChange({ target: { files: [f] } })
-                    }
-                }}
-            >
+                    className="import-dropzone"
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                        e.preventDefault()
+                        const f = e.dataTransfer.files[0]
+                        if (f) {
+                            if (fileRef.current) fileRef.current.value = ''
+                            handleFileChange({ target: { files: [f] } })
+                        }
+                    }}
+                >
                     <input
                         ref={fileRef}
                         type="file"
@@ -231,7 +416,7 @@ export default function ImportTestimonials() {
                 </div>
             )}
 
-            {/* Preview */}
+            {/* ── Preview ── */}
             {preview && (
                 <div className="import-preview">
                     <div className="import-preview-header">
@@ -250,7 +435,6 @@ export default function ImportTestimonials() {
                         )}
                     </div>
 
-                    {/* Invalid rows */}
                     {preview.invalid.length > 0 && (
                         <div className="import-invalid-list">
                             <h4>Rows with errors (skipped):</h4>
@@ -263,7 +447,6 @@ export default function ImportTestimonials() {
                         </div>
                     )}
 
-                    {/* Valid rows table */}
                     {preview.valid.length > 0 && (
                         <div className="import-table-wrap">
                             <table className="import-table">
@@ -328,7 +511,7 @@ export default function ImportTestimonials() {
                 </div>
             )}
 
-            {/* Result */}
+            {/* ── Result ── */}
             {importResult && (
                 <div className="import-result">
                     <div className="import-result-success">
