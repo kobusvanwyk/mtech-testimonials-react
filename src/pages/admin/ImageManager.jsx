@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
-    Images, LayoutGrid, AlignJustify, RefreshCw,
+    Images, LayoutGrid, AlignJustify, RefreshCw, Upload,
     Trash2, RefreshCcw, Link2, ExternalLink, Check, FileText
 } from 'lucide-react'
 
@@ -31,11 +31,35 @@ export default function ImageManager() {
     const [replacingId, setReplacingId] = useState(null)
     const [copiedId, setCopiedId] = useState(null)
     const [deletingId, setDeletingId] = useState(null)
+    const [uploading, setUploading] = useState(false)
+    const [uploadedUrl, setUploadedUrl] = useState(null)
     const replaceInputRef = useRef(null)
     const replaceTargetRef = useRef(null)
+    const uploadInputRef = useRef(null)
     const navigate = useNavigate()
 
     useEffect(() => { loadImages() }, [])
+
+    async function handleUpload(e) {
+        const file = e.target.files[0]
+        if (!file) return
+        e.target.value = ''
+        setUploading(true)
+        setUploadedUrl(null)
+        try {
+            const ext = file.name.split('.').pop()
+            const path = `misc/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+            const { error } = await supabase.storage.from(BUCKET).upload(path, file)
+            if (error) throw error
+            const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
+            await navigator.clipboard.writeText(publicUrl)
+            setUploadedUrl(publicUrl)
+            await loadImages()
+        } catch (err) {
+            alert('Upload failed: ' + err.message)
+        }
+        setUploading(false)
+    }
 
     async function loadImages() {
         setLoading(true)
@@ -219,6 +243,7 @@ export default function ImageManager() {
     return (
         <div className="admin-page-content">
             <input ref={replaceInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleReplaceFile} />
+            <input ref={uploadInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
 
             <div className="edit-header">
                 <h2><Images size={20} /> Image Manager</h2>
@@ -226,9 +251,21 @@ export default function ImageManager() {
                     <button className={`btn-icon ${view === 'grid' ? 'active' : ''}`} onClick={() => setView('grid')} title="Grid view"><LayoutGrid size={16} /></button>
                     <button className={`btn-icon ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')} title="List view"><AlignJustify size={16} /></button>
                     <button className="btn-secondary" onClick={loadImages}><RefreshCw size={14} /> Refresh</button>
+                    <button className="btn-primary" onClick={() => uploadInputRef.current.click()} disabled={uploading}>
+                        <Upload size={14} /> {uploading ? 'Uploading…' : 'Upload Image'}
+                    </button>
                 </div>
             </div>
 
+            {uploadedUrl && (
+                <div className="upload-success-banner">
+                    <Check size={15} />
+                    <span>Uploaded! URL copied to clipboard:</span>
+                    <code className="upload-url">{uploadedUrl}</code>
+                    <button className="img-action-btn" onClick={() => navigator.clipboard.writeText(uploadedUrl)} title="Copy again"><Link2 size={13} /></button>
+                    <button className="upload-banner-close" onClick={() => setUploadedUrl(null)}>×</button>
+                </div>
+            )}
             <div className="img-stats-bar">
                 <div className="img-stat"><span className="img-stat-value">{images.length}</span><span className="img-stat-label">Total Images</span></div>
                 <div className="img-stat"><span className="img-stat-value">{images.filter(i => i.folder === 'gallery').length}</span><span className="img-stat-label">Gallery</span></div>

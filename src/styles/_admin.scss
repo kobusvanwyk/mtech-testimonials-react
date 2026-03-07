@@ -1505,3 +1505,45 @@
         cursor: not-allowed;
     }
 }
+
+// ─── Upload success banner ───────────────────────────────────────────────────
+.upload-success-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f0fdf9;
+    border: 1px solid var(--primary-mid);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    color: var(--primary-dark);
+    font-size: 13px;
+    flex-wrap: wrap;
+
+    .upload-url {
+        flex: 1;
+        min-width: 0;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 11px;
+        color: #555;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 400px;
+    }
+
+    .upload-banner-close {
+        margin-left: auto;
+        background: none;
+        border: none;
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+        color: #999;
+        padding: 0 4px;
+        &:hover { color: #333; }
+    }
+}
