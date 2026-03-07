@@ -33,9 +33,13 @@ a {
 .navbar-brand {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-weight: bold;
-    font-size: 1.2rem;
+    text-decoration: none;
+}
+
+.navbar-logo {
+    height: 40px;
+    width: auto;
+    display: block;
 }
 
 .logo {
@@ -956,9 +960,8 @@ a {
 }
 
 /* Footer brand / logo */
-.footer-logo { display: flex; align-items: center; gap: 14px; }
-.footer-logo-text { display: flex; flex-direction: column; gap: 4px; }
-.footer-logo-brand { font-size: 1.1rem; font-weight: 800; color: #fff; letter-spacing: 1px; }
+.footer-logo-img { height: 36px; width: auto; display: block; opacity: 0.9; }
+.footer-logo-img:hover { opacity: 1; }
 .footer-logo-badge {
     font-size: 0.62rem; font-weight: 700; letter-spacing: 1.5px;
     color: #009b6b; border: 1px solid #009b6b; padding: 2px 8px;
