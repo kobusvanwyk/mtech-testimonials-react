@@ -4,6 +4,8 @@
     border-radius: var(--radius-lg);
     padding: 20px;
     box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 100px;
 
     &-heading {
         font-size: var(--text-sm);

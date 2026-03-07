@@ -1,5 +1,9 @@
 // === DESIGN TOKENS ===
 :root {
+    // ── Font Family ─────────────────────────────────────
+
+    --base-font-family: avenir-lt-pro, sans-serif;
+
     // ── Brand ─────────────────────────────────────
     --primary:        #03B09F;
     --primary-dark:   #028a7c;
@@ -7,9 +11,9 @@
     --primary-light:  #e6f8f6;
     --primary-mid:    #b3ede8;
 
-    --secondary:      #7CC42A;
-    --secondary-dark: #5a8f1e;
-    --secondary-light:#f0f8e0;
+    --secondary:      #ACC42A;
+    --secondary-dark: #82971a;
+    --secondary-light: #f6faea;
 
     // ── Semantic ───────────────────────────────────
     --danger:         #E7142C;

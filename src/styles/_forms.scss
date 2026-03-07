@@ -70,6 +70,7 @@
     margin-bottom: 16px;
     outline: none;
     transition: border-color 0.2s;
+    font-family: var(--base-font-family);
 
     &:focus { border-color: var(--primary); }
 }

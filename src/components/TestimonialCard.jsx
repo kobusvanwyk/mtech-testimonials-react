@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react'
 export default function TestimonialCard({ testimonial: t }) {
     return (
         <div className="testimonial-card">
+            <Link to={`/testimonial/${t.id}`} className="card-read-more-cover" />
             {t.featured_image_url && (
                 <img src={t.featured_image_url} alt={t.title} className="card-image" />
             )}

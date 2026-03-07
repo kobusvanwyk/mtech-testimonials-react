@@ -5,6 +5,7 @@
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
 
     &:hover {
         transform: translateY(-4px);
@@ -55,5 +56,16 @@
         color: var(--primary);
         font-weight: 600;
         font-size: 0.9rem;
+        display: flex;
+        align-content: center;
+        line-height: 1;
+        gap: 0.2rem;
+        padding: 1rem 0;
+        margin-bottom: -11px;
+    }
+
+    .card-read-more-cover {
+        position: absolute;
+        inset: 0;
     }
 }

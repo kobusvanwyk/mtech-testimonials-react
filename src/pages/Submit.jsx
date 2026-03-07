@@ -142,12 +142,12 @@ export default function Submit() {
                 {/* STEP 1 */}
                 {step === 1 && (
                     <div className="step">
-                        <h2>Tell us about your experience</h2>
-                        <p className="step-desc">Give your story a short, descriptive title.</p>
+                        <h2>Share a success story</h2>
+                        <p className="step-desc">Give the story a short descriptive title that highlights the main benefit or outcome.</p>
                         <input
                             className="form-input"
                             type="text"
-                            placeholder="e.g. Ambrotose helped my arthritis"
+                            placeholder="e.g. Ambrotose helped my Arthritis"
                             value={form.title}
                             onChange={e => updateForm('title', e.target.value)}
                             maxLength={120}
@@ -161,12 +161,13 @@ export default function Submit() {
                                 />
                                 &nbsp; Submit anonymously
                             </label>
+                            <p>The person's name will be hidden from public view</p>
                         </div>
                         {!form.anonymous && (
                             <input
                                 className="form-input"
                                 type="text"
-                                placeholder="Your name (e.g. Maria van der Berg)"
+                                placeholder="e.g. Maria van der Berg"
                                 value={form.person_name}
                                 onChange={e => updateForm('person_name', e.target.value)}
                             />
@@ -176,7 +177,7 @@ export default function Submit() {
                             disabled={!form.title || (!form.anonymous && !form.person_name)}
                             onClick={() => setStep(2)}
                         >
-                            Next <ArrowRight size={15} />
+                            Continue <ArrowRight size={15} />
                         </button>
                     </div>
                 )}
@@ -185,7 +186,7 @@ export default function Submit() {
                 {step === 2 && (
                     <div className="step">
                         <h2>Which health condition(s) does this relate to?</h2>
-                        <p className="step-desc">Type a condition and press Enter or comma to add it.</p>
+                        <p className="step-desc">Type a condition and press Enter or comma to add it. Add as many as you like.</p>
                         <div className="tag-input-area">
                             {form.conditions.map(c => (
                                 <span key={c} className="tag-pill">
@@ -222,8 +223,8 @@ export default function Submit() {
                 {/* STEP 3 */}
                 {step === 3 && (
                     <div className="step">
-                        <h2>Which Mannatech product(s) are you sharing about?</h2>
-                        <p className="step-desc">Select all that apply.</p>
+                        <h2>Which Mannatech products helped them?</h2>
+                        <p className="step-desc">Select all that apply. You can choose more than one.</p>
                         <div className="products-grid">
                             {PRODUCTS.map(p => (
                                 <label
@@ -255,7 +256,7 @@ export default function Submit() {
                 {/* STEP 4 */}
                 {step === 4 && (
                     <div className="step">
-                        <h2>Tell your story</h2>
+                        <h2>Tell the story</h2>
                         <p className="step-desc">Write in your own words. What happened? How did it help?</p>
                         <textarea
                             className="form-textarea"
@@ -281,7 +282,7 @@ export default function Submit() {
                 {/* STEP 5 */}
                 {step === 5 && (
                     <div className="step">
-                        <h2>Add photos (optional)</h2>
+                        <h2>Almost done!</h2>
                         <p className="step-desc">A photo makes your story more personal. You can skip this step.</p>
 
                         <div className="image-upload-section">
@@ -332,7 +333,7 @@ export default function Submit() {
                         <div className="step-nav">
                             <button className="btn-back" onClick={() => setStep(4)}><ArrowLeft size={15} /> Back</button>
                             <button className="btn-next" onClick={() => setStep(6)}>
-                                {featuredImage || galleryImages.length > 0 ? <>Next <ArrowRight size={15} /></> : <>Skip <ArrowRight size={15} /></>}
+                                {featuredImage || galleryImages.length > 0 ? <>Next <ArrowRight size={15} /></> : <>Next <ArrowRight size={15} /></>}
                             </button>
                         </div>
                     </div>
@@ -356,7 +357,7 @@ export default function Submit() {
                         <div className="step-nav">
                             <button className="btn-back" onClick={() => setStep(5)}><ArrowLeft size={15} /> Back</button>
                             <button className="btn-submit" onClick={handleSubmit} disabled={loading}>
-                                {loading ? 'Submitting...' : <><Check size={15} /> Submit My Story</>}
+                                {loading ? 'Submitting...' : <><Check size={15} /> Submit Testimonial</>}
                             </button>
                         </div>
                     </div>
