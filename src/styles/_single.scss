@@ -1,0 +1,65 @@
+/* === SINGLE PAGE === */
+.single-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 16px;
+}
+
+.back-link {
+    color: #03B09F;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 24px;
+}
+
+.single-article {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+}
+
+.single-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.single-title {
+    font-size: 2rem;
+    margin-bottom: 12px;
+}
+
+.single-meta {
+    color: #888;
+    margin-bottom: 16px;
+}
+
+.single-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.single-body p {
+    margin-bottom: 16px;
+    line-height: 1.8;
+    color: #444;
+}
+
+.single-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.gallery-image {
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+}

@@ -1,0 +1,37 @@
+/* === BUTTONS === */
+.btn-next, .btn-submit {
+    background: #03B09F;
+    color: white;
+    border: none;
+    border-radius: 28px;
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-next:hover:not(:disabled), .btn-submit:hover:not(:disabled) {
+    background: #028a7c;
+}
+
+.btn-next:disabled, .btn-submit:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-back {
+    background: none;
+    border: 2px solid #e0e0e0;
+    border-radius: 28px;
+    padding: 12px 28px;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #555;
+    transition: border-color 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #03B09F;
+    color: #03B09F;
+}

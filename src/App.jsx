@@ -16,7 +16,6 @@ import EditTestimonial from './pages/admin/EditTestimonial'
 import Categories from './pages/admin/Categories'
 import LegalEditor from './pages/admin/LegalEditor'
 import ImageManager from './pages/admin/ImageManager'
-import './index.css'
 
 function PublicLayout({ children }) {
     return (

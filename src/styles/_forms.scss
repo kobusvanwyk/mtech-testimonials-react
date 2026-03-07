@@ -1,0 +1,162 @@
+/* === SUBMIT FORM === */
+.submit-page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 40px 16px;
+}
+
+.submit-container {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.step-progress {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.step-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    transition: background 0.3s;
+}
+
+.step-dot.active {
+    background: #03B09F;
+}
+
+.step-counter {
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+}
+
+.step h2 {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.step-desc {
+    color: #777;
+    margin-bottom: 20px;
+}
+
+.form-input, .form-textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus, .form-textarea:focus {
+    border-color: #03B09F;
+}
+
+.form-textarea {
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.6;
+}
+
+.char-count {
+    text-align: right;
+    color: #aaa;
+    font-size: 0.85rem;
+    margin-top: -10px;
+}
+
+.anonymous-toggle {
+    margin-bottom: 16px;
+    color: #555;
+}
+
+.step-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 24px;
+}
+
+/* === TAG INPUT === */
+.tag-input-area {
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.tag-input-area:focus-within {
+    border-color: #03B09F;
+}
+
+.tag-pill {
+    background: #e8f7fc;
+    color: #2a9fc5;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tag-pill button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #2a9fc5;
+    font-size: 0.9rem;
+}
+
+.tag-input {
+    border: none;
+    outline: none;
+    font-size: 0.95rem;
+    min-width: 200px;
+    flex: 1;
+}
+
+/* === PRODUCTS GRID === */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.product-option {
+    padding: 12px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    color: #444;
+}
+
+.product-option input {
+    display: none;
+}
+
+.product-option.selected {
+    border-color: #03B09F;
+    background: #e6f8f6;
+    color: #027268;
+    font-weight: 600;
+}

@@ -1,0 +1,63 @@
+/* === SIDEBAR === */
+.sidebar {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.sidebar-heading {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    margin-bottom: 12px;
+}
+
+.sidebar-list {
+    list-style: none;
+    margin-bottom: 24px;
+}
+
+.sidebar-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    transition: background 0.15s;
+    color: #444;
+}
+
+.sidebar-item:hover {
+    background: #e6f8f6;
+}
+
+.sidebar-item.active.condition {
+    background: #e6f8f6;
+    color: #03B09F;
+    font-weight: 600;
+}
+
+.sidebar-item.active.product {
+    background: #f0f8e0;
+    color: #5a8f1e;
+    font-weight: 600;
+}
+
+.sidebar-count {
+    color: #bbb;
+    font-size: 0.85rem;
+}
+
+.sidebar-clear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #E7142C;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+    padding: 0;
+}

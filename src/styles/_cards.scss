@@ -1,0 +1,59 @@
+/* === CARDS === */
+.testimonial-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-title a {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.card-title a:hover {
+    color: #03B09F;
+}
+
+.card-author {
+    color: #888;
+    font-size: 0.9rem;
+    margin: 6px 0 10px;
+}
+
+.card-excerpt {
+    color: #555;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.card-read-more {
+    color: #03B09F;
+    font-weight: 600;
+    font-size: 0.9rem;
+}

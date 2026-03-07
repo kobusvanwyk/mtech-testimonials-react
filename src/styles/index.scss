@@ -1,0 +1,37 @@
+// ============================================================
+//  MTech Testimonials — Main Stylesheet
+//  Import order matters: tokens first, then base, then components
+// ============================================================
+
+// 1. Design tokens (CSS custom properties)
+@use 'tokens';
+
+// 2. Base / reset
+@use 'base';
+
+// 3. Layout
+@use 'layout';
+@use 'navbar';
+
+// 4. Public-facing components
+@use 'search';
+@use 'grid';
+@use 'cards';
+@use 'tags';
+@use 'sidebar';
+@use 'buttons';
+
+// 5. Forms & submission flow
+@use 'forms';
+@use 'review';
+@use 'single';
+
+// 6. Pages (legal, search results)
+@use 'pages';
+
+// 7. Footer
+@use 'footer';
+
+// 8. Admin
+@use 'admin';
+@use 'image-manager';

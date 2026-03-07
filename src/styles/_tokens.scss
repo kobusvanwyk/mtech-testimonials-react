@@ -1,0 +1,49 @@
+/* === COLOUR TOKENS === */
+:root {
+    /* Brand */
+    --primary:        #03B09F;
+    --primary-dark:   #028a7c;
+    --primary-darker: #027268;
+    --primary-light:  #e6f8f6;
+    --primary-mid:    #b3ede8;
+
+    --secondary:      #7CC42A;
+    --secondary-dark: #5a8f1e;
+    --secondary-light:#f0f8e0;
+
+    /* Semantic */
+    --danger:         #E7142C;
+    --danger-dark:    #b50e22;
+    --danger-light:   #fde8eb;
+
+    --warning:        #FFAF4E;
+    --warning-dark:   #e08828;
+    --warning-darker: #a85e10;
+    --warning-light:  #fff4e0;
+
+    --info:           #5BC2E7;
+    --info-dark:      #2a9fc5;
+    --info-light:     #e8f7fc;
+
+    --success:        #7CC42A;
+    --success-dark:   #5a8f1e;
+    --success-light:  #f0f8e0;
+
+    /* Neutrals */
+    --dark-navy:      #1a1a2e;
+    --dark-navy-mid:  #2a2a4a;
+    --dark-navy-light:#3a3a5a;
+    --slate-dark:     #1e293b;
+    --slate-mid:      #334155;
+    --slate:          #475569;
+    --slate-light:    #64748b;
+    --gray-dark:      #374151;
+    --gray:           #6b7280;
+    --gray-light:     #94a3b8;
+    --muted:          #aaa;
+    --border:         #e2e8f0;
+    --border-light:   #e5e7eb;
+    --surface:        #f3f4f6;
+    --surface-alt:    #f8fafc;
+    --surface-white:  #fff;
+}

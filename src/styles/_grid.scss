@@ -1,0 +1,11 @@
+/* === GRID === */
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.results-count {
+    color: #777;
+    margin-bottom: 16px;
+}

@@ -1,0 +1,52 @@
+/* === NAVBAR === */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: #fff;
+    border-bottom: 2px solid #03B09F;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.navbar-logo {
+    height: 40px;
+    width: auto;
+    display: block;
+}
+
+.logo {
+    height: 40px;
+}
+
+.navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.navbar-links a {
+    color: #555;
+    font-weight: 500;
+}
+
+.btn-submit-nav {
+    background: #03B09F;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-weight: 600;
+}
+
+.btn-submit-nav:hover {
+    background: #028a7c;
+}
