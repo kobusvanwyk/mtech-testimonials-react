@@ -1,6 +1,6 @@
-/* === DESIGN TOKENS === */
+// === DESIGN TOKENS ===
 :root {
-    /* ── Brand ───────────────────────────────────── */
+    // ── Brand ─────────────────────────────────────
     --primary:        #03B09F;
     --primary-dark:   #028a7c;
     --primary-darker: #027268;
@@ -11,7 +11,7 @@
     --secondary-dark: #5a8f1e;
     --secondary-light:#f0f8e0;
 
-    /* ── Semantic ─────────────────────────────────── */
+    // ── Semantic ───────────────────────────────────
     --danger:         #E7142C;
     --danger-dark:    #b50e22;
     --danger-light:   #fde8eb;
@@ -29,70 +29,70 @@
     --success-dark:   #5a8f1e;
     --success-light:  #f0f8e0;
 
-    /* ── Dark navy (sidebar, footer) ─────────────── */
+    // ── Dark navy (sidebar, footer) ───────────────
     --dark-navy:       #1a1a2e;
     --dark-navy-mid:   #2a2a4a;
     --dark-navy-light: #3a3a5a;
 
-    /* ── Slate (content text) ─────────────────────── */
+    // ── Slate (content text) ───────────────────────
     --slate-dark:  #1e293b;
     --slate-mid:   #334155;
     --slate:       #475569;
     --slate-light: #64748b;
 
-    /* ── Gray (UI chrome) ─────────────────────────── */
+    // ── Gray (UI chrome) ───────────────────────────
     --gray-dark: #374151;
     --gray:      #6b7280;
     --gray-light:#94a3b8;
 
-    /* ── Text ─────────────────────────────────────── */
+    // ── Text ───────────────────────────────────────
     --text-dark:      #333;
     --text-body:      #444;
     --text-secondary: #555;
     --text-dim:       #666;
     --text-hint:      #777;
 
-    /* ── Muted grays ──────────────────────────────── */
+    // ── Muted grays ────────────────────────────────
     --muted-dark:  #888;
     --muted:       #aaa;
     --muted-mid:   #999;
     --muted-light: #bbb;
     --disabled:    #ccc;
 
-    /* ── Borders ──────────────────────────────────── */
+    // ── Borders ────────────────────────────────────
     --border:        #e2e8f0;
     --border-light:  #e5e7eb;
     --border-soft:   #e0e0e0;
     --border-subtle: #f0f0f0;
 
-    /* ── Surfaces ─────────────────────────────────── */
+    // ── Surfaces ───────────────────────────────────
     --surface-white: #fff;
     --surface-alt:   #f8fafc;
     --surface:       #f3f4f6;
     --surface-hover: #f1f5f9;
     --surface-inset: #f9f9f9;
 
-    /* ── One-off values ───────────────────────────── */
-    --bg-body:     #f5f7fa;   /* page background */
-    --muted-hover: #ddd;      /* light text on dark bg */
+    // ── One-off values ─────────────────────────────
+    --bg-body:     #f5f7fa;   // page background
+    --muted-hover: #ddd;      // light text on dark bg
 
-    /* ── Border radius ────────────────────────────── */
-    --radius-sm:   6px;    /* badges, small buttons */
-    --radius-md:   8px;    /* inputs, table rows, small cards */
-    --radius-lg:   12px;   /* cards, panels, admin sections */
-    --radius-xl:   16px;   /* large cards, modals, containers */
-    --radius-pill: 28px;   /* pill-style buttons */
-    --radius-round:50%;    /* circular elements */
+    // ── Border radius ──────────────────────────────
+    --radius-sm:   6px;    // badges, small buttons
+    --radius-md:   8px;    // inputs, table rows, small cards
+    --radius-lg:   12px;   // cards, panels, admin sections
+    --radius-xl:   16px;   // large cards, modals, containers
+    --radius-pill: 28px;   // pill-style buttons
+    --radius-round:50%;    // circular elements
 
-    /* ── Box shadows ──────────────────────────────── */
-    --shadow-sm:    0 2px 8px rgba(0, 0, 0, 0.06);   /* subtle cards */
-    --shadow-md:    0 4px 24px rgba(0, 0, 0, 0.08);  /* forms, article pages */
-    --shadow-lg:    0 8px 32px rgba(0, 0, 0, 0.10);  /* modals, login box */
-    --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.10);  /* card hover state */
+    // ── Box shadows ────────────────────────────────
+    --shadow-sm:    0 2px 8px rgba(0, 0, 0, 0.06);   // subtle cards
+    --shadow-md:    0 4px 24px rgba(0, 0, 0, 0.08);  // forms, article pages
+    --shadow-lg:    0 8px 32px rgba(0, 0, 0, 0.10);  // modals, login box
+    --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.10);  // card hover state
 
-    /* ── Font sizes ───────────────────────────────── */
-    --text-xs:   0.78rem;   /* badges, meta labels */
-    --text-sm:   0.85rem;   /* secondary text, hints */
-    --text-base: 1rem;      /* body */
-    --text-lg:   1.1rem;    /* card titles, slightly larger body */
+    // ── Font sizes ─────────────────────────────────
+    --text-xs:   0.78rem;   // badges, meta labels
+    --text-sm:   0.85rem;   // secondary text, hints
+    --text-base: 1rem;      // body
+    --text-lg:   1.1rem;    // card titles, slightly larger body
 }

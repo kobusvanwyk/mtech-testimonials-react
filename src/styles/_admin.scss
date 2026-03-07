@@ -1,6 +1,6 @@
 @use './breakpoints' as *;
 
-/* === ADMIN SHARED === */
+// === ADMIN SHARED ===
 .admin-page {
     max-width: 800px;
     margin: 0 auto;
@@ -55,7 +55,7 @@
     font-weight: 600;
 }
 
-/* === MISC === */
+// === MISC ===
 .loading {
     text-align: center;
     padding: 80px;
@@ -76,7 +76,7 @@
     margin-top: 8px;
 }
 
-/* === IMAGE UPLOAD === */
+// === IMAGE UPLOAD ===
 .image-upload-section { margin-bottom: 28px; }
 
 .upload-label  { font-weight: 600; font-size: 0.95rem; display: block; margin-bottom: 4px; }
@@ -116,7 +116,7 @@
     width: 100%;
 }
 
-/* === ADMIN LAYOUT === */
+// === ADMIN LAYOUT ===
 .admin-layout {
     display: flex;
     min-height: 100vh;
@@ -225,7 +225,7 @@
     h2 { font-size: 1.6rem; margin-bottom: 24px; color: var(--dark-navy); }
 }
 
-/* === ADMIN LOGIN === */
+// === ADMIN LOGIN ===
 .admin-login {
     min-height: 100vh;
     display: flex;
@@ -282,7 +282,7 @@
     &:hover { background: var(--primary-dark); }
 }
 
-/* === DASHBOARD === */
+// === DASHBOARD ===
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -370,7 +370,7 @@
     &:hover { background: var(--primary); color: white; }
 }
 
-/* === STATUS BADGES === */
+// === STATUS BADGES ===
 .status-badge {
     padding: 4px 10px;
     border-radius: 20px;
@@ -384,7 +384,7 @@
     &.badge-rejected     { background: var(--danger-light); color: var(--danger-dark); }
 }
 
-/* === TESTIMONIAL TABLE === */
+// === TESTIMONIAL TABLE ===
 .testimonial-table-wrap {
     background: white;
     border-radius: var(--radius-lg);
@@ -489,7 +489,7 @@
 .table-count { text-align: right; color: var(--muted-light); font-size: 0.82rem; margin-top: 12px; }
 .page-sub    { color: var(--muted-dark); margin-bottom: 20px; font-size: 0.9rem; margin-top: -16px; }
 
-/* === STATUS FILTER TABS === */
+// === STATUS FILTER TABS ===
 .status-filter-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
 
 .filter-tab {
@@ -513,7 +513,7 @@
     &:not(.active) .filter-count { background: var(--border-light); color: var(--text-dim); }
 }
 
-/* === EDIT PAGE === */
+// === EDIT PAGE ===
 .edit-header {
     display: flex;
     align-items: center;
@@ -638,7 +638,7 @@
 .btn-remove-gallery { background: var(--danger-light) !important; color: var(--danger-dark); }
 .edit-footer { margin-top: 24px; display: flex; justify-content: flex-end; }
 
-/* === CATEGORIES === */
+// === CATEGORIES ===
 .categories-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -682,7 +682,7 @@
 .category-rename-input { flex: 1; padding: 6px 10px; border: 2px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.88rem; outline: none; }
 .cat-message { background: var(--primary-mid); color: var(--primary-darker); padding: 12px 16px; border-radius: var(--radius-md); margin-bottom: 20px; font-weight: 600; font-size: 0.9rem; }
 
-/* === REVIEW CARDS (PENDING) === */
+// === REVIEW CARDS (PENDING) ===
 .review-card {
     background: white;
     border-radius: var(--radius-lg);
@@ -738,7 +738,7 @@
 .flagged-heading { font-size: var(--text-base); margin-bottom: 12px; color: var(--danger-dark); }
 .empty-state     { background: white; border-radius: var(--radius-lg); padding: 40px; text-align: center; color: var(--muted-dark); font-size: var(--text-base); }
 
-/* === EDIT HISTORY === */
+// === EDIT HISTORY ===
 .edit-history-list { display: flex; flex-direction: column; gap: 8px; }
 
 .edit-history-item {
@@ -758,7 +758,7 @@
 .edit-history-date { font-size: 0.75rem; color: var(--muted); }
 .edit-history-note { font-size: 0.82rem; color: var(--text-body); }
 
-/* === ADMIN QUICK SEARCH === */
+// === ADMIN QUICK SEARCH ===
 .admin-search-wrap {
     padding: 10px 12px;
     position: relative;
@@ -808,7 +808,7 @@
     .qs-status { font-size: 0.7rem; margin-left: 8px; }
 }
 
-/* === PREVIEW MODAL === */
+// === PREVIEW MODAL ===
 .modal-overlay {
     position: fixed;
     inset: 0;

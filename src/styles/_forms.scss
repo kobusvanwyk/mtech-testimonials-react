@@ -1,6 +1,6 @@
 @use './breakpoints' as *;
 
-/* === SUBMIT FORM === */
+// === SUBMIT FORM ===
 .submit-page {
     max-width: 680px;
     margin: 0 auto;
@@ -92,7 +92,7 @@
     color: var(--text-secondary);
 }
 
-/* === TAG INPUT === */
+// === TAG INPUT ===
 .tag-input-area {
     border: 2px solid var(--border-soft);
     border-radius: var(--radius-md);
@@ -132,7 +132,7 @@
     }
 }
 
-/* === PRODUCTS GRID === */
+// === PRODUCTS GRID ===
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

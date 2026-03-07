@@ -1,8 +1,8 @@
 @use './breakpoints' as *;
 
-/* === IMAGE MANAGER === */
+// === IMAGE MANAGER ===
 
-/* Stats bar */
+// Stats bar
 .img-stats-bar {
     display: flex;
     gap: 12px;
@@ -40,7 +40,7 @@
 
 .img-stat-warn .img-stat-value { color: var(--warning-dark); }
 
-/* Toolbar */
+// Toolbar
 .img-toolbar {
     display: flex;
     justify-content: space-between;
@@ -115,7 +115,7 @@
     &:hover { background: var(--warning-light); }
 }
 
-/* Bulk bar */
+// Bulk bar
 .img-bulk-bar {
     display: flex;
     align-items: center;
@@ -130,7 +130,7 @@
     span { flex: 1; }
 }
 
-/* Grid */
+// Grid
 .img-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -222,7 +222,7 @@
     }
 }
 
-/* Image type badges */
+// Image type badges
 .img-type-badge {
     font-size: 0.72rem;
     padding: 2px 8px;
@@ -267,7 +267,7 @@
     font-style: italic;
 }
 
-/* Card action buttons */
+// Card action buttons
 .img-action-btn {
     flex: 1;
     padding: 7px 4px;
@@ -285,7 +285,7 @@
     &.img-action-delete:hover { background: var(--danger-light); color: var(--danger); }
 }
 
-/* List view */
+// List view
 .img-list-table {
     width: 100%;
     border-collapse: collapse;
@@ -341,7 +341,7 @@
 .img-list-date  { color: var(--slate-light); white-space: nowrap; }
 .img-list-actions { display: flex; gap: 4px; }
 
-/* View toggle buttons */
+// View toggle buttons
 .btn-icon {
     width: 34px;
     height: 34px;

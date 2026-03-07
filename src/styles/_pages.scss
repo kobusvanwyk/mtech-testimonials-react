@@ -1,6 +1,6 @@
 @use './breakpoints' as *;
 
-/* === LEGAL PAGES === */
+// === LEGAL PAGES ===
 .legal-page {
     min-height: 70vh;
     background: var(--surface-alt);
@@ -76,7 +76,7 @@
 
 .legal-updated      { color: var(--muted-dark); font-size: 0.88rem; margin-bottom: 36px; }
 
-/* Callout blocks */
+// Callout blocks
 .legal-warning {
     background: var(--warning-light);
     border-left: 4px solid var(--warning);
@@ -179,7 +179,7 @@
     a { color: var(--primary); }
 }
 
-/* === LEGAL EDITOR (Admin) === */
+// === LEGAL EDITOR (Admin) ===
 .legal-editor-tabs {
     display: flex;
     gap: 4px;
@@ -250,7 +250,7 @@
     margin: 0;
 }
 
-/* Mode toggle (Edit / HTML / Preview) */
+// Mode toggle (Edit / HTML / Preview)
 .mode-toggle-group {
     display: flex;
     border: 1px solid var(--border);
@@ -289,7 +289,7 @@
     outline: none;
 }
 
-/* === SEARCH BAR (results page variant) === */
+// === SEARCH BAR (results page variant) ===
 .search-wrapper {
     position: relative;
     margin-bottom: 24px;
@@ -341,7 +341,7 @@
     }
 }
 
-/* === AUTOCOMPLETE DROPDOWN === */
+// === AUTOCOMPLETE DROPDOWN ===
 .search-dropdown {
     position: absolute;
     top: calc(100% + 4px);
@@ -410,7 +410,7 @@
     }
 }
 
-/* Search tags inside dropdown */
+// Search tags inside dropdown
 .search-tag {
     font-size: 0.75rem;
     padding: 2px 8px;
@@ -421,7 +421,7 @@
     &-condition { color: var(--info-dark); border-color: var(--info); background: var(--info-light); }
 }
 
-/* === SEARCH RESULTS PAGE === */
+// === SEARCH RESULTS PAGE ===
 .search-results-page {
     max-width: 1100px;
     margin: 0 auto;
