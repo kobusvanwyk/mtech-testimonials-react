@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -27,13 +27,22 @@ function PublicLayout({ children }) {
     )
 }
 
+// Renders Single with or without layout depending on ?share=1
+function SingleRoute() {
+    const [searchParams] = useSearchParams()
+    const isShare = searchParams.get('share') === '1'
+    return isShare
+        ? <Single shareMode />
+        : <PublicLayout><Single /></PublicLayout>
+}
+
 function App() {
     return (
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
                 <Route path="/submit" element={<PublicLayout><Submit /></PublicLayout>} />
-                <Route path="/testimonial/:id" element={<PublicLayout><Single /></PublicLayout>} />
+                <Route path="/testimonial/:slug" element={<SingleRoute />} />
                 <Route path="/terms" element={<PublicLayout><Terms /></PublicLayout>} />
                 <Route path="/privacy" element={<PublicLayout><Privacy /></PublicLayout>} />
                 <Route path="/search" element={<PublicLayout><SearchResults /></PublicLayout>} />

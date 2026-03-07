@@ -1,25 +1,35 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Share2, Check } from 'lucide-react'
 
-export default function Single() {
-    const { id } = useParams()
+export default function Single({ shareMode = false }) {
+    const { slug } = useParams()
     const [testimonial, setTestimonial] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [copied, setCopied] = useState(false)
 
     useEffect(() => {
-        async function fetch() {
-            const { data } = await supabase
-                .from('testimonials')
-                .select('*')
-                .eq('id', id)
-                .single()
+        async function fetchTestimonial() {
+            // Support both old numeric IDs and new slugs gracefully
+            const isNumeric = /^\d+$/.test(slug)
+            const query = supabase.from('testimonials').select('*')
+            const { data } = await (isNumeric
+                ? query.eq('id', slug).single()
+                : query.eq('slug', slug).single())
             setTestimonial(data)
             setLoading(false)
         }
-        fetch()
-    }, [id])
+        fetchTestimonial()
+    }, [slug])
+
+    function handleShare() {
+        const shareUrl = `${window.location.origin}/testimonial/${slug}?share=1`
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2500)
+        })
+    }
 
     if (loading) return <div className="loading">Loading...</div>
     if (!testimonial) return <div className="not-found">Story not found.</div>
@@ -27,8 +37,11 @@ export default function Single() {
     const t = testimonial
 
     return (
-        <div className="single-page">
-            <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all stories</Link>
+        <div className={`single-page ${shareMode ? 'share-mode' : ''}`}>
+            {!shareMode && (
+                <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all stories</Link>
+            )}
+
             <article className="single-article">
                 {t.featured_image_url && (
                     <img src={t.featured_image_url} alt={t.title} className="single-image" />
@@ -57,6 +70,20 @@ export default function Single() {
                         ))}
                     </div>
                 )}
+
+                <div className="single-share">
+                    <button className={`btn-share ${copied ? 'copied' : ''}`} onClick={handleShare}>
+                        {copied
+                            ? <><Check size={15} /> Link copied!</>
+                            : <><Share2 size={15} /> Share this story</>
+                        }
+                    </button>
+                    {copied && (
+                        <p className="share-hint">
+                            Share this link — it opens the story without the site header and footer.
+                        </p>
+                    )}
+                </div>
             </article>
         </div>
     )

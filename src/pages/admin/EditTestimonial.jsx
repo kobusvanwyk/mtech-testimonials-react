@@ -126,7 +126,7 @@ export default function EditTestimonial() {
                 <Link to="/admin/all" className="back-link"><ArrowLeft size={15} /> Back</Link>
                 <h2>Edit Testimonial</h2>
                 <div className="edit-header-actions">
-                    <Link to={`/testimonial/${id}`} target="_blank" className="btn-preview">
+                    <Link to={`/testimonial/${form.slug || id}`} target="_blank" className="btn-preview">
                         <Eye size={14} /> Preview
                     </Link>
                     <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>

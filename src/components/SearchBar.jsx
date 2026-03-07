@@ -36,14 +36,14 @@ export default function SearchBar() {
 
             const { data } = await supabase
                 .from('testimonials')
-                .select('id, title, person_name, story_text, conditions, products')
+                .select('id, slug, title, person_name, story_text, conditions, products')
                 .eq('status', 'approved')
                 .or(`title.ilike.%${q}%,person_name.ilike.%${q}%,story_text.ilike.%${q}%`)
                 .limit(6)
 
             const { data: tagData } = await supabase
                 .from('testimonials')
-                .select('id, title, person_name, story_text, conditions, products')
+                .select('id, slug, title, person_name, story_text, conditions, products')
                 .eq('status', 'approved')
                 .limit(100)
 
@@ -80,10 +80,10 @@ export default function SearchBar() {
         }
     }
 
-    function handleSelect(id) {
+    function handleSelect(t) {
         setOpen(false)
         setQuery('')
-        navigate(`/testimonial/${id}`)
+        navigate(`/testimonial/${t.slug || t.id}`)
     }
 
     function getExcerpt(text) {
@@ -119,7 +119,7 @@ export default function SearchBar() {
                         <div
                             key={t.id}
                             className="search-dropdown-item"
-                            onMouseDown={() => handleSelect(t.id)}
+                            onMouseDown={() => handleSelect(t)}
                         >
                             <div className="search-item-title">{t.title}</div>
                             {t.person_name && (

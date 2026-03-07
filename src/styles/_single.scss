@@ -71,3 +71,56 @@
         }
     }
 }
+
+// === SHARE ===
+.single-share {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.btn-share {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--primary);
+    background: white;
+    color: var(--primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    &.copied {
+        border-color: var(--success);
+        color: var(--success);
+
+        &:hover {
+            background: var(--success-light);
+            color: var(--success);
+        }
+    }
+}
+
+.share-hint {
+    font-size: 0.82rem;
+    color: var(--muted-dark);
+}
+
+// === SHARE MODE (no navbar/footer) ===
+.single-page.share-mode {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+}
