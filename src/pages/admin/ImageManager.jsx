@@ -68,8 +68,9 @@ export default function ImageManager() {
                 .from('testimonials')
                 .select('id, title, gallery_urls, status')
 
-            const [{ data: galleryFiles }] = await Promise.all([
+            const [{ data: galleryFiles }, { data: miscFiles }] = await Promise.all([
                 supabase.storage.from(BUCKET).list('gallery', { limit: 500, sortBy: { column: 'created_at', order: 'desc' } }),
+                supabase.storage.from(BUCKET).list('misc', { limit: 500, sortBy: { column: 'created_at', order: 'desc' } }),
             ])
 
             const urlMap = {}
@@ -88,6 +89,12 @@ export default function ImageManager() {
                 allImages.push({ id: path, path, name: f.name, url: publicUrl, size: f.metadata?.size || 0, createdAt: f.created_at || f.updated_at, folder: 'gallery', testimonial, orphan: !testimonial })
             })
 
+            ;(miscFiles || []).filter(f => f.name !== '.emptyFolderPlaceholder').forEach(f => {
+                const path = `misc/${f.name}`
+                const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
+                allImages.push({ id: path, path, name: f.name, url: publicUrl, size: f.metadata?.size || 0, createdAt: f.created_at || f.updated_at, folder: 'misc', testimonial: null, orphan: false })
+            })
+
             setImages(allImages)
         } catch (err) {
             console.error('Error loading images:', err)
@@ -98,6 +105,7 @@ export default function ImageManager() {
     const displayed = images
         .filter(img => {
             if (filter === 'gallery') return img.folder === 'gallery'
+            if (filter === 'misc') return img.folder === 'misc'
             if (filter === 'orphans') return img.orphan
             return true
         })
@@ -275,12 +283,13 @@ export default function ImageManager() {
 
             <div className="img-toolbar">
                 <div className="img-filter-tabs">
-                    {['all', 'gallery', 'orphans'].map(f => (
+                    {['all', 'gallery', 'misc', 'orphans'].map(f => (
                         <button key={f} className={`img-filter-tab ${filter === f ? 'active' : ''}`} onClick={() => { setFilter(f); clearSelection() }}>
                             {f.charAt(0).toUpperCase() + f.slice(1)}
                             <span className="img-filter-count">
                                 {f === 'all' && images.length}
                                 {f === 'gallery' && images.filter(i => i.folder === 'gallery').length}
+                                {f === 'misc' && images.filter(i => i.folder === 'misc').length}
                                 {f === 'orphans' && orphanCount}
                             </span>
                         </button>
@@ -329,7 +338,7 @@ export default function ImageManager() {
                             <div className="img-card-info">
                                 <div className="img-card-badges">
                                     <span className={`img-type-badge img-type-${img.folder}`}>
-                                        <><Images size={11} /> Gallery</>
+                                        {img.folder === 'misc' ? <><Upload size={11} /> Misc</> : <><Images size={11} /> Gallery</>}
                                     </span>
                                     {img.orphan && <span className="img-orphan-badge">Orphan</span>}
                                 </div>
@@ -374,7 +383,7 @@ export default function ImageManager() {
                                 </td>
                                 <td>
                                     <span className={`img-type-badge img-type-${img.folder}`}>
-                                        <><Images size={11} /> Gallery</>
+                                        {img.folder === 'misc' ? <><Upload size={11} /> Misc</> : <><Images size={11} /> Gallery</>}
                                     </span>
                                 </td>
                                 <td className="img-list-size">{formatBytes(img.size)}</td>
