@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import PreviewModal from '../../components/PreviewModal'
 import { Eye, Check, Flag, Pencil, X, Trash2, ChevronDown, ChevronUp, Undo2, CheckCircle, Clock } from 'lucide-react'
 
@@ -23,6 +24,10 @@ export default function Pending() {
 
     async function handleStatus(id, status) {
         await supabase.from('testimonials').update({ status }).eq('id', id)
+        if (status === 'approved') {
+            const t = testimonials.find(t => t.id === id)
+            if (t) await syncConditionsOnApproval(t.conditions || [])
+        }
         // keep needs_editing items visible, remove others
         if (status === 'needs_editing') {
             setTestimonials(prev => prev.map(t => t.id === id ? { ...t, status } : t))

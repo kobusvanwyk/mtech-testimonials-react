@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useProducts, useConditions } from '../../lib/ProductsContext'
+import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import { ArrowLeft, ArrowRight, Eye, Check, X } from 'lucide-react'
 
 const STATUS_OPTIONS = [
@@ -97,6 +98,9 @@ export default function EditTestimonial() {
 
             const { error } = await supabase.from('testimonials').update(updates).eq('id', id)
             if (error) throw error
+            if (updates.status === 'approved') {
+                await syncConditionsOnApproval(updates.conditions || [])
+            }
 
             setSaved(true)
             setNewFeaturedImage(null)

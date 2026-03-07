@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useProducts, useConditions } from '../lib/ProductsContext'
+import { useProducts } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
 import { ArrowLeft, ArrowRight, X, Check, Sparkles, Image } from 'lucide-react'
 
 export default function Submit() {
     const PRODUCTS = useProducts()
-    const CONDITIONS = useConditions()
     const [step, setStep] = useState(1)
     const [submitted, setSubmitted] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -256,24 +255,27 @@ export default function Submit() {
                 {step === 2 && (
                     <div className="step">
                         <h2>Which health condition(s) does this relate to?</h2>
-                        <p className="step-desc">Select all conditions that apply. You can select more than one.</p>
-                        <div className="products-grid">
-                            {CONDITIONS.map(c => (
-                                <button
-                                    key={c}
-                                    type="button"
-                                    className={`product-option ${form.conditions.includes(c) ? 'selected' : ''}`}
-                                    onClick={() => {
-                                        const updated = form.conditions.includes(c)
-                                            ? form.conditions.filter(x => x !== c)
-                                            : [...form.conditions, c]
-                                        updateForm('conditions', updated)
-                                    }}
-                                >
-                                    <span className="product-check"><Check size={12} /></span>
-                                    {c}
-                                </button>
+                        <p className="step-desc">Type a condition and press Enter or comma to add it. Add as many as you like.</p>
+                        <label className="form-label">Health conditions</label>
+                        <div className="tag-input-area">
+                            {form.conditions.map(c => (
+                                <span key={c} className="tag-pill">
+                                    {c} <button onClick={() => removeCondition(c)}><X size={10} /></button>
+                                </span>
                             ))}
+                            <input
+                                className="tag-input"
+                                type="text"
+                                placeholder="e.g. High blood pressure"
+                                value={form.conditionInput}
+                                onChange={e => updateForm('conditionInput', e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter' || e.key === ',') {
+                                        e.preventDefault()
+                                        addCondition()
+                                    }
+                                }}
+                            />
                         </div>
                         <div className="step-nav">
                             <button className="btn-back" onClick={() => setStep(1)}><ArrowLeft size={15} /> Back</button>
