@@ -4,7 +4,7 @@ import { ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { PRODUCTS } from '../lib/constants'
 
-function DropdownMenu({ label, items, onSelect }) {
+function DropdownMenu({ label, items, counts = {}, onSelect }) {
     const [open, setOpen] = useState(false)
     const ref = useRef()
 
@@ -35,7 +35,10 @@ function DropdownMenu({ label, items, onSelect }) {
                                 className="nav-dropdown-item"
                                 onClick={() => { onSelect(item); setOpen(false) }}
                             >
-                                {item}
+                                <span>{item}</span>
+                                {counts[item] > 0 && (
+                                    <span className="nav-dropdown-count">{counts[item]}</span>
+                                )}
                             </button>
                         ))}
                     </div>
@@ -49,18 +52,28 @@ export default function Navbar() {
     const [conditions, setConditions] = useState([])
     const navigate = useNavigate()
 
+    const [counts, setCounts] = useState({})
+
     useEffect(() => {
-        async function fetchConditions() {
+        async function fetchData() {
             const { data } = await supabase
                 .from('testimonials')
-                .select('conditions')
+                .select('conditions, products')
                 .eq('status', 'approved')
             if (data) {
-                const all = [...new Set(data.flatMap(t => t.conditions || []))].sort()
-                setConditions(all)
+                const allConditions = [...new Set(data.flatMap(t => t.conditions || []))].sort()
+                setConditions(allConditions)
+
+                // Build counts map for both conditions and products
+                const countMap = {}
+                data.forEach(t => {
+                    ;(t.conditions || []).forEach(c => { countMap[c] = (countMap[c] || 0) + 1 })
+                    ;(t.products   || []).forEach(p => { countMap[p] = (countMap[p] || 0) + 1 })
+                })
+                setCounts(countMap)
             }
         }
-        fetchConditions()
+        fetchData()
     }, [])
 
     function handleFilter(value) {
@@ -90,11 +103,13 @@ export default function Navbar() {
                     <DropdownMenu
                         label="View by Condition"
                         items={conditions}
+                        counts={counts}
                         onSelect={handleFilter}
                     />
                     <DropdownMenu
                         label="View by Product"
                         items={PRODUCTS}
+                        counts={counts}
                         onSelect={handleFilter}
                     />
                 </div>

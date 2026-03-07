@@ -125,7 +125,10 @@
 }
 
 .nav-dropdown-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     width: 100%;
     padding: 9px 16px;
     background: none;
@@ -138,6 +141,23 @@
 
     &:hover {
         background: var(--primary-light);
+        color: var(--primary-dark);
+    }
+}
+
+.nav-dropdown-count {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-hint);
+    background: var(--surface);
+    padding: 1px 7px;
+    border-radius: 20px;
+    min-width: 22px;
+    text-align: center;
+
+    .nav-dropdown-item:hover & {
+        background: white;
         color: var(--primary-dark);
     }
 }
