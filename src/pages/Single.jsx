@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { ArrowLeft, Share2, Check } from 'lucide-react'
+import { ArrowLeft, Share2, Check, Pencil } from 'lucide-react'
 
 export default function Single({ shareMode = false }) {
     const { slug } = useParams()
     const [testimonial, setTestimonial] = useState(null)
     const [loading, setLoading] = useState(true)
     const [copied, setCopied] = useState(false)
+    const [isAdmin, setIsAdmin] = useState(false)
 
     useEffect(() => {
         async function fetchTestimonial() {
@@ -21,7 +22,12 @@ export default function Single({ shareMode = false }) {
             setTestimonial(data)
             setLoading(false)
         }
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession()
+            setIsAdmin(!!session)
+        }
         fetchTestimonial()
+        checkSession()
     }, [slug])
 
     function handleShare() {
@@ -40,7 +46,14 @@ export default function Single({ shareMode = false }) {
     return (
         <div className={`single-page ${shareMode ? 'share-mode' : ''}`}>
             {!shareMode && (
-                <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all stories</Link>
+                <div className="single-top-bar">
+                    <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all stories</Link>
+                    {isAdmin && (
+                        <Link to={`/admin/edit/${t.id}`} className="btn-edit-admin">
+                            <Pencil size={14} /> Edit
+                        </Link>
+                    )}
+                </div>
             )}
 
             <article className="single-article">

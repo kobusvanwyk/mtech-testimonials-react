@@ -7,11 +7,34 @@
     padding: 40px 16px;
 }
 
+.single-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    .back-link { margin-bottom: 0; }
+}
+
 .back-link {
     color: var(--primary);
     font-weight: 600;
     display: inline-block;
     margin-bottom: 24px;
+}
+
+.btn-edit-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--dark-navy);
+    color: white;
+    padding: 7px 14px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.15s;
+    &:hover { opacity: 0.85; }
 }
 
 .single-article {
