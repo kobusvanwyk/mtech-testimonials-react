@@ -8,7 +8,7 @@
 }
 
 .back-link {
-    color: #03B09F;
+    color: var(--primary);
     font-weight: 600;
     display: inline-block;
     margin-bottom: 24px;
@@ -39,7 +39,7 @@
     }
 
     .single-meta {
-        color: #888;
+        color: var(--muted-dark);
         margin-bottom: 16px;
     }
 
@@ -54,7 +54,7 @@
         p {
             margin-bottom: 16px;
             line-height: 1.8;
-            color: #444;
+            color: var(--text-body);
         }
     }
 

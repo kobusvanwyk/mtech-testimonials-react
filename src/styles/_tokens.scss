@@ -1,6 +1,6 @@
-/* === COLOUR TOKENS === */
+/* === DESIGN TOKENS === */
 :root {
-    /* Brand */
+    /* ── Brand ───────────────────────────────────── */
     --primary:        #03B09F;
     --primary-dark:   #028a7c;
     --primary-darker: #027268;
@@ -11,7 +11,7 @@
     --secondary-dark: #5a8f1e;
     --secondary-light:#f0f8e0;
 
-    /* Semantic */
+    /* ── Semantic ─────────────────────────────────── */
     --danger:         #E7142C;
     --danger-dark:    #b50e22;
     --danger-light:   #fde8eb;
@@ -29,21 +29,50 @@
     --success-dark:   #5a8f1e;
     --success-light:  #f0f8e0;
 
-    /* Neutrals */
-    --dark-navy:      #1a1a2e;
-    --dark-navy-mid:  #2a2a4a;
-    --dark-navy-light:#3a3a5a;
-    --slate-dark:     #1e293b;
-    --slate-mid:      #334155;
-    --slate:          #475569;
-    --slate-light:    #64748b;
-    --gray-dark:      #374151;
-    --gray:           #6b7280;
-    --gray-light:     #94a3b8;
-    --muted:          #aaa;
-    --border:         #e2e8f0;
-    --border-light:   #e5e7eb;
-    --surface:        #f3f4f6;
-    --surface-alt:    #f8fafc;
-    --surface-white:  #fff;
+    /* ── Dark navy (sidebar, footer) ─────────────── */
+    --dark-navy:       #1a1a2e;
+    --dark-navy-mid:   #2a2a4a;
+    --dark-navy-light: #3a3a5a;
+
+    /* ── Slate (content text) ─────────────────────── */
+    --slate-dark:  #1e293b;
+    --slate-mid:   #334155;
+    --slate:       #475569;
+    --slate-light: #64748b;
+
+    /* ── Gray (UI chrome) ─────────────────────────── */
+    --gray-dark: #374151;
+    --gray:      #6b7280;
+    --gray-light:#94a3b8;
+
+    /* ── Text ─────────────────────────────────────── */
+    --text-dark:      #333;
+    --text-body:      #444;
+    --text-secondary: #555;
+    --text-dim:       #666;
+    --text-hint:      #777;
+
+    /* ── Muted grays ──────────────────────────────── */
+    --muted-dark:  #888;
+    --muted:       #aaa;
+    --muted-mid:   #999;
+    --muted-light: #bbb;
+    --disabled:    #ccc;
+
+    /* ── Borders ──────────────────────────────────── */
+    --border:        #e2e8f0;
+    --border-light:  #e5e7eb;
+    --border-soft:   #e0e0e0;
+    --border-subtle: #f0f0f0;
+
+    /* ── Surfaces ─────────────────────────────────── */
+    --surface-white: #fff;
+    --surface-alt:   #f8fafc;
+    --surface:       #f3f4f6;
+    --surface-hover: #f1f5f9;
+    --surface-inset: #f9f9f9;
+
+    /* ── One-off values ───────────────────────────── */
+    --bg-body:     #f5f7fa;   /* page background */
+    --muted-hover: #ddd;      /* light text on dark bg */
 }

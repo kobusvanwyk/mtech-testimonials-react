@@ -10,7 +10,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: #888;
+        color: var(--muted-dark);
         margin-bottom: 12px;
     }
 
@@ -27,27 +27,27 @@
         display: flex;
         justify-content: space-between;
         transition: background 0.15s;
-        color: #444;
+        color: var(--text-body);
 
-        &:hover { background: #e6f8f6; }
+        &:hover { background: var(--primary-light); }
 
         &.active {
             &.condition {
-                background: #e6f8f6;
-                color: #03B09F;
+                background: var(--primary-light);
+                color: var(--primary);
                 font-weight: 600;
             }
 
             &.product {
-                background: #f0f8e0;
-                color: #5a8f1e;
+                background: var(--secondary-light);
+                color: var(--secondary-dark);
                 font-weight: 600;
             }
         }
     }
 
     &-count {
-        color: #bbb;
+        color: var(--muted-light);
         font-size: 0.85rem;
     }
 
@@ -55,7 +55,7 @@
         background: none;
         border: none;
         cursor: pointer;
-        color: #E7142C;
+        color: var(--danger);
         font-size: 0.85rem;
         margin-bottom: 10px;
         padding: 0;

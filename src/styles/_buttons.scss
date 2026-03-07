@@ -1,7 +1,7 @@
 /* === BUTTONS === */
 .btn-next,
 .btn-submit {
-    background: #03B09F;
+    background: var(--primary);
     color: white;
     border: none;
     border-radius: 28px;
@@ -11,22 +11,22 @@
     cursor: pointer;
     transition: background 0.2s;
 
-    &:hover:not(:disabled) { background: #028a7c; }
-    &:disabled { background: #ccc; cursor: not-allowed; }
+    &:hover:not(:disabled) { background: var(--primary-dark); }
+    &:disabled { background: var(--disabled); cursor: not-allowed; }
 }
 
 .btn-back {
     background: none;
-    border: 2px solid #e0e0e0;
+    border: 2px solid var(--border-soft);
     border-radius: 28px;
     padding: 12px 28px;
     font-size: 1rem;
     cursor: pointer;
-    color: #555;
+    color: var(--text-secondary);
     transition: border-color 0.2s;
 
     &:hover {
-        border-color: #03B09F;
-        color: #03B09F;
+        border-color: var(--primary);
+        color: var(--primary);
     }
 }

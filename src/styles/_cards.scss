@@ -25,20 +25,20 @@
         a {
             font-size: 1.1rem;
             font-weight: 700;
-            color: #1a1a2e;
+            color: var(--dark-navy);
 
-            &:hover { color: #03B09F; }
+            &:hover { color: var(--primary); }
         }
     }
 
     .card-author {
-        color: #888;
+        color: var(--muted-dark);
         font-size: 0.9rem;
         margin: 6px 0 10px;
     }
 
     .card-excerpt {
-        color: #555;
+        color: var(--text-secondary);
         font-size: 0.92rem;
         line-height: 1.6;
         margin-bottom: 12px;
@@ -52,7 +52,7 @@
     }
 
     .card-read-more {
-        color: #03B09F;
+        color: var(--primary);
         font-weight: 600;
         font-size: 0.9rem;
     }

@@ -6,8 +6,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: #fff;
-    border-bottom: 2px solid #03B09F;
+    background: var(--surface-white);
+    border-bottom: 2px solid var(--primary);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -37,7 +37,7 @@
         @include md { gap: 24px; }
 
         a {
-            color: #555;
+            color: var(--text-secondary);
             font-weight: 500;
             font-size: 0.9rem;
 
@@ -47,7 +47,7 @@
 }
 
 .btn-submit-nav {
-    background: #03B09F;
+    background: var(--primary);
     color: white;
     padding: 8px 14px;
     border-radius: 24px;
@@ -60,5 +60,5 @@
         font-size: 1rem;
     }
 
-    &:hover { background: #028a7c; }
+    &:hover { background: var(--primary-dark); }
 }
