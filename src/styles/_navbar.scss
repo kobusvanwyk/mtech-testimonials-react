@@ -1,15 +1,21 @@
+@use './breakpoints' as *;
+
 /* === NAVBAR === */
 .navbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 32px;
+    padding: 12px 16px;  // mobile
     background: #fff;
     border-bottom: 2px solid #03B09F;
     position: sticky;
     top: 0;
     z-index: 100;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    @include md {
+        padding: 16px 32px;
+    }
 }
 
 .navbar-brand {
@@ -19,9 +25,13 @@
 }
 
 .navbar-logo {
-    height: 40px;
+    height: 32px;   // mobile: slightly smaller
     width: auto;
     display: block;
+
+    @include md {
+        height: 40px;
+    }
 }
 
 .logo {
@@ -31,20 +41,36 @@
 .navbar-links {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 14px;   // mobile: tighter gap
+
+    @include md {
+        gap: 24px;
+    }
 }
 
 .navbar-links a {
     color: #555;
     font-weight: 500;
+    font-size: 0.9rem;
+
+    @include md {
+        font-size: 1rem;
+    }
 }
 
 .btn-submit-nav {
     background: #03B09F;
     color: white;
-    padding: 10px 20px;
+    padding: 8px 14px;   // mobile: compact
     border-radius: 24px;
     font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+
+    @include md {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
 }
 
 .btn-submit-nav:hover {

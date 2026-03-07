@@ -1,3 +1,5 @@
+@use './breakpoints' as *;
+
 /* === LEGAL PAGES === */
 .legal-page { background: #f8f9fa; min-height: 60vh; }
 .legal-container {
@@ -46,6 +48,7 @@
     gap: 4px;
     border-bottom: 2px solid #e2e8f0;
     margin-bottom: 20px;
+    overflow-x: auto;  // scrollable on mobile
 }
 
 .legal-tab {
@@ -108,7 +111,11 @@
 .legal-page {
     min-height: 70vh;
     background: #f8fafc;
-    padding: 48px 16px;
+    padding: 24px 16px;  // mobile
+
+    @include md {
+        padding: 48px 16px;
+    }
 }
 
 .legal-container {
@@ -116,15 +123,31 @@
     margin: 0 auto;
     background: #fff;
     border-radius: 12px;
-    padding: 48px 56px;
+    padding: 24px 16px;  // mobile
     box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+
+    @include sm {
+        padding: 32px 28px;
+    }
+
+    @include md {
+        padding: 48px 56px;
+    }
 }
 
 .legal-content h1 {
-    font-size: 1.9rem;
+    font-size: 1.3rem;  // mobile
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 6px;
+
+    @include sm {
+        font-size: 1.6rem;
+    }
+
+    @include md {
+        font-size: 1.9rem;
+    }
 }
 
 .legal-content h2 {
@@ -160,10 +183,7 @@
 
 .legal-content strong { color: #1e293b; }
 
-@media (max-width: 640px) {
-    .legal-container { padding: 28px 20px; }
-    .legal-content h1 { font-size: 1.4rem; }
-}
+// ↑ Responsive padding/size handled above with mobile-first min-width approach
 
 /* ── Mode toggle group (Edit / HTML / Preview) ── */
 .mode-toggle-group {
@@ -357,7 +377,11 @@
 .search-results-page {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 40px 24px;
+    padding: 24px 16px;  // mobile
+
+    @include md {
+        padding: 40px 24px;
+    }
 }
 
 .search-results-header {
@@ -365,10 +389,14 @@
 }
 
 .search-results-header h1 {
-    font-size: 1.6rem;
+    font-size: 1.2rem;  // mobile
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 16px;
+
+    @include md {
+        font-size: 1.6rem;
+    }
 }
 
 .search-results-form {

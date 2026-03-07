@@ -1,0 +1,14 @@
+// ============================================================
+//  Breakpoints — mobile-first (min-width) SCSS mixins
+//  Usage: @include md { ... }
+// ============================================================
+//
+//  sm  ≥ 576px   large phones
+//  md  ≥ 768px   tablets / landscape phones
+//  lg  ≥ 960px   small desktops / large tablets
+//  xl  ≥ 1200px  wide desktops
+//
+@mixin sm { @media (min-width: 576px)  { @content; } }
+@mixin md { @media (min-width: 768px)  { @content; } }
+@mixin lg { @media (min-width: 960px)  { @content; } }
+@mixin xl { @media (min-width: 1200px) { @content; } }

@@ -1,15 +1,25 @@
+@use './breakpoints' as *;
+
 /* === SUBMIT FORM === */
 .submit-page {
     max-width: 680px;
     margin: 0 auto;
-    padding: 40px 16px;
+    padding: 24px 16px;
+
+    @include md {
+        padding: 40px 16px;
+    }
 }
 
 .submit-container {
     background: white;
     border-radius: 16px;
-    padding: 40px;
+    padding: 24px 16px;  // mobile
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+
+    @include md {
+        padding: 40px;
+    }
 }
 
 .step-progress {

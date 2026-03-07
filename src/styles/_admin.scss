@@ -1,3 +1,5 @@
+@use './breakpoints' as *;
+
 /* === ADMIN === */
 .admin-page, .admin-login {
     max-width: 800px;
@@ -123,14 +125,26 @@
 .upload-progress { text-align: center; color: #03B09F; font-weight: 600; margin-bottom: 16px; }
 
 /* === ADMIN LAYOUT === */
-.admin-layout { display: flex; min-height: 100vh; background: #f0f2f5; }
+.admin-layout { display: flex; min-height: 100vh; background: #f0f2f5; flex-direction: column; @include md { flex-direction: row; } }
 .admin-sidebar {
-    width: 240px; min-height: 100vh; background: #1a1a2e; color: #ccc;
-    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 200;
+    width: 100%; min-height: auto; background: #1a1a2e; color: #ccc;
+    display: flex; flex-direction: column; position: relative; top: auto; left: auto; z-index: 200;
+
+    @include md {
+        width: 240px;
+        min-height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
 }
-.admin-sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid #2a2a4a; }
+.admin-sidebar-header { padding: 12px 16px; border-bottom: 1px solid #2a2a4a;
+    @include md { padding: 24px 20px 16px; }
+}
 .admin-sidebar-title { font-weight: 700; font-size: 1rem; color: #fff; letter-spacing: 0.5px; }
-.admin-nav { flex: 1; padding: 12px 0; }
+.admin-nav { flex: 1; padding: 4px 0; display: flex; flex-direction: row; overflow-x: auto;
+    @include md { flex-direction: column; padding: 12px 0; }
+}
 .admin-nav-item {
     display: flex; align-items: center; gap: 10px;
     padding: 11px 20px; color: #aaa; font-size: 0.92rem;
@@ -147,8 +161,12 @@
     padding: 11px 20px; color: #aaa; font-size: 0.92rem; transition: all 0.15s;
 }
 .admin-logout:hover { background: #2a2a4a; color: #E7142C; }
-.admin-main { margin-left: 240px; flex: 1; min-height: 100vh; }
-.admin-page-content { padding: 32px; }
+.admin-main { margin-left: 0; flex: 1; min-height: 100vh;
+    @include md { margin-left: 240px; }
+}
+.admin-page-content { padding: 16px;
+    @include md { padding: 32px; }
+}
 .admin-page-content h2 { font-size: 1.6rem; margin-bottom: 24px; color: #1a1a2e; }
 
 /* === ADMIN LOGIN === */
@@ -176,7 +194,9 @@
 .btn-login:hover { background: #028a7c; }
 
 /* === DASHBOARD === */
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 28px;
+    @include md { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+}
 .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid #e0e0e0; }
 .stat-total { border-top-color: #1a1a2e; }
 .stat-pending { border-top-color: #7CC42A; }
@@ -254,8 +274,9 @@
 .btn-save { background: #03B09F; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; }
 .btn-save:hover:not(:disabled) { background: #028a7c; }
 .btn-save:disabled { background: #ccc; cursor: not-allowed; }
-.edit-grid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
-@media (max-width: 900px) { .edit-grid { grid-template-columns: 1fr; } }
+.edit-grid { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start;
+    @include lg { grid-template-columns: 1fr 300px; }
+}
 .edit-main, .edit-sidebar { display: flex; flex-direction: column; gap: 20px; }
 .edit-section { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 .edit-label { display: block; font-weight: 700; font-size: 0.85rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
@@ -279,8 +300,9 @@
 .edit-footer { margin-top: 24px; display: flex; justify-content: flex-end; }
 
 /* === CATEGORIES === */
-.categories-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-@media (max-width: 800px) { .categories-grid { grid-template-columns: 1fr; } }
+.categories-grid { display: grid; grid-template-columns: 1fr; gap: 24px;
+    @include md { grid-template-columns: 1fr 1fr; }
+}
 .cat-section-title { font-size: 1rem; margin-bottom: 16px; }
 .cat-total { color: #aaa; font-weight: 400; }
 .category-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }

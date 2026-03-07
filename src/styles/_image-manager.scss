@@ -1,3 +1,5 @@
+@use './breakpoints' as *;
+
 /* ── Image Manager ──────────────────────────────── */
 
 /* Stats bar */
@@ -134,7 +136,11 @@
 /* Grid */
 .img-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr);  // mobile: 2 col
+
+    @include md {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
     gap: 16px;
 }
 
