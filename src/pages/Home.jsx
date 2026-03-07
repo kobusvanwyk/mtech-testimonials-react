@@ -1,20 +1,18 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { PRODUCTS } from '../lib/constants'
 import TestimonialCard from '../components/TestimonialCard'
 import SearchBar from '../components/SearchBar'
 import CategorySidebar from '../components/CategorySidebar'
 
-const PRODUCTS = [
-    'Ambrotose Complex', 'Advanced Ambrotose', 'Ambrotose AO',
-    'NutriVerus', 'Catalyst', 'Manapol', 'PLUS', 'OsoLean',
-    'GI-ProBalance', 'ImmunoSTART', 'BounceBack', 'Superfood Greens and Reds',
-    'TruPLENISH', 'Cardio Balance', 'Omega 3'
-]
-
 export default function Home() {
     const [testimonials, setTestimonials] = useState([])
     const [loading, setLoading] = useState(true)
-    const [activeFilter, setActiveFilter] = useState(null)
+    const [searchParams, setSearchParams] = useSearchParams()
+
+    // Active filter comes from URL ?filter=X so navbar dropdowns can link here
+    const activeFilter = searchParams.get('filter') || null
 
     useEffect(() => { fetchTestimonials() }, [])
 
@@ -30,7 +28,14 @@ export default function Home() {
         setLoading(false)
     }
 
-    // Only the sidebar condition filter applies to the grid
+    function setActiveFilter(filter) {
+        if (filter) {
+            setSearchParams({ filter })
+        } else {
+            setSearchParams({})
+        }
+    }
+
     const filtered = activeFilter
         ? testimonials.filter(t =>
             t.conditions?.includes(activeFilter) ||
@@ -38,7 +43,7 @@ export default function Home() {
           )
         : testimonials
 
-    const allConditions = [...new Set(testimonials.flatMap(t => t.conditions || []))]
+    const allConditions = [...new Set(testimonials.flatMap(t => t.conditions || []))].sort()
 
     if (loading) return <div className="loading">Loading stories...</div>
 

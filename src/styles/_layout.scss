@@ -22,3 +22,10 @@
         gap: 32px;
     }
 }
+
+// ── Site header wrapper (topbar + navbar, sticky as one unit) ─────────────────
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}

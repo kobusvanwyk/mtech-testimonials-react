@@ -21,7 +21,9 @@ import Settings from './pages/admin/Settings'
 function PublicLayout({ children }) {
     return (
         <>
-            <Navbar />
+            <header className="site-header">
+                <Navbar />
+            </header>
             <main className="main-content">{children}</main>
             <Footer />
         </>
