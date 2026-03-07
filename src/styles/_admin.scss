@@ -193,6 +193,17 @@
     &-divider { height: 1px; background: var(--dark-navy-mid); margin: 8px 0; }
 }
 
+.admin-user-email {
+    font-size: 0.75rem;
+    color: var(--muted-dark);
+    padding: 6px 14px 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 6px;
+}
+
 .admin-logout {
     width: 100%;
     background: none;
@@ -279,7 +290,8 @@
     margin-top: 8px;
     transition: background 0.2s;
 
-    &:hover { background: var(--primary-dark); }
+    &:hover    { background: var(--primary-dark); }
+    &:disabled { opacity: 0.65; cursor: not-allowed; }
 }
 
 // === DASHBOARD ===

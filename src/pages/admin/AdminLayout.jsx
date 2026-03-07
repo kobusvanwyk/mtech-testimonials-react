@@ -7,51 +7,78 @@ import {
 } from 'lucide-react'
 
 export default function AdminLayout() {
-    const [authed, setAuthed]   = useState(false)
+    const [session, setSession] = useState(undefined) // undefined = loading
+    const [email, setEmail]     = useState('')
     const [password, setPassword] = useState('')
     const [error, setError]     = useState('')
-    const navigate  = useNavigate()
-    const location  = useLocation()
-    const ADMIN_PWD = import.meta.env.VITE_ADMIN_PASSWORD || 'mannatech2024'
+    const [loading, setLoading] = useState(false)
+    const navigate = useNavigate()
+    const location = useLocation()
 
     useEffect(() => {
-        setAuthed(sessionStorage.getItem('admin_authed') === 'true')
+        // Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session)
+        })
+        // Listen for auth changes (login / logout / token refresh)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session)
+        })
+        return () => subscription.unsubscribe()
     }, [])
 
-    function handleLogin(e) {
+    async function handleLogin(e) {
         e.preventDefault()
-        if (password === ADMIN_PWD) {
-            sessionStorage.setItem('admin_authed', 'true')
-            setAuthed(true)
-            setError('')
-        } else {
-            setError('Incorrect password.')
-        }
+        setLoading(true)
+        setError('')
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) setError(error.message)
+        setLoading(false)
     }
 
-    function handleLogout() {
-        sessionStorage.removeItem('admin_authed')
-        setAuthed(false)
+    async function handleLogout() {
+        await supabase.auth.signOut()
         navigate('/admin')
     }
 
-    if (!authed) return (
+    // Still checking session
+    if (session === undefined) return (
+        <div className="admin-login">
+            <div className="admin-login-box">
+                <div className="admin-login-logo"><Lock size={40} /></div>
+                <p className="admin-login-sub">Loading…</p>
+            </div>
+        </div>
+    )
+
+    if (!session) return (
         <div className="admin-login">
             <div className="admin-login-box">
                 <div className="admin-login-logo"><Lock size={40} /></div>
                 <h2>Admin Login</h2>
-                <p className="admin-login-sub">Enter your password to continue</p>
+                <p className="admin-login-sub">Sign in to continue</p>
                 <form onSubmit={handleLogin}>
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        className={error ? 'input-error' : ''}
+                        autoFocus
+                        required
+                    />
                     <input
                         type="password"
                         placeholder="Password"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         className={error ? 'input-error' : ''}
-                        autoFocus
+                        required
                     />
                     {error && <p className="error-msg">{error}</p>}
-                    <button type="submit" className="btn-login">Sign In</button>
+                    <button type="submit" className="btn-login" disabled={loading}>
+                        {loading ? 'Signing in…' : 'Sign In'}
+                    </button>
                 </form>
             </div>
         </div>
@@ -88,6 +115,7 @@ export default function AdminLayout() {
                     )}
                 </nav>
                 <div className="admin-sidebar-footer">
+                    <div className="admin-user-email">{session.user.email}</div>
                     <a href="/" className="admin-nav-item" target="_blank">
                         <Globe size={16} /> View Site
                     </a>
