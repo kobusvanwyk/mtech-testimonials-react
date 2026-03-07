@@ -8,11 +8,23 @@ import {
     Font,
 } from '@react-pdf/renderer'
 
+import regularTtf  from '../assets/fonts/PlusJakartaSans-Regular.ttf'
+import mediumTtf   from '../assets/fonts/PlusJakartaSans-Medium.ttf'
+import semiBoldTtf from '../assets/fonts/PlusJakartaSans-SemiBold.ttf'
+import boldTtf     from '../assets/fonts/PlusJakartaSans-Bold.ttf'
+import italicTtf   from '../assets/fonts/PlusJakartaSans-Italic.ttf'
+
 // ─── Fonts ───────────────────────────────────────────────────────────────────
-// Using react-pdf built-in fonts (Helvetica) — always available, no network
-// dependency. Custom TTF fonts can be added later by bundling the .ttf file
-// inside the project (e.g. src/assets/fonts/Inter.ttf) and registering via
-// Font.register({ family: 'Inter', src: interTtf }) where interTtf is imported.
+Font.register({
+    family: 'PlusJakartaSans',
+    fonts: [
+        { src: regularTtf,  fontWeight: 400, fontStyle: 'normal' },
+        { src: italicTtf,   fontWeight: 400, fontStyle: 'italic' },
+        { src: mediumTtf,   fontWeight: 500, fontStyle: 'normal' },
+        { src: semiBoldTtf, fontWeight: 600, fontStyle: 'normal' },
+        { src: boldTtf,     fontWeight: 700, fontStyle: 'normal' },
+    ],
+})
 
 Font.registerHyphenationCallback(word => [word])
 
@@ -37,7 +49,7 @@ const S = StyleSheet.create({
     // Page
     page: {
         backgroundColor: C.white,
-        fontFamily: 'Helvetica',
+        fontFamily: 'PlusJakartaSans',
         fontSize: 11,
         paddingBottom: 80,
     },
@@ -64,7 +76,7 @@ const S = StyleSheet.create({
     },
     testimonialLabel: {
         fontSize: 9,
-        fontFamily: 'Helvetica-Bold',
+        fontFamily: 'PlusJakartaSans', fontWeight: 700,
         color: C.primary,
         textTransform: 'uppercase',
         letterSpacing: 2,
@@ -77,7 +89,7 @@ const S = StyleSheet.create({
     },
     logoFallback: {
         fontSize: 15,
-        fontFamily: 'Helvetica-Bold',
+        fontFamily: 'PlusJakartaSans', fontWeight: 700,
         color: C.primary,
         letterSpacing: 1.5,
     },
@@ -85,7 +97,7 @@ const S = StyleSheet.create({
     // ── Title ────────────────────────────────────────
     title: {
         fontSize: 24,
-        fontFamily: 'Helvetica-Bold',
+        fontFamily: 'PlusJakartaSans', fontWeight: 700,
         color: C.dark,
         lineHeight: 1.25,
         marginBottom: 10,
@@ -128,12 +140,12 @@ const S = StyleSheet.create({
     },
     chipTextCondition: {
         fontSize: 8.5,
-        fontFamily: 'Helvetica-Bold',
+        fontFamily: 'PlusJakartaSans', fontWeight: 700,
         color: C.primaryDark,
     },
     chipTextProduct: {
         fontSize: 8.5,
-        fontFamily: 'Helvetica-Bold',
+        fontFamily: 'PlusJakartaSans', fontWeight: 700,
         color: '#6d8000',
     },
 
@@ -151,7 +163,7 @@ const S = StyleSheet.create({
     },
     gallerySectionLabel: {
         fontSize: 9,
-        fontFamily: 'Helvetica-Bold',
+        fontFamily: 'PlusJakartaSans', fontWeight: 700,
         color: C.muted,
         textTransform: 'uppercase',
         letterSpacing: 1.2,
@@ -191,7 +203,7 @@ const S = StyleSheet.create({
     },
     footerContactLabel: {
         fontSize: 8,
-        fontFamily: 'Helvetica-Bold',
+        fontFamily: 'PlusJakartaSans', fontWeight: 700,
         color: C.footerText,
         textTransform: 'uppercase',
         letterSpacing: 1.5,
