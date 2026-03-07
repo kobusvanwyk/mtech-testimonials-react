@@ -14,7 +14,6 @@ import Published from './pages/admin/Published'
 import AllTestimonials from './pages/admin/AllTestimonials'
 import EditTestimonial from './pages/admin/EditTestimonial'
 import Categories from './pages/admin/Categories'
-import LegalEditor from './pages/admin/LegalEditor'
 import ImageManager from './pages/admin/ImageManager'
 
 function PublicLayout({ children }) {
@@ -55,7 +54,6 @@ function App() {
                     <Route path="all" element={<AllTestimonials />} />
                     <Route path="edit/:id" element={<EditTestimonial />} />
                     <Route path="categories" element={<Categories />} />
-                    <Route path="legal" element={<LegalEditor />} />
                     <Route path="images" element={<ImageManager />} />
                 </Route>
             </Routes>
