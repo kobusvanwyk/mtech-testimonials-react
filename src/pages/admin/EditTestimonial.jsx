@@ -199,7 +199,17 @@ export default function EditTestimonial() {
                     </div>
 
                     <div className="edit-section">
-                        <label className="edit-label">Featured Photo</label>
+                        <div className="edit-label-row">
+                            <label className="edit-label">Featured Photo</label>
+                            <label className="edit-checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={form.hide_featured_image || false}
+                                    onChange={e => update('hide_featured_image', e.target.checked)}
+                                />
+                                Hide image
+                            </label>
+                        </div>
                         {form.featured_image_url && (
                             <div className="edit-image-preview">
                                 <img src={form.featured_image_url} alt="Featured" />

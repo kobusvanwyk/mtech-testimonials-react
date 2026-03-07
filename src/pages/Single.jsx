@@ -44,7 +44,7 @@ export default function Single({ shareMode = false }) {
             )}
 
             <article className="single-article">
-                {t.featured_image_url && (
+                {t.featured_image_url && !t.hide_featured_image && (
                     <img src={t.featured_image_url} alt={t.title} className="single-image" />
                 )}
                 <h1 className="single-title">{t.title}</h1>

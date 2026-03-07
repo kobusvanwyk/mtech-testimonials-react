@@ -583,6 +583,7 @@
 }
 
 .edit-label { display: block; font-weight: 700; font-size: var(--text-sm); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.edit-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; .edit-label { margin-bottom: 0; } }
 
 .edit-input,
 .edit-textarea,
