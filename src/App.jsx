@@ -15,6 +15,7 @@ import AllTestimonials from './pages/admin/AllTestimonials'
 import EditTestimonial from './pages/admin/EditTestimonial'
 import Categories from './pages/admin/Categories'
 import LegalEditor from './pages/admin/LegalEditor'
+import ImageManager from './pages/admin/ImageManager'
 import './index.css'
 
 function PublicLayout({ children }) {
@@ -47,6 +48,7 @@ function App() {
                     <Route path="edit/:id" element={<EditTestimonial />} />
                     <Route path="categories" element={<Categories />} />
                     <Route path="legal" element={<LegalEditor />} />
+                    <Route path="images" element={<ImageManager />} />
                 </Route>
             </Routes>
         </BrowserRouter>
