@@ -122,7 +122,6 @@ export default function EditTestimonial() {
             updates.edit_history = [...(form.edit_history || []), historyEntry]
 
             delete updates.id
-            delete updates.created_at
 
             const { error } = await supabase.from('testimonials').update(updates).eq('id', id)
             if (error) throw error
@@ -265,8 +264,17 @@ export default function EditTestimonial() {
                     </div>
 
                     <div className="edit-section">
-                        <label className="edit-label">Submitted</label>
-                        <p className="edit-meta">{new Date(form.created_at).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <label className="edit-label">Testimonial Date</label>
+                        <input
+                            type="date"
+                            className="edit-input"
+                            value={form.created_at ? new Date(form.created_at).toISOString().slice(0, 10) : ''}
+                            onChange={e => {
+                                const d = e.target.value
+                                if (d) update('created_at', new Date(d).toISOString())
+                            }}
+                        />
+                        <p className="settings-hint" style={{ marginTop: 6 }}>This is the date shown on the card and testimonial page.</p>
                     </div>
                 </div>
             </div>

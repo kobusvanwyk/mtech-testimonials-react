@@ -43,7 +43,7 @@ export default function Single({ shareMode = false }) {
         async function fetchRelated(current) {
             const { data } = await supabase
                 .from('testimonials')
-                .select('id, slug, title, person_name, anonymous, story_text, conditions, products')
+                .select('id, slug, title, person_name, anonymous, story_text, conditions, products, created_at')
                 .eq('status', 'approved')
                 .neq('id', current.id)
                 .limit(50)
