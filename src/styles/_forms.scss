@@ -79,6 +79,60 @@
     margin-bottom: 28px;
 }
 
+// ── Mobile progress bar (hidden on desktop) ────────────────────────────────
+.step-progress-mobile { display: none; }
+
+@media (max-width: 480px) {
+    .step-progress,
+    .step-counter { display: none; }
+
+    .step-progress-mobile {
+        display: block;
+        margin-bottom: 24px;
+    }
+
+    .step-progress-bar-wrap {
+        height: 6px;
+        background: var(--border-soft, #e2e8f0);
+        border-radius: 99px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .step-progress-bar {
+        height: 100%;
+        background: var(--primary, #03B09F);
+        border-radius: 99px;
+        transition: width 0.35s ease;
+        min-width: 6px;
+    }
+
+    .step-progress-labels {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 2px;
+    }
+
+    .step-progress-current {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--primary, #03B09F);
+    }
+
+    .step-progress-next {
+        font-size: 0.78rem;
+        color: var(--muted, #aaa);
+    }
+
+    .step-progress-fraction {
+        font-size: 0.75rem;
+        color: var(--muted, #aaa);
+        display: block;
+        text-align: right;
+    }
+}
+
 .step {
     h2 {
         font-size: 1.5rem;

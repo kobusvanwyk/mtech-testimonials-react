@@ -199,6 +199,7 @@ export default function Submit() {
     return (
         <div className="submit-page">
             <div className="submit-container">
+                {/* Desktop: dot stepper */}
                 <div className="step-progress">
                     {[1, 2, 3, 4, 5, 6, 7].map((n, i) => (
                         <React.Fragment key={n}>
@@ -216,6 +217,27 @@ export default function Submit() {
                     ))}
                 </div>
                 <p className="step-counter">Step {step} of 7</p>
+
+                {/* Mobile: progress bar */}
+                {(() => {
+                    const STEP_LABELS = ['', 'Your details', 'Health condition', 'Products', 'Your story', 'Photos', 'Consent', 'Review']
+                    const pct = Math.round(((step - 1) / 6) * 100)
+                    return (
+                        <div className="step-progress-mobile">
+                            <div className="step-progress-bar-wrap">
+                                <div className="step-progress-bar" style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="step-progress-labels">
+                                <span className="step-progress-current">{STEP_LABELS[step]}</span>
+                                {step < 7 && (
+                                    <span className="step-progress-next">Next: {STEP_LABELS[step + 1]}</span>
+                                )}
+                            </div>
+                            <span className="step-progress-fraction">Step {step} of 7</span>
+                        </div>
+                    )
+                })()}
+
 
                 {/* Honeypot — hidden from real users, bots will fill it */}
                 <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', opacity: 0, pointerEvents: 'none' }} aria-hidden="true">
