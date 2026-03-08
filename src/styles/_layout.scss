@@ -23,9 +23,8 @@
     }
 }
 
-// ── Site header wrapper (topbar + navbar, sticky as one unit) ─────────────────
+// ── Site header wrapper ────────────────────────────────────────────────────────
+// Topbar scrolls away; only the navbar sticks
 .site-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    // no sticky here — handled per-child
 }
