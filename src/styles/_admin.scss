@@ -1777,3 +1777,32 @@
     color: var(--text-muted, #999);
     justify-content: flex-end;
 }
+
+// ── Page header row (title + actions) ─────────────────────────────────────
+.page-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 1rem;
+
+    h2 { margin: 0; }
+}
+
+.btn-export-csv {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.45rem 1rem;
+    background: var(--color-primary, #03B09F);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+
+    &:hover { background: #029a8a; }
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import TestimonialTable from '../../components/TestimonialTable'
-import { List } from 'lucide-react'
+import { List, Download } from 'lucide-react'
 
 const STATUS_FILTERS = [
     { value: 'all', label: 'All' },
@@ -38,6 +38,30 @@ export default function AllTestimonials() {
         setTestimonials(prev => prev.filter(t => t.id !== id))
     }
 
+
+    function exportCSV() {
+        const rows = [
+            ['Title', 'Author', 'Status', 'Conditions', 'Products', 'Date', 'Words'],
+            ...filtered.map(t => [
+                `"${(t.title || '').replace(/"/g, '""')}"`,
+                `"${(t.anonymous ? 'Anonymous' : t.person_name || '').replace(/"/g, '""')}"`,
+                t.status || '',
+                `"${(t.conditions || []).join(', ')}"`,
+                `"${(t.products || []).join(', ')}"`,
+                t.created_at ? new Date(t.created_at).toLocaleDateString('en-ZA') : '',
+                (t.story_text || '').trim().split(/\s+/).filter(Boolean).length,
+            ])
+        ]
+        const csv = rows.map(r => r.join(',')).join('\n')
+        const blob = new Blob([csv], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `testimonials-${new Date().toISOString().slice(0,10)}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
+    }
+
     const filtered = statusFilter === 'all'
         ? testimonials
         : statusFilter === 'imported_pending'
@@ -46,7 +70,10 @@ export default function AllTestimonials() {
 
     return (
         <div className="admin-page-content">
-            <h2><List size={20} /> All Testimonials</h2>
+            <div className="page-header-row">
+                <h2><List size={20} /> All Testimonials</h2>
+                <button className="btn-export-csv" onClick={exportCSV}><Download size={15} /> Export CSV</button>
+            </div>
             <div className="status-filter-bar">
                 {STATUS_FILTERS.map(f => (
                     <button
