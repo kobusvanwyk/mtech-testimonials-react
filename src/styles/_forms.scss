@@ -74,9 +74,20 @@
 
 .step-counter {
     text-align: center;
-    color: var(--muted-dark);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     margin-bottom: 28px;
+
+    .step-counter-current {
+        font-weight: 700;
+        color: var(--primary, #03B09F);
+    }
+    .step-counter-sep,
+    .step-counter-fraction {
+        color: var(--muted-dark);
+    }
+    .step-counter-next {
+        color: var(--muted, #aaa);
+    }
 }
 
 // ── Mobile progress bar (hidden on desktop) ────────────────────────────────

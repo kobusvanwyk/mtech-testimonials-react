@@ -216,7 +216,21 @@ export default function Submit() {
                         </React.Fragment>
                     ))}
                 </div>
-                <p className="step-counter">Step {step} of 7</p>
+                <div className="step-counter">
+                    {(() => {
+                        const STEP_LABELS = ['', 'Your details', 'Health condition', 'Products', 'Your story', 'Photos', 'Consent', 'Review']
+                        return (
+                            <>
+                                <span className="step-counter-current">{STEP_LABELS[step]}</span>
+                                <span className="step-counter-sep"> · </span>
+                                <span className="step-counter-fraction">Step {step} of 7</span>
+                                {step < 7 && (
+                                    <span className="step-counter-next"> — Next: {STEP_LABELS[step + 1]}</span>
+                                )}
+                            </>
+                        )
+                    })()}
+                </div>
 
                 {/* Mobile: progress bar */}
                 {(() => {
