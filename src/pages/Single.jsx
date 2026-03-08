@@ -119,8 +119,7 @@ export default function Single({ shareMode = false }) {
                 </div>
                 {t.gallery_urls?.length > 0 && (
                     <div className="single-gallery">
-                        <div className="gallery-grid">
-                            <Gallery withDownloadButton>
+                        <Gallery withDownloadButton>
                             <div className="gallery-grid">
                                 {t.gallery_urls.map((url, i) => {
                                     const dim = imageDimensions[url] || { w: 1200, h: 800 }
@@ -140,7 +139,6 @@ export default function Single({ shareMode = false }) {
                                 })}
                             </div>
                         </Gallery>
-                        </div>
                     </div>
                 )}
 
