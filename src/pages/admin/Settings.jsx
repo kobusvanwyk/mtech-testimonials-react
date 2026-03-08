@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Settings as SettingsIcon, Save, Check, ExternalLink } from 'lucide-react'
+import { useSiteSettings } from '../../lib/SiteSettingsContext'
+import { Settings as SettingsIcon, Save, Check, ExternalLink, EyeOff, Eye } from 'lucide-react'
 
 const FIELDS = [
     { key: 'og_site_name',    label: 'Site Name',       hint: 'Appears in the browser tab and as the OG site name.',                                           type: 'text'     },
@@ -11,6 +12,8 @@ const FIELDS = [
 ]
 
 export default function Settings() {
+    const { privateMode, setPrivateModeValue } = useSiteSettings()
+    const [toggling, setToggling] = useState(false)
     const [values, setValues]   = useState({})
     const [loading, setLoading] = useState(true)
     const [saving, setSaving]   = useState(false)
@@ -38,6 +41,12 @@ export default function Settings() {
         setSaving(false)
     }
 
+    async function handleTogglePrivateMode() {
+        setToggling(true)
+        await setPrivateModeValue(!privateMode)
+        setToggling(false)
+    }
+
     if (loading) return <div className="loading">Loading settings…</div>
 
     return (
@@ -50,6 +59,30 @@ export default function Settings() {
             </div>
 
             {error && <div className="import-error" style={{ marginBottom: 20 }}>{error}</div>}
+
+            {/* Private Mode */}
+            <div className="settings-section settings-private-mode">
+                <div className="private-mode-row">
+                    <div className="private-mode-info">
+                        <h3 className="settings-section-title">
+                            {privateMode ? <EyeOff size={18} /> : <Eye size={18} />}
+                            Private Mode
+                        </h3>
+                        <p className="settings-section-hint">
+                            {privateMode
+                                ? 'The site is currently private. Only the submission form, Terms and Privacy pages are accessible to visitors. Admin is always accessible.'
+                                : 'The site is currently public. All pages are visible to everyone.'}
+                        </p>
+                    </div>
+                    <button
+                        className={`btn-private-mode-toggle ${privateMode ? 'active' : ''}`}
+                        onClick={handleTogglePrivateMode}
+                        disabled={toggling}
+                    >
+                        {toggling ? 'Updating…' : privateMode ? 'Disable Private Mode' : 'Enable Private Mode'}
+                    </button>
+                </div>
+            </div>
 
             <div className="settings-section">
                 <h3 className="settings-section-title">Open Graph / Social Sharing</h3>

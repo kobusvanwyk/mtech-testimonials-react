@@ -1960,3 +1960,70 @@
     font-weight: 600;
     color: var(--text-secondary, #555);
 }
+
+// ── Private Mode Toggle ───────────────────────────────────────────────────────
+.settings-private-mode {
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-md);
+    background: rgba(3, 176, 159, 0.04);
+
+    &.settings-section {
+        padding: 20px 24px;
+    }
+}
+
+.private-mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.private-mode-info {
+    flex: 1;
+    min-width: 200px;
+
+    .settings-section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        border: none;
+        padding: 0;
+    }
+}
+
+.btn-private-mode-toggle {
+    padding: 10px 20px;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    border: 2px solid var(--primary);
+    background: transparent;
+    color: var(--primary-dark);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    &.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+
+        &:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}

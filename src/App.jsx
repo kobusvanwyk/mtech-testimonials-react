@@ -2,12 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-r
 import Navbar from './components/Navbar'
 import Topbar from './components/Topbar'
 import Footer from './components/Footer'
+import LogoOnlyLayout from './components/LogoOnlyLayout'
 import Home from './pages/Home'
 import Submit from './pages/Submit'
 import Single from './pages/Single'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import SearchResults from './pages/SearchResults'
+import PrivateModePage from './pages/PrivateModePage'
 import AdminLayout from './pages/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
 import AllTestimonials from './pages/admin/AllTestimonials'
@@ -18,6 +20,7 @@ import ImportTestimonials from './pages/admin/ImportTestimonials'
 import Settings from './pages/admin/Settings'
 import PDFSettings from './pages/admin/PDFSettings'
 import NotFound from './pages/NotFound'
+import { useSiteSettings } from './lib/SiteSettingsContext'
 
 function PublicLayout({ children }) {
     return (
@@ -39,30 +42,68 @@ function SingleRoute() {
         : <PublicLayout><Single /></PublicLayout>
 }
 
+function AppRoutes() {
+    const { privateMode, loading } = useSiteSettings()
+
+    // Blank screen while fetching private_mode — prevents flash of wrong content
+    if (loading) return null
+
+    if (privateMode) {
+        return (
+            <Routes>
+                {/* Accessible in private mode — logo only layout */}
+                <Route path="/submit"  element={<LogoOnlyLayout><Submit /></LogoOnlyLayout>} />
+                <Route path="/terms"   element={<LogoOnlyLayout><Terms /></LogoOnlyLayout>} />
+                <Route path="/privacy" element={<LogoOnlyLayout><Privacy /></LogoOnlyLayout>} />
+
+                {/* Admin always accessible */}
+                <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="dashboard"  element={<Dashboard />} />
+                    <Route path="all"        element={<AllTestimonials />} />
+                    <Route path="edit/:id"   element={<EditTestimonial />} />
+                    <Route path="categories" element={<Categories />} />
+                    <Route path="images"     element={<ImageManager />} />
+                    <Route path="import"     element={<ImportTestimonials />} />
+                    <Route path="settings"   element={<Settings />} />
+                    <Route path="pdf-settings" element={<PDFSettings />} />
+                </Route>
+
+                {/* Everything else — neutral dead end */}
+                <Route path="*" element={<PrivateModePage />} />
+            </Routes>
+        )
+    }
+
+    return (
+        <Routes>
+            <Route path="/"                    element={<PublicLayout><Home /></PublicLayout>} />
+            <Route path="/submit"              element={<PublicLayout><Submit /></PublicLayout>} />
+            <Route path="/testimonial/:slug"   element={<SingleRoute />} />
+            <Route path="/terms"               element={<PublicLayout><Terms /></PublicLayout>} />
+            <Route path="/privacy"             element={<PublicLayout><Privacy /></PublicLayout>} />
+            <Route path="/search"              element={<PublicLayout><SearchResults /></PublicLayout>} />
+
+            <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard"  element={<Dashboard />} />
+                <Route path="all"        element={<AllTestimonials />} />
+                <Route path="edit/:id"   element={<EditTestimonial />} />
+                <Route path="categories" element={<Categories />} />
+                <Route path="images"     element={<ImageManager />} />
+                <Route path="import"     element={<ImportTestimonials />} />
+                <Route path="settings"   element={<Settings />} />
+                <Route path="pdf-settings" element={<PDFSettings />} />
+            </Route>
+            <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
+        </Routes>
+    )
+}
+
 function App() {
     return (
         <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
-                <Route path="/submit" element={<PublicLayout><Submit /></PublicLayout>} />
-                <Route path="/testimonial/:slug" element={<SingleRoute />} />
-                <Route path="/terms" element={<PublicLayout><Terms /></PublicLayout>} />
-                <Route path="/privacy" element={<PublicLayout><Privacy /></PublicLayout>} />
-                <Route path="/search" element={<PublicLayout><SearchResults /></PublicLayout>} />
-
-                <Route path="/admin" element={<AdminLayout />}>
-                    <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="all" element={<AllTestimonials />} />
-                    <Route path="edit/:id" element={<EditTestimonial />} />
-                    <Route path="categories" element={<Categories />} />
-                    <Route path="images" element={<ImageManager />} />
-                    <Route path="import" element={<ImportTestimonials />} />
-                    <Route path="settings" element={<Settings />} />
-                    <Route path="pdf-settings" element={<PDFSettings />} />
-                </Route>
-                <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
-            </Routes>
+            <AppRoutes />
         </BrowserRouter>
     )
 }

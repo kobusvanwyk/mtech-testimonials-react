@@ -1,17 +1,25 @@
 import { Link } from 'react-router-dom'
 
-export default function Footer() {
+export default function Footer({ disableLogoLink = false }) {
     return (
         <footer className="footer">
             <div className="footer-main">
                 <div className="footer-brand">
-                    <Link to="/">
+                    {disableLogoLink ? (
                         <img
                             src="/mtech-testimonials-logo.svg"
                             alt="MTech Testimonials"
                             className="footer-logo-img"
                         />
-                    </Link>
+                    ) : (
+                        <Link to="/">
+                            <img
+                                src="/mtech-testimonials-logo.svg"
+                                alt="MTech Testimonials"
+                                className="footer-logo-img"
+                            />
+                        </Link>
+                    )}
                 </div>
 
                 <div className="footer-links">

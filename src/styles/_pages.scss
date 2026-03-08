@@ -518,3 +518,27 @@
     transition: background 0.2s, color 0.2s;
     &:hover { background: var(--color-primary, #03B09F); color: white; }
 }
+
+// ── Private Mode Page ─────────────────────────────────────────────────────────
+.private-mode-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 32px 16px;
+    background: var(--surface-bg);
+}
+
+.private-mode-logo {
+    width: 200px;
+    max-width: 80vw;
+    opacity: 0.9;
+}
+
+.private-mode-msg {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    text-align: center;
+}
