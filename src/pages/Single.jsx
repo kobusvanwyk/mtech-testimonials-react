@@ -145,7 +145,7 @@ export default function Single({ shareMode = false }) {
                 <div className="single-share">
                     <a
                         className="btn-whatsapp"
-                        href={`https://wa.me/?text=${encodeURIComponent(`Check out this Mannatech testimonial: "${t.title}"\n${window.location.origin}/testimonial/${slug}`)}`}
+                        href={`https://wa.me/?text=${encodeURIComponent(`Check out this Mannatech testimonial: "${t.title}"\n${window.location.origin}/testimonial/${slug}?share=1`)}`}
                         target="_blank"
                         rel="noreferrer"
                     >
