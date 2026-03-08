@@ -89,8 +89,8 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                     )}
                                 </td>
                                 <td>{t.anonymous ? <em>Anonymous</em> : t.person_name}</td>
-                                <td className="col-tags">{t.conditions?.map(c => <span key={c} className="tag tag-condition">{c}</span>)}</td>
-                                <td className="col-tags">{t.products?.map(p => <span key={p} className="tag tag-product">{p}</span>)}</td>
+                                <td className="col-tags"><div className="tags-wrap">{t.conditions?.map(c => <span key={c} className="tag tag-condition">{c}</span>)}</div></td>
+                                <td className="col-tags"><div className="tags-wrap">{t.products?.map(p => <span key={p} className="tag tag-product">{p}</span>)}</div></td>
                                 <td className="col-date">{new Date(t.created_at).toLocaleDateString('en-ZA')}</td>
                                 <td>{statusBadge(t.status)}</td>
                                 <td>

@@ -472,7 +472,7 @@
     }
 }
 
-.col-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.col-tags .tags-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
 .col-date { white-space: nowrap; color: var(--muted-dark); }
 
 .row-actions { display: flex; gap: 6px; }
