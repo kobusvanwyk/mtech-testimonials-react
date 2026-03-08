@@ -97,8 +97,7 @@
     .single-gallery {
         margin-top: 24px;
 
-        // PhotoSwipe wraps items — target the gallery container it creates
-        .pswp-gallery {
+        .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 12px;

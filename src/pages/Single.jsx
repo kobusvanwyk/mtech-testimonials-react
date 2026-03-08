@@ -119,24 +119,28 @@ export default function Single({ shareMode = false }) {
                 </div>
                 {t.gallery_urls?.length > 0 && (
                     <div className="single-gallery">
-                        <Gallery withDownloadButton>
-                            {t.gallery_urls.map((url, i) => {
-                                const dim = imageDimensions[url] || { w: 1200, h: 800 }
-                                return (
-                                    <Item key={i} original={url} thumbnail={url} width={dim.w} height={dim.h} alt={`Photo ${i + 1}`}>
-                                        {({ ref, open }) => (
-                                            <img
-                                                ref={ref}
-                                                src={url}
-                                                onClick={open}
-                                                alt={`Photo ${i + 1}`}
-                                                className="gallery-image gallery-image-clickable"
-                                            />
-                                        )}
-                                    </Item>
-                                )
-                            })}
+                        <div className="gallery-grid">
+                            <Gallery withDownloadButton>
+                            <div className="gallery-grid">
+                                {t.gallery_urls.map((url, i) => {
+                                    const dim = imageDimensions[url] || { w: 1200, h: 800 }
+                                    return (
+                                        <Item key={i} original={url} thumbnail={url} width={dim.w} height={dim.h} alt={`Photo ${i + 1}`}>
+                                            {({ ref, open }) => (
+                                                <img
+                                                    ref={ref}
+                                                    src={url}
+                                                    onClick={open}
+                                                    alt={`Photo ${i + 1}`}
+                                                    className="gallery-image gallery-image-clickable"
+                                                />
+                                            )}
+                                        </Item>
+                                    )
+                                })}
+                            </div>
                         </Gallery>
+                        </div>
                     </div>
                 )}
 
