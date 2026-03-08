@@ -1887,3 +1887,73 @@
     &:hover { color: var(--color-primary, #03B09F); }
     .checked { color: var(--color-primary, #03B09F); }
 }
+
+// ── Dashboard breakdown charts ─────────────────────────────────────────────
+.breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+
+    @media (max-width: 700px) { grid-template-columns: 1fr; }
+}
+
+.breakdown-panel {
+    background: white;
+    border: 1px solid var(--border-soft, #e2e8f0);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+}
+
+.breakdown-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0 0 0.85rem;
+    color: var(--text-primary, #1a202c);
+}
+
+.breakdown-sub {
+    font-weight: 400;
+    color: var(--text-muted, #999);
+    font-size: 0.8rem;
+}
+
+.breakdown-bars { display: flex; flex-direction: column; gap: 7px; }
+
+.breakdown-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 30px;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+}
+
+.breakdown-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-secondary, #555);
+}
+
+.breakdown-bar-wrap {
+    background: #f1f5f9;
+    border-radius: 4px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.breakdown-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+    min-width: 4px;
+}
+
+.breakdown-bar-condition { background: var(--color-primary, #03B09F); }
+.breakdown-bar-product   { background: var(--color-secondary, #ACC42A); }
+
+.breakdown-count {
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-secondary, #555);
+}

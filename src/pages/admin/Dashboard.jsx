@@ -3,14 +3,19 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { ArrowRight } from 'lucide-react'
 
+const TOP_N = 10
+
 export default function Dashboard() {
     const [stats, setStats] = useState(null)
     const [recent, setRecent] = useState([])
+    const [topConditions, setTopConditions] = useState([])
+    const [topProducts, setTopProducts] = useState([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         fetchStats()
         fetchRecent()
+        fetchBreakdown()
     }, [])
 
     async function fetchStats() {
@@ -38,6 +43,29 @@ export default function Dashboard() {
         setRecent(data || [])
     }
 
+    async function fetchBreakdown() {
+        const { data } = await supabase
+            .from('testimonials')
+            .select('conditions, products')
+            .eq('status', 'approved')
+
+        if (!data) return
+
+        const condCount = {}
+        const prodCount = {}
+
+        for (const t of data) {
+            for (const c of (t.conditions || [])) condCount[c] = (condCount[c] || 0) + 1
+            for (const p of (t.products || [])) prodCount[p] = (prodCount[p] || 0) + 1
+        }
+
+        const sortedCond = Object.entries(condCount).sort((a, b) => b[1] - a[1]).slice(0, TOP_N)
+        const sortedProd = Object.entries(prodCount).sort((a, b) => b[1] - a[1]).slice(0, TOP_N)
+
+        setTopConditions(sortedCond)
+        setTopProducts(sortedProd)
+    }
+
     const statusBadge = (status) => {
         const map = {
             pending: { label: 'Pending', cls: 'badge-pending' },
@@ -51,6 +79,9 @@ export default function Dashboard() {
     }
 
     if (loading) return <div className="admin-page-content"><div className="loading">Loading...</div></div>
+
+    const maxCond = topConditions[0]?.[1] || 1
+    const maxProd = topProducts[0]?.[1] || 1
 
     return (
         <div className="admin-page-content">
@@ -88,6 +119,44 @@ export default function Dashboard() {
                     </div>
                 )}
             </div>
+
+            {/* Breakdown charts */}
+            {(topConditions.length > 0 || topProducts.length > 0) && (
+                <div className="breakdown-grid">
+                    {topConditions.length > 0 && (
+                        <div className="breakdown-panel">
+                            <h3 className="breakdown-title">Top Conditions <span className="breakdown-sub">(published)</span></h3>
+                            <div className="breakdown-bars">
+                                {topConditions.map(([name, count]) => (
+                                    <div key={name} className="breakdown-row">
+                                        <span className="breakdown-label" title={name}>{name}</span>
+                                        <div className="breakdown-bar-wrap">
+                                            <div className="breakdown-bar breakdown-bar-condition" style={{ width: `${(count / maxCond) * 100}%` }} />
+                                        </div>
+                                        <span className="breakdown-count">{count}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {topProducts.length > 0 && (
+                        <div className="breakdown-panel">
+                            <h3 className="breakdown-title">Top Products <span className="breakdown-sub">(published)</span></h3>
+                            <div className="breakdown-bars">
+                                {topProducts.map(([name, count]) => (
+                                    <div key={name} className="breakdown-row">
+                                        <span className="breakdown-label" title={name}>{name}</span>
+                                        <div className="breakdown-bar-wrap">
+                                            <div className="breakdown-bar breakdown-bar-product" style={{ width: `${(count / maxProd) * 100}%` }} />
+                                        </div>
+                                        <span className="breakdown-count">{count}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="dashboard-section">
                 <div className="dashboard-section-header">
