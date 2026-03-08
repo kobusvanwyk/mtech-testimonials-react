@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import Topbar from './components/Topbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
 import Submit from './pages/Submit'
@@ -21,6 +22,7 @@ import NotFound from './pages/NotFound'
 function PublicLayout({ children }) {
     return (
         <>
+            <Topbar />
             <header className="site-header">
                 <Navbar />
             </header>

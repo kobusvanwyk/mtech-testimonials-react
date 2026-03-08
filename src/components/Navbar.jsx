@@ -203,12 +203,6 @@ export default function Navbar() {
 
     return (
         <>
-            {/* Top bar */}
-            <div className="navbar-topbar">
-                <span>Do you have a Mannatech testimonial to share?</span>
-                <Link to="/submit" className="navbar-topbar-btn">Submit Your Testimonial</Link>
-            </div>
-
             {/* Main navbar */}
             <nav className="navbar">
                 <Link to="/" className="navbar-brand">
