@@ -13,7 +13,9 @@ export default function TestimonialCard({ testimonial: t }) {
                     {t.anonymous ? 'Anonymous' : t.person_name}
                 </p>
                 <p className="card-excerpt">
-                    {t.story_text?.substring(0, 150)}...
+                    {(t.story_text?.length ?? 0) > 150
+                        ? t.story_text.substring(0, 150) + '…'
+                        : t.story_text}
                 </p>
                 <div className="card-tags">
                     {t.conditions?.map(c => (
