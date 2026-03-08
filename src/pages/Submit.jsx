@@ -322,7 +322,7 @@ export default function Submit() {
                 {step === 2 && (
                     <div className="step">
                         <h2>What health challenge does this testimonial relate to?</h2>
-                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Search for the condition below, or type it in yourself if you don't see it listed. You can add more than one.</span></p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Search for your health condition below and select it from the list. If it's not listed, type it in and press Enter (or tap "Add" on mobile) to add it. You can add more than one.</span></p>
                         <label className="form-label">Health conditions</label>
                         <div className="tag-input-area">
                             {form.conditions.map(c => (
