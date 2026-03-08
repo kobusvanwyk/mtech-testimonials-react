@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProducts, useConditions } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
-import { ArrowLeft, ArrowRight, X, Check, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, X, Check, Sparkles, Info } from 'lucide-react'
 
 export default function Submit() {
     const PRODUCTS = useProducts()
@@ -222,7 +222,7 @@ export default function Submit() {
                 {step === 1 && (
                     <div className="step">
                         <h2>Whose testimonial are you sharing?</h2>
-                        <p className="step-desc">You can submit your own experience, or on behalf of someone else — a family member, friend, or client. Give it a title that captures what happened.</p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>You can submit your own experience, or on behalf of someone else — a family member, friend, or client. Give it a title that captures what happened.</span></p>
 
                         <label className="form-label">Testimonial title</label>
                         <input
@@ -271,7 +271,7 @@ export default function Submit() {
                 {step === 2 && (
                     <div className="step">
                         <h2>What health challenge does this testimonial relate to?</h2>
-                        <p className="step-desc">Search for the condition below, or type it in yourself if you don't see it listed. You can add more than one.</p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Search for the condition below, or type it in yourself if you don't see it listed. You can add more than one.</span></p>
                         <label className="form-label">Health conditions</label>
                         <div className="tag-input-area">
                             {form.conditions.map(c => (
@@ -333,7 +333,7 @@ export default function Submit() {
                 {step === 3 && (
                     <div className="step">
                         <h2>Which Mannatech products made a difference?</h2>
-                        <p className="step-desc">Select everything that played a role — you can choose more than one.</p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Select everything that played a role — you can choose more than one.</span></p>
                         <div className="products-grid">
                             {PRODUCTS.map(p => (
                                 <label
@@ -366,7 +366,7 @@ export default function Submit() {
                 {step === 4 && (
                     <div className="step">
                         <h2>Tell us what happened</h2>
-                        <p className="step-desc">Write it the way you'd tell a friend. What was the health challenge? What changed after using the product? There's no right or wrong way — just be honest.</p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Write it the way you'd tell a friend. What was the health challenge? What changed after using the product? There's no right or wrong way — just be honest.</span></p>
                         <label className="form-label">Your testimonial</label>
                         <textarea
                             className="form-textarea"
@@ -393,7 +393,7 @@ export default function Submit() {
                 {step === 5 && (
                     <div className="step">
                         <h2>Would you like to add photos?</h2>
-                        <p className="step-desc">A before/after photo or a picture of the person really brings the testimonial to life. This step is completely optional — just tap Next if you'd rather skip it.</p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>A before/after photo or a picture of the person really brings the testimonial to life. This step is completely optional — just tap Next if you'd rather skip it.</span></p>
 
                         {/* Gallery dropzone */}
                         <label className="form-label">Gallery photos</label>
@@ -446,7 +446,7 @@ export default function Submit() {
                 {step === 6 && (
                     <div className="step">
                         <h2>Almost done — just one last thing</h2>
-                        <p className="step-desc">Please read and tick each box below before we submit the testimonial.</p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Please read and tick each box below before we submit the testimonial.</span></p>
 
                         <div className="terms-list">
                             <label className={`terms-item ${terms.tc ? 'checked' : ''}`}>
@@ -497,7 +497,7 @@ export default function Submit() {
                 {step === 7 && (
                     <div className="step">
                         <h2>Does everything look right?</h2>
-                        <p className="step-desc">Take a quick look before we send it. You can go back and change anything.</p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Take a quick look before we send it. You can go back and change anything.</span></p>
                         <div className="review-card">
                             <h3>{form.title}</h3>
                             <p><strong>By:</strong> {form.anonymous ? 'Anonymous' : form.person_name}</p>
