@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useParams, useNavigate, Link, useBlocker } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useProducts, useConditions } from '../../lib/ProductsContext'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
@@ -25,12 +25,37 @@ export default function EditTestimonial() {
     const [conditionInput, setConditionInput] = useState('')
     const [newGalleryImages, setNewGalleryImages] = useState([])
     const [form, setForm] = useState(null)
+    const originalForm = useRef(null)
+
+    const isDirty = useCallback(() => {
+        if (!form || !originalForm.current) return false
+        if (newGalleryImages.length > 0) return true
+        return JSON.stringify(form) !== JSON.stringify(originalForm.current)
+    }, [form, newGalleryImages])
+
+    // Block React Router navigation when there are unsaved changes
+    const blocker = useBlocker(isDirty)
+
+    // Block browser tab close / refresh
+    useEffect(() => {
+        function handleBeforeUnload(e) {
+            if (isDirty()) {
+                e.preventDefault()
+                e.returnValue = ''
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [isDirty])
 
     useEffect(() => { fetchTestimonial() }, [id])
 
     async function fetchTestimonial() {
         const { data } = await supabase.from('testimonials').select('*').eq('id', id).single()
-        if (data) setForm(data)
+        if (data) {
+            setForm(data)
+            originalForm.current = data
+        }
         setLoading(false)
     }
 
@@ -100,6 +125,7 @@ export default function EditTestimonial() {
 
             setSaved(true)
             setNewGalleryImages([])
+            originalForm.current = { ...updates, id, created_at: form.created_at }
             setTimeout(() => setSaved(false), 3000)
             fetchTestimonial()
         } catch (err) {
@@ -240,7 +266,28 @@ export default function EditTestimonial() {
 
             <div className="edit-footer">
                 <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>
+                {isDirty() && !saving && (
+                    <span className="unsaved-indicator">You have unsaved changes</span>
+                )}
             </div>
+
+            {/* React Router navigation blocker */}
+            {blocker.state === 'blocked' && (
+                <div className="unsaved-modal-backdrop">
+                    <div className="unsaved-modal">
+                        <h3>Leave without saving?</h3>
+                        <p>You have unsaved changes. If you leave now they will be lost.</p>
+                        <div className="unsaved-modal-actions">
+                            <button className="btn-secondary" onClick={() => blocker.reset()}>
+                                Stay and keep editing
+                            </button>
+                            <button className="btn-danger" onClick={() => blocker.proceed()}>
+                                Leave without saving
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

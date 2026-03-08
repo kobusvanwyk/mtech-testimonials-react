@@ -1696,3 +1696,74 @@
     border: 1px solid #90cdf4;
     color: #2b6cb0;
 }
+
+// ── Unsaved changes indicator & modal ─────────────────────────────────────────
+.unsaved-indicator {
+    font-size: 0.82rem;
+    color: #b7791f;
+    background: #fffbeb;
+    border: 1px solid #f6e05e;
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    margin-left: 12px;
+}
+
+.unsaved-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.unsaved-modal {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+
+    h3 {
+        margin: 0 0 10px;
+        font-size: 1.1rem;
+        color: var(--text-main);
+    }
+
+    p {
+        margin: 0 0 24px;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+}
+
+.unsaved-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+
+    .btn-secondary {
+        padding: 9px 16px;
+        border: 1.5px solid var(--border-soft);
+        border-radius: var(--radius-md);
+        background: white;
+        color: var(--text-main);
+        font-size: 0.88rem;
+        cursor: pointer;
+        &:hover { background: var(--bg-subtle); }
+    }
+
+    .btn-danger {
+        padding: 9px 16px;
+        border: none;
+        border-radius: var(--radius-md);
+        background: #e53e3e;
+        color: white;
+        font-size: 0.88rem;
+        cursor: pointer;
+        &:hover { background: #c53030; }
+    }
+}
