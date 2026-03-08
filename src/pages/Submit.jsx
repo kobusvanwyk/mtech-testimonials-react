@@ -9,6 +9,8 @@ export default function Submit() {
     const PRODUCTS = useProducts()
     const ALL_CONDITIONS = useConditions()
     const [step, setStep] = useState(1)
+
+    useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, [step])
     const [conditionSuggestions, setConditionSuggestions] = useState([])
     const [suggestionIndex, setSuggestionIndex] = useState(-1)
     const [submitted, setSubmitted] = useState(false)
