@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { ArrowLeft, Share2, Check, Pencil } from 'lucide-react'
 import { PDFDownloadButton } from '../components/PDFDownloadButton'
+import TestimonialCard from '../components/TestimonialCard'
 import { Gallery, Item } from 'react-photoswipe-gallery'
 import 'photoswipe/dist/photoswipe.css'
 
@@ -13,6 +14,7 @@ export default function Single({ shareMode = false }) {
     const [copied, setCopied] = useState(false)
     const [isAdmin, setIsAdmin] = useState(false)
     const [imageDimensions, setImageDimensions] = useState({})
+    const [related, setRelated] = useState([])
 
     useEffect(() => {
         async function fetchTestimonial() {
@@ -25,6 +27,7 @@ export default function Single({ shareMode = false }) {
                 : query.eq('slug', slug).single())
             setTestimonial(data)
             setLoading(false)
+            if (data) fetchRelated(data)
             // Pre-load image dimensions for PhotoSwipe
             if (data?.gallery_urls?.length) {
                 const dims = {}
@@ -36,6 +39,28 @@ export default function Single({ shareMode = false }) {
                 })))
                 setImageDimensions(dims)
             }
+        }
+        async function fetchRelated(current) {
+            const { data } = await supabase
+                .from('testimonials')
+                .select('id, slug, title, person_name, anonymous, story_text, conditions, products')
+                .eq('status', 'approved')
+                .neq('id', current.id)
+                .limit(50)
+            if (!data) return
+            const conditions = current.conditions || []
+            const products = current.products || []
+            // Score each by overlap — conditions weighted higher
+            const scored = data.map(t => {
+                const conditionMatches = (t.conditions || []).filter(c => conditions.includes(c)).length
+                const productMatches = (t.products || []).filter(p => products.includes(p)).length
+                return { ...t, score: conditionMatches * 2 + productMatches }
+            })
+            const results = scored
+                .filter(t => t.score > 0)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 3)
+            setRelated(results)
         }
         async function checkSession() {
             const { data: { session } } = await supabase.auth.getSession()
@@ -138,6 +163,17 @@ export default function Single({ shareMode = false }) {
                     )}
                 </div>
             </article>
+
+            {related.length > 0 && !shareMode && (
+                <div className="related-section">
+                    <h2 className="related-title">More testimonials like this</h2>
+                    <div className="related-grid">
+                        {related.map(r => (
+                            <TestimonialCard key={r.id} testimonial={r} />
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

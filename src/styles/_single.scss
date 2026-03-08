@@ -228,3 +228,24 @@
         cursor: not-allowed;
     }
 }
+
+// ── Related testimonials ───────────────────────────────────────────────────────
+.related-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+    border-top: 1px solid var(--border-light);
+}
+
+.related-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 24px;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
