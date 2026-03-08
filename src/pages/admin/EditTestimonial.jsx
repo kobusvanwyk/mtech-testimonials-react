@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate, Link, useBlocker } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useProducts, useConditions } from '../../lib/ProductsContext'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
@@ -25,6 +25,7 @@ export default function EditTestimonial() {
     const [conditionInput, setConditionInput] = useState('')
     const [newGalleryImages, setNewGalleryImages] = useState([])
     const [form, setForm] = useState(null)
+    const [pendingNav, setPendingNav] = useState(null)
     const originalForm = useRef(null)
 
     const isDirty = useCallback(() => {
@@ -33,8 +34,14 @@ export default function EditTestimonial() {
         return JSON.stringify(form) !== JSON.stringify(originalForm.current)
     }, [form, newGalleryImages])
 
-    // Block React Router navigation when there are unsaved changes
-    const blocker = useBlocker(isDirty)
+    // Safe navigate — shows confirmation if dirty
+    function safeNavigate(to) {
+        if (isDirty()) {
+            setPendingNav(to)
+        } else {
+            navigate(to)
+        }
+    }
 
     // Block browser tab close / refresh
     useEffect(() => {
@@ -144,7 +151,7 @@ export default function EditTestimonial() {
     return (
         <div className="admin-page-content">
             <div className="edit-header">
-                <Link to="/admin/all" className="back-link"><ArrowLeft size={15} /> Back</Link>
+                <button className="back-link btn-link" onClick={() => safeNavigate('/admin/all')}><ArrowLeft size={15} /> Back</button>
                 <h2>Edit Testimonial</h2>
                 <div className="edit-header-actions">
                     <Link to={`/testimonial/${form.slug || id}`} target="_blank" className="btn-preview">
@@ -271,17 +278,17 @@ export default function EditTestimonial() {
                 )}
             </div>
 
-            {/* React Router navigation blocker */}
-            {blocker.state === 'blocked' && (
+            {/* Navigation confirmation modal */}
+            {pendingNav && (
                 <div className="unsaved-modal-backdrop">
                     <div className="unsaved-modal">
                         <h3>Leave without saving?</h3>
                         <p>You have unsaved changes. If you leave now they will be lost.</p>
                         <div className="unsaved-modal-actions">
-                            <button className="btn-secondary" onClick={() => blocker.reset()}>
+                            <button className="btn-secondary" onClick={() => setPendingNav(null)}>
                                 Stay and keep editing
                             </button>
-                            <button className="btn-danger" onClick={() => blocker.proceed()}>
+                            <button className="btn-danger" onClick={() => { setPendingNav(null); navigate(pendingNav) }}>
                                 Leave without saving
                             </button>
                         </div>

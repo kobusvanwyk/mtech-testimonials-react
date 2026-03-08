@@ -22,6 +22,19 @@
     margin-bottom: 24px;
 }
 
+// Allows a <button> to visually behave like a link
+.btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .btn-edit-admin {
     display: inline-flex;
     align-items: center;
