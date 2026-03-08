@@ -148,7 +148,7 @@ export default function Submit() {
                 )
             }
 
-            setUploadProgress('Saving your story...')
+            setUploadProgress('Saving your testimonial...')
             const slug = await generateUniqueSlug(form.title)
             const { error } = await supabase.from('testimonials').insert([{
                 title: form.title,
@@ -177,8 +177,8 @@ export default function Submit() {
         return (
             <div className="submit-success">
                 <div className="success-icon"><Sparkles size={48} /></div>
-                <h2>Thank you for sharing your story!</h2>
-                <p>Your testimonial has been submitted and will be reviewed before publishing.</p>
+                <h2>Thank you for submitting your testimonial!</h2>
+                <p>Your testimonial has been received and will be reviewed before publishing.</p>
             </div>
         )
     }
@@ -221,14 +221,14 @@ export default function Submit() {
                 {/* STEP 1 */}
                 {step === 1 && (
                     <div className="step">
-                        <h2>Share a success story</h2>
-                        <p className="step-desc">Give the story a short descriptive title that highlights the main benefit or outcome.</p>
+                        <h2>Whose testimonial are you sharing?</h2>
+                        <p className="step-desc">You can submit your own experience, or on behalf of someone else — a family member, friend, or client. Give it a title that captures what happened.</p>
 
-                        <label className="form-label">Story title</label>
+                        <label className="form-label">Testimonial title</label>
                         <input
                             className="form-input"
                             type="text"
-                            placeholder="e.g. Ambrotose helped my Arthritis"
+                            placeholder="e.g. How Ambrotose helped my arthritis"
                             value={form.title}
                             onChange={e => updateForm('title', e.target.value)}
                             maxLength={120}
@@ -239,8 +239,8 @@ export default function Submit() {
                             onClick={() => updateForm('anonymous', !form.anonymous)}
                         >
                             <div className="toggle-text">
-                                <strong>Submit anonymously</strong>
-                                <span>The person's name will be hidden from public view</span>
+                                <strong>Keep the name private</strong>
+                                <span>The person's name won't appear publicly</span>
                             </div>
                             <div className={`toggle-switch ${form.anonymous ? 'on' : ''}`} />
                         </div>
@@ -270,8 +270,8 @@ export default function Submit() {
                 {/* STEP 2 */}
                 {step === 2 && (
                     <div className="step">
-                        <h2>Which health condition(s) does this relate to?</h2>
-                        <p className="step-desc">Type to search or add a condition. Press Enter or comma to add. You can add as many as you like.</p>
+                        <h2>What health challenge does this testimonial relate to?</h2>
+                        <p className="step-desc">Search for the condition below, or type it in yourself if you don't see it listed. You can add more than one.</p>
                         <label className="form-label">Health conditions</label>
                         <div className="tag-input-area">
                             {form.conditions.map(c => (
@@ -332,8 +332,8 @@ export default function Submit() {
                 {/* STEP 3 */}
                 {step === 3 && (
                     <div className="step">
-                        <h2>Which Mannatech products helped them?</h2>
-                        <p className="step-desc">Select all that apply. You can choose more than one.</p>
+                        <h2>Which Mannatech products made a difference?</h2>
+                        <p className="step-desc">Select everything that played a role — you can choose more than one.</p>
                         <div className="products-grid">
                             {PRODUCTS.map(p => (
                                 <label
@@ -365,12 +365,12 @@ export default function Submit() {
                 {/* STEP 4 */}
                 {step === 4 && (
                     <div className="step">
-                        <h2>Tell the story</h2>
-                        <p className="step-desc">Write in your own words. What happened? How did it help?</p>
-                        <label className="form-label">Your story</label>
+                        <h2>Tell us what happened</h2>
+                        <p className="step-desc">Write it the way you'd tell a friend. What was the health challenge? What changed after using the product? There's no right or wrong way — just be honest.</p>
+                        <label className="form-label">Your testimonial</label>
                         <textarea
                             className="form-textarea"
-                            placeholder="Start typing your story here..."
+                            placeholder="Start typing the testimonial here..."
                             value={form.story_text}
                             onChange={e => updateForm('story_text', e.target.value)}
                             rows={10}
@@ -392,12 +392,12 @@ export default function Submit() {
                 {/* STEP 5 */}
                 {step === 5 && (
                     <div className="step">
-                        <h2>Add photos</h2>
-                        <p className="step-desc">A photo makes your story more personal. You can skip this step.</p>
+                        <h2>Would you like to add photos?</h2>
+                        <p className="step-desc">A before/after photo or a picture of the person really brings the testimonial to life. This step is completely optional — just tap Next if you'd rather skip it.</p>
 
                         {/* Gallery dropzone */}
                         <label className="form-label">Gallery photos</label>
-                        <p className="upload-hint">Extra photos shown on the full story page.</p>
+                        <p className="upload-hint">Extra photos shown on the full testimonial page.</p>
                         {galleryImages.length < 8 && (
                             <label
                                 className="dropzone"
@@ -445,8 +445,8 @@ export default function Submit() {
                 {/* STEP 6 — TERMS */}
                 {step === 6 && (
                     <div className="step">
-                        <h2>Before you submit...</h2>
-                        <p className="step-desc">Please review and accept the following:</p>
+                        <h2>Almost done — just one last thing</h2>
+                        <p className="step-desc">Please read and tick each box below before we submit the testimonial.</p>
 
                         <div className="terms-list">
                             <label className={`terms-item ${terms.tc ? 'checked' : ''}`}>
@@ -496,14 +496,15 @@ export default function Submit() {
                 {/* STEP 7 — REVIEW */}
                 {step === 7 && (
                     <div className="step">
-                        <h2>Review your story</h2>
+                        <h2>Does everything look right?</h2>
+                        <p className="step-desc">Take a quick look before we send it. You can go back and change anything.</p>
                         <div className="review-card">
                             <h3>{form.title}</h3>
                             <p><strong>By:</strong> {form.anonymous ? 'Anonymous' : form.person_name}</p>
                             <p><strong>Conditions:</strong> {form.conditions.join(', ')}</p>
                             <p><strong>Products:</strong> {form.products.join(', ')}</p>
                             {galleryImages.length > 0 && <p><strong>Gallery photos:</strong> {galleryImages.length} added</p>}
-                            <p><strong>Story:</strong></p>
+                            <p><strong>Testimonial:</strong></p>
                             <p className="review-story">{form.story_text}</p>
                         </div>
                         {uploadProgress && <p className="upload-progress">{uploadProgress}</p>}

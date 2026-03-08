@@ -54,7 +54,7 @@ export default function Single({ shareMode = false }) {
     }
 
     if (loading) return <div className="loading">Loading...</div>
-    if (!testimonial) return <div className="not-found">Story not found.</div>
+    if (!testimonial) return <div className="not-found">Testimonial not found.</div>
 
     const t = testimonial
 
@@ -62,7 +62,7 @@ export default function Single({ shareMode = false }) {
         <div className={`single-page ${shareMode ? 'share-mode' : ''}`}>
             {!shareMode && (
                 <div className="single-top-bar">
-                    <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all stories</Link>
+                    <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all testimonials</Link>
                     <div className="single-top-bar-actions">
                         <PDFDownloadButton testimonial={t} />
                         {isAdmin && (
@@ -119,12 +119,12 @@ export default function Single({ shareMode = false }) {
                     <button className={`btn-share ${copied ? 'copied' : ''}`} onClick={handleShare}>
                         {copied
                             ? <><Check size={15} /> Link copied!</>
-                            : <><Share2 size={15} /> Share this story</>
+                            : <><Share2 size={15} /> Share this testimonial</>
                         }
                     </button>
                     {copied && (
                         <p className="share-hint">
-                            Share this link — it opens the story without the site header and footer.
+                            Share this link — it opens the testimonial without the site header and footer.
                         </p>
                     )}
                 </div>

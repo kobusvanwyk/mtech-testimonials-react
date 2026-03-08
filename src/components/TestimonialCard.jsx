@@ -24,7 +24,7 @@ export default function TestimonialCard({ testimonial: t }) {
                     ))}
                 </div>
                 <Link to={`/testimonial/${t.slug || t.id}`} className="card-read-more">
-                    Read full story <ArrowRight size={14} />
+                    Read full testimonial <ArrowRight size={14} />
                 </Link>
             </div>
         </div>

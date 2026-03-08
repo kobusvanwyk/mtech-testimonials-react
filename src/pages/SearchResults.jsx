@@ -86,9 +86,9 @@ export default function SearchResults() {
 
                     {results.length === 0 ? (
                         <div className="no-results">
-                            <p>No stories found matching "<strong>{query}</strong>".</p>
+                            <p>No testimonials found matching "<strong>{query}</strong>".</p>
                             <Link to="/" className="btn-primary">
-                                <ArrowLeft size={15} /> Browse all stories
+                                <ArrowLeft size={15} /> Browse all testimonials
                             </Link>
                         </div>
                     ) : (

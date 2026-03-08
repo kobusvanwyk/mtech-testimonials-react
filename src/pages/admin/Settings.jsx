@@ -56,7 +56,7 @@ export default function Settings() {
                 <p className="settings-section-hint">
                     These values control how the site appears when links are shared on WhatsApp,
                     Facebook, and other platforms. Testimonial pages automatically use the
-                    testimonial title and a story excerpt — the image below is used everywhere.
+                    testimonial title and a testimonial excerpt — the image below is used everywhere.
                 </p>
                 <div className="settings-fields">
                     {FIELDS.map(f => (

@@ -38,7 +38,7 @@ function BottomSheet({ title, items, counts = {}, open, onClose, onSelect }) {
                 <div className="bs-list">
                     {/* View All entry */}
                     <button className="bs-item bs-item-all" onClick={() => { onSelect(null); onClose() }}>
-                        <span>All stories</span>
+                        <span>All testimonials</span>
                     </button>
                     {items.map(item => (
                         <button
@@ -88,7 +88,7 @@ function DesktopDropdown({ label, items, counts = {}, onSelect }) {
                             className="nav-dropdown-item nav-dropdown-item-all"
                             onClick={() => { onSelect(null); setOpen(false) }}
                         >
-                            <span>All stories</span>
+                            <span>All testimonials</span>
                         </button>
                         <div className="nav-dropdown-divider" />
                         {items.map(item => (
@@ -205,8 +205,8 @@ export default function Navbar() {
         <>
             {/* Top bar */}
             <div className="navbar-topbar">
-                <span>Have a Mannatech success story?</span>
-                <Link to="/submit" className="navbar-topbar-btn">Share Your Story</Link>
+                <span>Do you have a Mannatech testimonial to share?</span>
+                <Link to="/submit" className="navbar-topbar-btn">Submit Your Testimonial</Link>
             </div>
 
             {/* Main navbar */}

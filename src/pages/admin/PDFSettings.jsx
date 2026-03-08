@@ -43,7 +43,7 @@ const PDF_FIELDS = [
     {
         key: 'pdf_font_threshold',
         label: 'Compact Font Threshold (characters)',
-        hint: 'Testimonials longer than this character count will use a smaller font to save space. Default is 1200. Increase to keep normal size for longer stories, decrease to compact sooner.',
+        hint: 'Testimonials longer than this character count will use a smaller font to save space. Default is 1200. Increase to keep normal size for longer testimonials, decrease to compact sooner.',
         type: 'number',
     },
 ]

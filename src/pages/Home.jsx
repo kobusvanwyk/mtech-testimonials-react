@@ -46,7 +46,7 @@ export default function Home() {
 
 
 
-    if (loading) return <div className="loading">Loading stories...</div>
+    if (loading) return <div className="loading">Loading testimonials...</div>
 
     return (
         <div className="home-layout">
@@ -62,7 +62,7 @@ export default function Home() {
                     {filtered.map(t => <TestimonialCard key={t.id} testimonial={t} />)}
                 </div>
                 {filtered.length === 0 && (
-                    <p className="no-results">No stories found for "{activeFilter}".</p>
+                    <p className="no-results">No testimonials found for "{activeFilter}".</p>
                 )}
             </div>
             <CategorySidebar

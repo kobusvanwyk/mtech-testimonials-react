@@ -149,7 +149,7 @@ export default function EditTestimonial() {
                     </div>
 
                     <div className="edit-section">
-                        <label className="edit-label">Story</label>
+                        <label className="edit-label">Testimonial</label>
                         <textarea className="edit-textarea" value={form.story_text || ''} onChange={e => update('story_text', e.target.value)} rows={12} />
                     </div>
 
