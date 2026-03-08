@@ -39,8 +39,8 @@
 }
 
 .btn-load-more {
-    background: white;
-    color: var(--color-primary);
+    background: var(--color-primary);
+    color: white;
     border: 2px solid var(--color-primary);
     border-radius: 6px;
     padding: 0.65rem 2rem;
@@ -50,8 +50,8 @@
     transition: background 0.2s, color 0.2s;
 
     &:hover:not(:disabled) {
-        background: var(--color-primary);
-        color: white;
+        background: var(--color-primary-dark, #029a8a);
+        border-color: var(--color-primary-dark, #029a8a);
     }
 
     &:disabled {
