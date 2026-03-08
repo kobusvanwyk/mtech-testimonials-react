@@ -9,7 +9,6 @@ import Privacy from './pages/Privacy'
 import SearchResults from './pages/SearchResults'
 import AdminLayout from './pages/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
-import Pending from './pages/admin/Pending'
 import AllTestimonials from './pages/admin/AllTestimonials'
 import EditTestimonial from './pages/admin/EditTestimonial'
 import Categories from './pages/admin/Categories'
@@ -53,7 +52,6 @@ function App() {
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="pending" element={<Pending />} />
                     <Route path="all" element={<AllTestimonials />} />
                     <Route path="edit/:id" element={<EditTestimonial />} />
                     <Route path="categories" element={<Categories />} />

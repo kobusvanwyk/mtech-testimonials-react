@@ -494,6 +494,9 @@
     &.delete    { background: var(--danger-light); color: var(--danger-dark); }
     &.feature,
     &.unfeature { background: var(--warning-light); color: var(--warning-darker); }
+    &.flag         { background: var(--surface); color: var(--text-muted, #aaa); padding: 5px 7px;
+                     &:hover { background: #fff8f0; color: #b7640a; } }
+    &.flag-active  { background: #fff0dc; color: #b7640a; }
 }
 
 .table-empty { text-align: center; padding: 40px; color: var(--muted); }

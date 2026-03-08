@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import TestimonialTable from '../../components/TestimonialTable'
 import { List, Download } from 'lucide-react'
 
@@ -30,6 +31,10 @@ export default function AllTestimonials() {
 
     async function handleStatusChange(id, status) {
         await supabase.from('testimonials').update({ status }).eq('id', id)
+        if (status === 'approved') {
+            const t = testimonials.find(t => t.id === id)
+            if (t) await syncConditionsOnApproval(t.conditions || [])
+        }
         setTestimonials(prev => prev.map(t => t.id === id ? { ...t, status } : t))
     }
 

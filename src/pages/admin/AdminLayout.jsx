@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
-    LayoutDashboard, Clock, List, Tag,
+    LayoutDashboard, List, Tag,
     Images, Globe, LogOut, Lock, Upload, Settings, FileText
 } from 'lucide-react'
 
@@ -86,7 +86,6 @@ export default function AdminLayout() {
 
     const nav = [
         { to: '/admin',            label: 'Dashboard',       icon: <LayoutDashboard size={16} /> },
-        { to: '/admin/pending',    label: 'Pending',         icon: <Clock size={16} /> },
         { to: '/admin/all',        label: 'All Testimonials',icon: <List size={16} /> },
         null,
         { to: '/admin/categories', label: 'Categories',      icon: <Tag size={16} /> },
