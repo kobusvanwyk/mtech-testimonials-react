@@ -82,15 +82,30 @@
     }
 
     .single-gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 12px;
         margin-top: 24px;
+
+        // PhotoSwipe wraps items — target the gallery container it creates
+        .pswp-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
 
         .gallery-image {
             width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
             border-radius: var(--radius-md);
-            cursor: pointer;
+            display: block;
+        }
+
+        .gallery-image-clickable {
+            cursor: zoom-in;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            &:hover {
+                transform: scale(1.02);
+                box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            }
         }
     }
 }

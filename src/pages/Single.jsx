@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { ArrowLeft, Share2, Check, Pencil } from 'lucide-react'
 import { PDFDownloadButton } from '../components/PDFDownloadButton'
+import { Gallery, Item } from 'react-photoswipe-gallery'
+import 'photoswipe/dist/photoswipe.css'
 
 export default function Single({ shareMode = false }) {
     const { slug } = useParams()
@@ -10,6 +12,7 @@ export default function Single({ shareMode = false }) {
     const [loading, setLoading] = useState(true)
     const [copied, setCopied] = useState(false)
     const [isAdmin, setIsAdmin] = useState(false)
+    const [imageDimensions, setImageDimensions] = useState({})
 
     useEffect(() => {
         async function fetchTestimonial() {
@@ -22,6 +25,17 @@ export default function Single({ shareMode = false }) {
                 : query.eq('slug', slug).single())
             setTestimonial(data)
             setLoading(false)
+            // Pre-load image dimensions for PhotoSwipe
+            if (data?.gallery_urls?.length) {
+                const dims = {}
+                await Promise.all(data.gallery_urls.map(url => new Promise(resolve => {
+                    const img = new Image()
+                    img.onload = () => { dims[url] = { w: img.naturalWidth, h: img.naturalHeight }; resolve() }
+                    img.onerror = () => { dims[url] = { w: 1200, h: 800 }; resolve() }
+                    img.src = url
+                })))
+                setImageDimensions(dims)
+            }
         }
         async function checkSession() {
             const { data: { session } } = await supabase.auth.getSession()
@@ -80,9 +94,24 @@ export default function Single({ shareMode = false }) {
                 </div>
                 {t.gallery_urls?.length > 0 && (
                     <div className="single-gallery">
-                        {t.gallery_urls.map((url, i) => (
-                            <img key={i} src={url} alt={`Gallery ${i + 1}`} className="gallery-image" />
-                        ))}
+                        <Gallery withDownloadButton>
+                            {t.gallery_urls.map((url, i) => {
+                                const dim = imageDimensions[url] || { w: 1200, h: 800 }
+                                return (
+                                    <Item key={i} original={url} thumbnail={url} width={dim.w} height={dim.h} alt={`Photo ${i + 1}`}>
+                                        {({ ref, open }) => (
+                                            <img
+                                                ref={ref}
+                                                src={url}
+                                                onClick={open}
+                                                alt={`Photo ${i + 1}`}
+                                                className="gallery-image gallery-image-clickable"
+                                            />
+                                        )}
+                                    </Item>
+                                )
+                            })}
+                        </Gallery>
                     </div>
                 )}
 
