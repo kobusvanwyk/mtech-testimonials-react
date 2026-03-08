@@ -16,6 +16,7 @@ import ImageManager from './pages/admin/ImageManager'
 import ImportTestimonials from './pages/admin/ImportTestimonials'
 import Settings from './pages/admin/Settings'
 import PDFSettings from './pages/admin/PDFSettings'
+import NotFound from './pages/NotFound'
 
 function PublicLayout({ children }) {
     return (
@@ -60,6 +61,7 @@ function App() {
                     <Route path="settings" element={<Settings />} />
                     <Route path="pdf-settings" element={<PDFSettings />} />
                 </Route>
+                <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
             </Routes>
         </BrowserRouter>
     )
