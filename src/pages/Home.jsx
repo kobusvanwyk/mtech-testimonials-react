@@ -6,45 +6,62 @@ import TestimonialCard from '../components/TestimonialCard'
 import SearchBar from '../components/SearchBar'
 import CategorySidebar from '../components/CategorySidebar'
 
+const PAGE_SIZE = 12
+
 export default function Home() {
     const PRODUCTS   = useProducts()
     const CONDITIONS = useConditions()
     const [testimonials, setTestimonials] = useState([])
     const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [hasMore, setHasMore] = useState(false)
+    const [totalCount, setTotalCount] = useState(0)
     const [searchParams, setSearchParams] = useSearchParams()
 
-    // Active filter comes from URL ?filter=X so navbar dropdowns can link here
     const activeFilter = searchParams.get('filter') || null
 
-    useEffect(() => { fetchTestimonials() }, [])
+    // Reset and re-fetch when filter changes
+    useEffect(() => {
+        setTestimonials([])
+        setLoading(true)
+        fetchTestimonials(0, true)
+    }, [activeFilter])
 
-    async function fetchTestimonials() {
-        const { data, error } = await supabase
+    async function fetchTestimonials(from = 0, reset = false) {
+        const to = from + PAGE_SIZE - 1
+
+        let query = supabase
             .from('testimonials')
-            .select('*')
+            .select('*', { count: 'exact' })
             .eq('status', 'approved')
             .order('created_at', { ascending: false })
+            .range(from, to)
 
-        if (!error) setTestimonials(data)
-        setLoading(false)
+        if (activeFilter) {
+            query = query.or(
+                `conditions.cs.{"${activeFilter}"},products.cs.{"${activeFilter}"}`
+            )
+        }
+
+        const { data, error, count } = await query
+
+        if (!error && data) {
+            setTestimonials(prev => reset ? data : [...prev, ...data])
+            setTotalCount(count ?? 0)
+            setHasMore(from + PAGE_SIZE < (count ?? 0))
+        }
+        reset ? setLoading(false) : setLoadingMore(false)
+    }
+
+    async function handleLoadMore() {
+        setLoadingMore(true)
+        await fetchTestimonials(testimonials.length)
     }
 
     function setActiveFilter(filter) {
-        if (filter) {
-            setSearchParams({ filter })
-        } else {
-            setSearchParams({})
-        }
+        if (filter) setSearchParams({ filter })
+        else setSearchParams({})
     }
-
-    const filtered = activeFilter
-        ? testimonials.filter(t =>
-            t.conditions?.includes(activeFilter) ||
-            t.products?.includes(activeFilter)
-          )
-        : testimonials
-
-
 
     if (loading) return <div className="loading">Loading testimonials...</div>
 
@@ -54,15 +71,26 @@ export default function Home() {
                 <SearchBar />
                 <p className="results-count">
                     {activeFilter
-                        ? `${filtered.length} stor${filtered.length === 1 ? 'y' : 'ies'} for "${activeFilter}"`
-                        : `${filtered.length} stor${filtered.length === 1 ? 'y' : 'ies'}`
+                        ? `${totalCount} testimonial${totalCount === 1 ? '' : 's'} for "${activeFilter}"`
+                        : `${totalCount} testimonial${totalCount === 1 ? '' : 's'}`
                     }
                 </p>
                 <div className="testimonials-grid">
-                    {filtered.map(t => <TestimonialCard key={t.id} testimonial={t} />)}
+                    {testimonials.map(t => <TestimonialCard key={t.id} testimonial={t} />)}
                 </div>
-                {filtered.length === 0 && (
+                {testimonials.length === 0 && !loading && (
                     <p className="no-results">No testimonials found for "{activeFilter}".</p>
+                )}
+                {hasMore && (
+                    <div className="load-more-wrap">
+                        <button
+                            className="btn-load-more"
+                            onClick={handleLoadMore}
+                            disabled={loadingMore}
+                        >
+                            {loadingMore ? 'Loading...' : `Load more testimonials`}
+                        </button>
+                    </div>
                 )}
             </div>
             <CategorySidebar
