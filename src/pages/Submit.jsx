@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { Link } from 'react-router-dom'
 import { useProducts, useConditions } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
 import { ArrowLeft, ArrowRight, X, Check, Sparkles, Info } from 'lucide-react'
@@ -179,6 +179,18 @@ export default function Submit() {
                 <div className="success-icon"><Sparkles size={48} /></div>
                 <h2>Thank you for submitting your testimonial!</h2>
                 <p>Your testimonial has been received and will be reviewed before publishing.</p>
+                <div className="submit-success-actions">
+                    <Link to="/" className="btn-success-home">Browse all testimonials</Link>
+                    <button className="btn-success-another" onClick={() => {
+                        setSubmitted(false)
+                        setStep(1)
+                        setForm({ title: '', person_name: '', anonymous: false, conditions: [], products: [], story_text: '', conditionInput: '' })
+                        setGalleryImages([])
+                        setTerms({ tc: false, privacy: false, consent: false })
+                    }}>
+                        Submit another testimonial
+                    </button>
+                </div>
             </div>
         )
     }

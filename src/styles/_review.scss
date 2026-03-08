@@ -24,6 +24,40 @@
         font-size: 2rem;
         margin-bottom: 12px;
     }
+
+    p {
+        color: var(--text-muted);
+        margin-bottom: 32px;
+    }
+}
+
+.submit-success-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    .btn-success-home {
+        display: inline-block;
+        background: var(--brand-teal);
+        color: white;
+        padding: 12px 28px;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        &:hover { opacity: 0.9; }
+    }
+
+    .btn-success-another {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 0.88rem;
+        cursor: pointer;
+        text-decoration: underline;
+        &:hover { color: var(--text-main); }
+    }
 }
 
 .success-icon {
