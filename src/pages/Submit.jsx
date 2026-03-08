@@ -1,12 +1,15 @@
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useProducts } from '../lib/ProductsContext'
+import { useProducts, useConditions } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
 import { ArrowLeft, ArrowRight, X, Check, Sparkles } from 'lucide-react'
 
 export default function Submit() {
     const PRODUCTS = useProducts()
+    const ALL_CONDITIONS = useConditions()
     const [step, setStep] = useState(1)
+    const [conditionSuggestions, setConditionSuggestions] = useState([])
+    const [suggestionIndex, setSuggestionIndex] = useState(-1)
     const [submitted, setSubmitted] = useState(false)
     const [loading, setLoading] = useState(false)
     const [galleryImages, setGalleryImages] = useState([])
@@ -28,12 +31,49 @@ export default function Submit() {
         setForm(prev => ({ ...prev, [field]: value }))
     }
 
-    function addCondition() {
-        const val = form.conditionInput.trim()
-        if (val && !form.conditions.includes(val)) {
-            updateForm('conditions', [...form.conditions, val])
+    function addCondition(val) {
+        const trimmed = (val ?? form.conditionInput).trim()
+        if (trimmed && !form.conditions.includes(trimmed)) {
+            updateForm('conditions', [...form.conditions, trimmed])
         }
         updateForm('conditionInput', '')
+        setConditionSuggestions([])
+        setSuggestionIndex(-1)
+    }
+
+    function handleConditionInput(e) {
+        const val = e.target.value
+        updateForm('conditionInput', val)
+        setSuggestionIndex(-1)
+        if (val.trim().length < 1) {
+            setConditionSuggestions([])
+            return
+        }
+        const lower = val.toLowerCase()
+        const matches = ALL_CONDITIONS.filter(c =>
+            c.toLowerCase().includes(lower) && !form.conditions.includes(c)
+        ).slice(0, 6)
+        setConditionSuggestions(matches)
+    }
+
+    function handleConditionKeyDown(e) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setSuggestionIndex(i => Math.min(i + 1, conditionSuggestions.length - 1))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setSuggestionIndex(i => Math.max(i - 1, -1))
+        } else if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault()
+            if (suggestionIndex >= 0 && conditionSuggestions[suggestionIndex]) {
+                addCondition(conditionSuggestions[suggestionIndex])
+            } else {
+                addCondition()
+            }
+        } else if (e.key === 'Escape') {
+            setConditionSuggestions([])
+            setSuggestionIndex(-1)
+        }
     }
 
     function removeCondition(c) {
@@ -231,7 +271,7 @@ export default function Submit() {
                 {step === 2 && (
                     <div className="step">
                         <h2>Which health condition(s) does this relate to?</h2>
-                        <p className="step-desc">Type a condition and press Enter or comma to add it. Add as many as you like.</p>
+                        <p className="step-desc">Type to search or add a condition. Press Enter or comma to add. You can add as many as you like.</p>
                         <label className="form-label">Health conditions</label>
                         <div className="tag-input-area">
                             {form.conditions.map(c => (
@@ -239,19 +279,42 @@ export default function Submit() {
                                     {c} <button onClick={() => removeCondition(c)}><X size={10} /></button>
                                 </span>
                             ))}
-                            <input
-                                className="tag-input"
-                                type="text"
-                                placeholder="e.g. High blood pressure"
-                                value={form.conditionInput}
-                                onChange={e => updateForm('conditionInput', e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter' || e.key === ',') {
-                                        e.preventDefault()
-                                        addCondition()
-                                    }
-                                }}
-                            />
+                            <div className="condition-autocomplete-wrap">
+                                <input
+                                    className="tag-input"
+                                    type="text"
+                                    placeholder="e.g. High blood pressure"
+                                    value={form.conditionInput}
+                                    onChange={handleConditionInput}
+                                    onKeyDown={handleConditionKeyDown}
+                                    onBlur={() => setTimeout(() => {
+                                        setConditionSuggestions([])
+                                        setSuggestionIndex(-1)
+                                    }, 150)}
+                                    autoComplete="off"
+                                />
+                                {conditionSuggestions.length > 0 && (
+                                    <div className="condition-suggestions">
+                                        {conditionSuggestions.map((s, i) => (
+                                            <button
+                                                key={s}
+                                                className={`condition-suggestion-item ${i === suggestionIndex ? 'highlighted' : ''}`}
+                                                onMouseDown={e => { e.preventDefault(); addCondition(s) }}
+                                            >
+                                                {s}
+                                            </button>
+                                        ))}
+                                        {form.conditionInput.trim() && !ALL_CONDITIONS.map(c => c.toLowerCase()).includes(form.conditionInput.trim().toLowerCase()) && (
+                                            <button
+                                                className={`condition-suggestion-item condition-suggestion-new ${suggestionIndex === conditionSuggestions.length ? 'highlighted' : ''}`}
+                                                onMouseDown={e => { e.preventDefault(); addCondition() }}
+                                            >
+                                                Add "<strong>{form.conditionInput.trim()}</strong>"
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="step-nav">
                             <button className="btn-back" onClick={() => setStep(1)}><ArrowLeft size={15} /> Back</button>

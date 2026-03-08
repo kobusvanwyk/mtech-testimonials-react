@@ -235,6 +235,54 @@
     }
 }
 
+// === CONDITION AUTOCOMPLETE ===
+.condition-autocomplete-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+
+.condition-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    z-index: 100;
+    overflow: hidden;
+}
+
+.condition-suggestion-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: background 0.1s;
+
+    &:hover, &.highlighted {
+        background: var(--bg-subtle);
+        color: var(--brand-teal);
+    }
+
+    & + & {
+        border-top: 1px solid var(--border-soft);
+    }
+}
+
+.condition-suggestion-new {
+    color: var(--brand-teal);
+    font-style: italic;
+    border-top: 1px solid var(--border-soft) !important;
+}
+
 // === PRODUCTS GRID ===
 .products-grid {
     display: grid;
