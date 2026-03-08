@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import { useProducts, useConditions } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
 import { ArrowLeft, ArrowRight, X, Check, Sparkles, Info } from 'lucide-react'
