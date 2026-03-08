@@ -11,6 +11,13 @@ export default function TestimonialCard({ testimonial: t }) {
                 </h3>
                 <p className="card-author">
                     {t.anonymous ? 'Anonymous' : t.person_name}
+                    {t.created_at && (
+                        <span className="card-date">
+                            {new Date(t.created_at).toLocaleDateString('en-ZA', {
+                                year: 'numeric', month: 'short', day: 'numeric'
+                            })}
+                        </span>
+                    )}
                 </p>
                 <p className="card-excerpt">
                     {(t.story_text?.length ?? 0) > 150
