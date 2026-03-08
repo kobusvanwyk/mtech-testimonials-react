@@ -43,12 +43,13 @@ function SingleRoute() {
 }
 
 function AppRoutes() {
-    const { privateMode, loading } = useSiteSettings()
+    const { privateMode, loading, isLoggedIn } = useSiteSettings()
 
     // Blank screen while fetching private_mode — prevents flash of wrong content
     if (loading) return null
 
-    if (privateMode) {
+    // Logged-in admins always see the full site regardless of private mode
+    if (privateMode && !isLoggedIn) {
         return (
             <Routes>
                 {/* Accessible in private mode — logo only layout */}

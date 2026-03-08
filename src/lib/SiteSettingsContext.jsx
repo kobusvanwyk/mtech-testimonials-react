@@ -1,23 +1,30 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from './supabase'
 
-const SiteSettingsContext = createContext({ privateMode: false, loading: true })
+const SiteSettingsContext = createContext({ privateMode: false, loading: true, isLoggedIn: false })
 
 export function SiteSettingsProvider({ children }) {
     const [privateMode, setPrivateMode] = useState(false)
+    const [isLoggedIn, setIsLoggedIn]   = useState(false)
     const [loading, setLoading]         = useState(true)
 
     useEffect(() => {
-        async function fetchSettings() {
-            const { data } = await supabase
-                .from('site_settings')
-                .select('key, value')
-                .eq('key', 'private_mode')
-                .single()
-            if (data) setPrivateMode(data.value === 'true')
+        async function fetchAll() {
+            const [{ data: settingsData }, { data: { session } }] = await Promise.all([
+                supabase.from('site_settings').select('key, value').eq('key', 'private_mode').single(),
+                supabase.auth.getSession()
+            ])
+            if (settingsData) setPrivateMode(settingsData.value === 'true')
+            setIsLoggedIn(!!session)
             setLoading(false)
         }
-        fetchSettings()
+        fetchAll()
+
+        // Keep login state in sync if user logs in/out during session
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setIsLoggedIn(!!session)
+        })
+        return () => subscription.unsubscribe()
     }, [])
 
     async function setPrivateModeValue(val) {
@@ -28,7 +35,7 @@ export function SiteSettingsProvider({ children }) {
     }
 
     return (
-        <SiteSettingsContext.Provider value={{ privateMode, loading, setPrivateModeValue }}>
+        <SiteSettingsContext.Provider value={{ privateMode, loading, isLoggedIn, setPrivateModeValue }}>
             {children}
         </SiteSettingsContext.Provider>
     )
