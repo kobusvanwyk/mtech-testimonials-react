@@ -183,6 +183,10 @@ export default function EditTestimonial() {
                     <div className="edit-section">
                         <label className="edit-label">Testimonial</label>
                         <textarea className="edit-textarea" value={form.story_text || ''} onChange={e => update('story_text', e.target.value)} rows={12} />
+                        <div className="story-count">
+                            <span>{(form.story_text || '').trim().split(/\s+/).filter(Boolean).length} words</span>
+                            <span>{(form.story_text || '').length} characters</span>
+                        </div>
                     </div>
 
                     <div className="edit-section">
