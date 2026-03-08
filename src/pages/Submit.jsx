@@ -177,7 +177,7 @@ export default function Submit() {
     if (submitted) {
         return (
             <div className="submit-success">
-                <div className="success-icon"><Sparkles size={48} /></div>
+                <div className="success-icon"><Sparkles size={32} /></div>
                 <h2>Thank you for submitting your testimonial!</h2>
                 <p>Your testimonial has been received and will be reviewed before publishing.</p>
                 <div className="submit-success-actions">
