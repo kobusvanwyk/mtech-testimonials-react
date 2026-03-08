@@ -23,9 +23,7 @@ function PublicLayout({ children }) {
     return (
         <>
             <Topbar />
-            <header className="site-header">
                 <Navbar />
-            </header>
             <main className="main-content">{children}</main>
             <Footer />
         </>
