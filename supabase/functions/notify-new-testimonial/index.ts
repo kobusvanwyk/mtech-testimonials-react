@@ -2,7 +2,6 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const TO_EMAIL       = 'info@mtechtestimonials.co.za'
 const FROM_EMAIL     = 'notifications@mtechtestimonials.co.za'
 const SITE_URL       = 'https://mtechtestimonials.co.za'
-const LOGO_URL       = 'https://fevayahwllgdnctilptw.supabase.co/storage/v1/object/public/testimonial-images/misc/1772909924026-88rcdg9mmf6.png'
 
 Deno.serve(async (req: Request) => {
   try {
@@ -40,8 +39,6 @@ Deno.serve(async (req: Request) => {
         <!-- ── Header ── -->
         <tr>
           <td align="center" bgcolor="#03B09F" style="background-color:#03B09F;border-radius:12px 12px 0 0;padding:36px 40px 28px 40px;">
-            <img src="${LOGO_URL}" alt="MTech Testimonials" width="220" height="auto"
-                 style="display:block;margin:0 auto 20px auto;border:0;outline:none;max-width:220px;" />
             <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
               <tr>
                 <td align="center" bgcolor="#ffffff" style="background-color:rgba(255,255,255,0.15);border-radius:20px;padding:5px 18px;">
