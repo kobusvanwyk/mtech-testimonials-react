@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import Navbar from './components/Navbar'
 import Topbar from './components/Topbar'
 import Footer from './components/Footer'
@@ -101,9 +102,23 @@ function AppRoutes() {
     )
 }
 
+// Pushes a page_view event to GTM dataLayer on every route change
+function PageViewTracker() {
+    const location = useLocation()
+    useEffect(() => {
+        window.dataLayer = window.dataLayer || []
+        window.dataLayer.push({
+            event: 'page_view',
+            page_path: location.pathname + location.search,
+        })
+    }, [location])
+    return null
+}
+
 function App() {
     return (
         <BrowserRouter>
+            <PageViewTracker />
             <AppRoutes />
         </BrowserRouter>
     )
