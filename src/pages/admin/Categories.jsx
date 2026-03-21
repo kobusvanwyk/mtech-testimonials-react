@@ -64,7 +64,7 @@ function MergeGroup({ group, onMerge }) {
 }
 
 // ── Reusable section ──────────────────────────────────────────────────────────
-function CategorySection({ title, table, color, onDataChange }) {
+function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
     const [items, setItems]         = useState([])
     const [loading, setLoading]     = useState(true)
     const [editingId, setEditingId] = useState(null)
@@ -282,7 +282,7 @@ function CategorySection({ title, table, color, onDataChange }) {
         setSaving(false)
     }
 
-    // Detect duplicates: exact case-insensitive matches + fuzzy similar names
+    // Detect duplicates: exact case-insensitive matches + fuzzy similar names (conditions only)
     const duplicateGroups = (() => {
         const visited = new Set()
         const groups = []
@@ -293,7 +293,8 @@ function CategorySection({ title, table, color, onDataChange }) {
 
             for (let j = i + 1; j < items.length; j++) {
                 if (visited.has(items[j].id)) continue
-                if (similarity(items[i].name, items[j].name) >= SIMILARITY_THRESHOLD) {
+                const sim = similarity(items[i].name, items[j].name)
+                if (fuzzy ? sim >= SIMILARITY_THRESHOLD : sim === 1) {
                     group.push(items[j])
                     visited.add(items[j].id)
                 }
@@ -475,7 +476,7 @@ export default function Categories() {
             </p>
             <div className="categories-grid">
                 <CategorySection title="Health Conditions" table="conditions" color="condition" />
-                <CategorySection title="Products"          table="products"   color="product"   />
+                <CategorySection title="Products"          table="products"   color="product" fuzzy={false} />
             </div>
         </div>
     )
