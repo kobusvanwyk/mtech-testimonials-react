@@ -134,6 +134,8 @@ function CategorySection({ title, table, color, onDataChange }) {
         fetchItems()
         setSaving(false)
     }
+
+    async function handleRename(item) {
         const name = editValue.trim()
         if (!name || name === item.name) { setEditingId(null); return }
 
