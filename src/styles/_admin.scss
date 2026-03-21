@@ -277,6 +277,26 @@
 
 .error-msg { color: var(--danger); font-size: var(--text-sm); margin-bottom: 12px; }
 
+.password-field {
+    position: relative;
+    input { padding-right: 44px; }
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted-dark);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    &:hover { color: var(--primary); }
+}
+
 .btn-login {
     width: 100%;
     background: var(--primary);

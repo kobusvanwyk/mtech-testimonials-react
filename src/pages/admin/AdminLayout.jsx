@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
     LayoutDashboard, List, Tag,
-    Images, Globe, LogOut, Lock, Upload, Settings, FileText
+    Images, Globe, LogOut, Lock, Upload, Settings, FileText, Eye, EyeOff
 } from 'lucide-react'
 
 export default function AdminLayout() {
@@ -12,6 +12,7 @@ export default function AdminLayout() {
     const [password, setPassword] = useState('')
     const [error, setError]     = useState('')
     const [loading, setLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -67,14 +68,24 @@ export default function AdminLayout() {
                         autoFocus
                         required
                     />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        className={error ? 'input-error' : ''}
-                        required
-                    />
+                    <div className="password-field">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            className={error ? 'input-error' : ''}
+                            required
+                        />
+                        <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowPassword(v => !v)}
+                            tabIndex={-1}
+                        >
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                    </div>
                     {error && <p className="error-msg">{error}</p>}
                     <button type="submit" className="btn-login" disabled={loading}>
                         {loading ? 'Signing in…' : 'Sign In'}
