@@ -1,20 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, MinusCircle, Trash2, Eye, Pencil, X, Flag, ChevronDown, ChevronUp, Save } from 'lucide-react'
 import { PDFDownloadButton } from './PDFDownloadButton'
-import { useProducts, useConditions } from '../lib/ProductsContext'
+import { useProducts } from '../lib/ProductsContext'
+import { supabase } from '../lib/supabase'
 
 function QuickViewPanel({ t, onStatusChange, onQuickSave, onClose }) {
     const ALL_PRODUCTS   = useProducts()
-    const ALL_CONDITIONS = useConditions()
+    const [ALL_CONDITIONS, setAllConditions] = useState([])
 
-    const [title,       setTitle]       = useState(t.title || '')
-    const [personName,  setPersonName]  = useState(t.person_name || '')
-    const [anonymous,   setAnonymous]   = useState(t.anonymous || false)
-    const [condText,    setCondText]    = useState((t.conditions || []).join(', '))
-    const [products,    setProducts]    = useState(t.products || [])
-    const [saving,      setSaving]      = useState(false)
-    const [saved,       setSaved]       = useState(false)
+    useEffect(() => {
+        supabase.from('conditions').select('name').order('name')
+            .then(({ data }) => setAllConditions((data || []).map(d => d.name)))
+    }, [])
+
+    const [title,      setTitle]      = useState(t.title || '')
+    const [personName, setPersonName] = useState(t.person_name || '')
+    const [anonymous,  setAnonymous]  = useState(t.anonymous || false)
+    const [conditions, setConditions] = useState(t.conditions || [])
+    const [products,   setProducts]   = useState(t.products || [])
+    const [saving,     setSaving]     = useState(false)
+    const [saved,      setSaved]      = useState(false)
+
+    function toggleCondition(c) {
+        setConditions(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
+    }
 
     function toggleProduct(p) {
         setProducts(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
@@ -22,7 +32,6 @@ function QuickViewPanel({ t, onStatusChange, onQuickSave, onClose }) {
 
     async function handleSave() {
         setSaving(true)
-        const conditions = condText.split(',').map(s => s.trim()).filter(Boolean)
         await onQuickSave(t.id, { title, person_name: personName, anonymous, conditions, products })
         setSaving(false)
         setSaved(true)
@@ -63,8 +72,17 @@ function QuickViewPanel({ t, onStatusChange, onQuickSave, onClose }) {
                             </div>
                         </div>
                         <div className="qv-field">
-                            <label className="qv-label">Conditions <span className="qv-hint">(comma-separated)</span></label>
-                            <input className="qv-input" value={condText} onChange={e => setCondText(e.target.value)} placeholder="e.g. Diabetes, High Blood Pressure" />
+                            <label className="qv-label">Conditions</label>
+                            <div className="qv-products">
+                                {ALL_CONDITIONS.map(c => (
+                                    <button
+                                        key={c}
+                                        type="button"
+                                        className={`qv-product-btn ${conditions.includes(c) ? 'on' : ''}`}
+                                        onClick={() => toggleCondition(c)}
+                                    >{c}</button>
+                                ))}
+                            </div>
                         </div>
                         <div className="qv-field qv-field-full">
                             <label className="qv-label">Products</label>
