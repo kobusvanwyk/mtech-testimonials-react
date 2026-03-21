@@ -20,7 +20,7 @@
       --text:       #1a2e2b;
       --muted:      #5a7570;
       --border:     #d4ece9;
-      --font:       "acumin-pro", "Helvetica Neue", Arial, sans-serif;
+      --font:       "avenir-lt-pro", "Helvetica Neue", Arial, sans-serif;
     }
 
     body {
@@ -38,14 +38,6 @@
       padding: 36px 48px 52px;
       position: relative;
       overflow: hidden;
-    }
-    .header::after {
-      content: '';
-      position: absolute;
-      bottom: -1px; left: -5%; right: -5%;
-      height: 36px;
-      background: var(--offwhite); /* matches first section */
-      border-radius: 60% 60% 0 0;
     }
     .header-inner {
       max-width: 960px;
@@ -328,10 +320,9 @@
        MOBILE
     ───────────────────────────────────────── */
     @media (max-width: 640px) {
-      .header { padding: 30px 20px 48px; }
+      .header { padding: 30px 20px 52px; }
       .header h1 { font-size: 22px; }
       .header-logo { display: none; }
-      .header::after { height: 30px; background: var(--offwhite); }
 
       .section { padding: 36px 18px; }
 
