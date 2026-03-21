@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Submit Your Testimonial — Mannatech</title>
+  <link rel="stylesheet" href="https://use.typekit.net/jyw6jwy.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal:      #03B09F;
+      --teal-dark: #028c7c;
+      --lime:      #ACC42A;
+      --lime-dark: #8fa822;
+      --white:     #ffffff;
+      --offwhite:  #f4faf9;
+      --text:      #1a2e2b;
+      --muted:     #5a7570;
+      --border:    #d4ece9;
+    }
+
+    body {
+      font-family: "acumin-pro", sans-serif;
+      background: var(--offwhite);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--teal);
+      padding: 36px 24px 32px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      bottom: -30px; left: 50%;
+      transform: translateX(-50%);
+      width: 120%; height: 60px;
+      background: var(--offwhite);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: white;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .header p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.5;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+
+    /* ── Content ── */
+    .content {
+      padding: 48px 20px 40px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--lime-dark);
+      margin-bottom: 20px;
+    }
+
+    /* ── Step cards ── */
+    .step {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      box-shadow: 0 2px 8px rgba(3,176,159,0.06);
+    }
+
+    .step-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: white;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-num.lime { background: var(--lime); }
+
+    .step-body { flex: 1; min-width: 0; }
+
+    .step-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .step-desc strong { color: var(--text); }
+
+    .step-tag {
+      display: inline-block;
+      background: var(--offwhite);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--teal-dark);
+      padding: 2px 8px;
+      margin-top: 6px;
+    }
+
+    /* ── Tip box ── */
+    .tip {
+      background: linear-gradient(135deg, #e8faf8 0%, #f4fce8 100%);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--lime);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin: 20px 0;
+    }
+    .tip-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--lime-dark);
+      margin-bottom: 6px;
+    }
+    .tip p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ── CTA ── */
+    .cta {
+      background: var(--teal);
+      border-radius: 16px;
+      padding: 24px 20px;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .cta p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: var(--lime);
+      color: white;
+      font-family: "acumin-pro", sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 28px;
+      border-radius: 30px;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 24px 20px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-badge">Step-by-step guide</div>
+    <h1>How to Submit Your Testimonial</h1>
+    <p>Follow these simple steps — it only takes a few minutes.</p>
+  </div>
+
+  <div class="content">
+
+    <p class="section-label">The 7 steps</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Your Details</div>
+        <div class="step-desc">Enter your <strong>first and last name</strong>. If you prefer, tick the <strong>"Stay anonymous"</strong> box and your name will not be shown publicly.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Health Condition</div>
+        <div class="step-desc">Type the health condition(s) your story relates to. For more than one, <strong>separate them with a comma.</strong></div>
+        <span class="step-tag">e.g. Diabetes, High Blood Pressure</span>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Products Used</div>
+        <div class="step-desc">Select the Mannatech <strong>product(s)</strong> that your testimonial is about. Tap each one to select it.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Your Story</div>
+        <div class="step-desc">Write your testimonial in your own words. <strong>What was your health challenge? What changed?</strong> There is no right or wrong way — just be honest.</div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <div class="tip-label">💡 Tip</div>
+      <p>You don't need to write an essay. Even a few sentences about what changed for you is perfect.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Photos <em style="font-weight:400;font-size:12px;color:var(--muted)">(optional)</em></div>
+        <div class="step-desc">You may add photos if you like — for example before/after photos or product photos. <strong>This step is completely optional.</strong> Tap "Next" to skip it.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num lime">6</div>
+      <div class="step-body">
+        <div class="step-title">Consent</div>
+        <div class="step-desc">Tick the three checkboxes to confirm you agree to the <strong>Terms &amp; Conditions</strong>, <strong>Privacy Policy</strong>, and that you give us permission to use your story.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num lime">7</div>
+      <div class="step-body">
+        <div class="step-title">Review &amp; Submit</div>
+        <div class="step-desc">Check that everything looks correct, then tap the big <strong>green "Submit" button</strong>. That's it — you're done!</div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <p>Ready to share your story? Tap the button below to open the form.</p>
+      <a class="cta-btn" href="/submit">Start My Testimonial →</a>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    © Mannatech South Africa · mtechtestimonials.co.za
+  </div>
+
+</body>
+</html>
