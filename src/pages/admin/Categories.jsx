@@ -53,6 +53,8 @@ function CategorySection({ title, table, color, onDataChange }) {
     const [editValue, setEditValue] = useState('')
     const [addValue, setAddValue]   = useState('')
     const [adding, setAdding]       = useState(false)
+    const [bulkAdding, setBulkAdding] = useState(false)
+    const [bulkValue, setBulkValue]   = useState('')
     const [saving, setSaving]       = useState(false)
     const [message, setMessage]     = useState(null)
     const addInputRef = useRef()
@@ -111,7 +113,27 @@ function CategorySection({ title, table, color, onDataChange }) {
         setSaving(false)
     }
 
-    async function handleRename(item) {
+    async function handleBulkAdd() {
+        const names = bulkValue
+            .split('\n')
+            .map(n => n.trim())
+            .filter(Boolean)
+        if (!names.length) return
+
+        setSaving(true)
+        let added = 0, skipped = 0
+        for (const name of names) {
+            const duplicate = items.find(i => i.name.toLowerCase() === name.toLowerCase())
+            if (duplicate) { skipped++; continue }
+            const { error } = await supabase.from(table).insert({ name, active: true, sort_order: 0 })
+            if (!error) added++
+        }
+        flash(`Added ${added} item${added !== 1 ? 's' : ''}${skipped ? `, skipped ${skipped} duplicate${skipped !== 1 ? 's' : ''}` : ''}`)
+        setBulkValue('')
+        setBulkAdding(false)
+        fetchItems()
+        setSaving(false)
+    }
         const name = editValue.trim()
         if (!name || name === item.name) { setEditingId(null); return }
 
@@ -231,10 +253,36 @@ function CategorySection({ title, table, color, onDataChange }) {
                 <button className="cat-add-btn" onClick={startAdd}>
                     <Plus size={14} /> Add
                 </button>
+                <button className="cat-add-btn bulk" onClick={() => { setBulkAdding(v => !v); setAdding(false) }}>
+                    <Plus size={14} /> Bulk Add
+                </button>
             </div>
 
             {/* Merge warnings */}
             <MergeWarning duplicateGroups={duplicateGroups} onMerge={handleMerge} />
+
+            {/* Bulk add */}
+            {bulkAdding && (
+                <div className="bulk-add-box">
+                    <p className="bulk-add-label">One {table === 'products' ? 'product' : 'condition'} per line:</p>
+                    <textarea
+                        className="bulk-add-textarea"
+                        value={bulkValue}
+                        onChange={e => setBulkValue(e.target.value)}
+                        placeholder={`e.g.\nDiabetes\nHigh Blood Pressure\nArthritis`}
+                        rows={6}
+                        autoFocus
+                    />
+                    <div className="bulk-add-actions">
+                        <button className="cat-btn save" onClick={handleBulkAdd} disabled={saving || !bulkValue.trim()}>
+                            <Check size={13} /> Add All
+                        </button>
+                        <button className="cat-btn cancel" onClick={() => { setBulkAdding(false); setBulkValue('') }}>
+                            <X size={13} /> Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {message && (
                 <div className={`cat-message ${message.type}`}>{message.text}</div>
