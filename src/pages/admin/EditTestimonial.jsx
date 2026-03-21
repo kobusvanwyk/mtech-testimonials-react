@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { useProducts, useConditions } from '../../lib/ProductsContext'
+import { useProducts } from '../../lib/ProductsContext'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import { ArrowLeft, ArrowRight, Eye, Check, X } from 'lucide-react'
 import { PDFDownloadButton } from '../../components/PDFDownloadButton'
@@ -16,7 +16,7 @@ const STATUS_OPTIONS = [
 
 export default function EditTestimonial() {
     const PRODUCTS = useProducts()
-    const CONDITIONS = useConditions()
+    const [CONDITIONS, setConditions] = useState([])
     const { id } = useParams()
     const navigate = useNavigate()
     const [loading, setLoading] = useState(true)
@@ -56,6 +56,11 @@ export default function EditTestimonial() {
     }, [isDirty])
 
     useEffect(() => { fetchTestimonial() }, [id])
+
+    useEffect(() => {
+        supabase.from('conditions').select('name').order('name')
+            .then(({ data }) => setConditions((data || []).map(d => d.name)))
+    }, [])
 
     async function fetchTestimonial() {
         const { data } = await supabase.from('testimonials').select('*').eq('id', id).single()
