@@ -431,7 +431,7 @@ export default function Submit() {
                             <button className="btn-back" onClick={() => setStep(3)}><ArrowLeft size={15} /> Back</button>
                             <button
                                 className="btn-next"
-                                disabled={form.story_text.length < 50}
+                                disabled={!form.story_text.trim()}
                                 onClick={() => setStep(5)}
                             >
                                 Next <ArrowRight size={15} />
