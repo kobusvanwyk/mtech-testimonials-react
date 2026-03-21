@@ -161,7 +161,7 @@ function CategorySection({ title, table, color, onDataChange }) {
         }
         flash(`Deleted ${toDelete.length} item${toDelete.length !== 1 ? 's' : ''}`)
         setSelectedIds(new Set())
-        fetchItems()
+        await fetchItems()
         setSaving(false)
     }
 
