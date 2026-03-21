@@ -1374,9 +1374,23 @@
         background: var(--secondary);
         &:hover { background: var(--secondary-dark, #8fa822); }
     }
+    &.delete-selected {
+        background: var(--danger, #dc2626);
+        &:hover { background: #b91c1c; }
+    }
 }
 
-.bulk-add-box {
+.cat-select-all,
+.cat-row-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+}
+
+.category-row {
+    &.selected { background: var(--primary-light, #e6f7f6); }
     background: var(--bg-soft, #f8faf8);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);

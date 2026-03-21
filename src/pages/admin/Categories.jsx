@@ -55,6 +55,7 @@ function CategorySection({ title, table, color, onDataChange }) {
     const [adding, setAdding]       = useState(false)
     const [bulkAdding, setBulkAdding] = useState(false)
     const [bulkValue, setBulkValue]   = useState('')
+    const [selectedIds, setSelectedIds] = useState(new Set())
     const [saving, setSaving]       = useState(false)
     const [message, setMessage]     = useState(null)
     const addInputRef = useRef()
@@ -135,7 +136,48 @@ function CategorySection({ title, table, color, onDataChange }) {
         setSaving(false)
     }
 
-    async function handleRename(item) {
+    async function handleBulkDelete() {
+        const toDelete = items.filter(i => selectedIds.has(i.id))
+        const withTestimonials = toDelete.filter(i => i._count > 0)
+        const msg = withTestimonials.length
+            ? `Delete ${toDelete.length} item${toDelete.length !== 1 ? 's' : ''}? ${withTestimonials.length} of them are used in testimonials and will be removed from those too. This cannot be undone.`
+            : `Delete ${toDelete.length} item${toDelete.length !== 1 ? 's' : ''}? This cannot be undone.`
+        if (!window.confirm(msg)) return
+
+        setSaving(true)
+        const field = table === 'products' ? 'products' : 'conditions'
+        for (const item of toDelete) {
+            if (item._count > 0) {
+                const { data: affected } = await supabase
+                    .from('testimonials')
+                    .select('id, ' + field)
+                    .contains(field, [item.name])
+                for (const t of (affected || [])) {
+                    const updated = t[field].filter(x => x !== item.name)
+                    await supabase.from('testimonials').update({ [field]: updated }).eq('id', t.id)
+                }
+            }
+            await supabase.from(table).delete().eq('id', item.id)
+        }
+        flash(`Deleted ${toDelete.length} item${toDelete.length !== 1 ? 's' : ''}`)
+        setSelectedIds(new Set())
+        fetchItems()
+        setSaving(false)
+    }
+
+    function toggleSelect(id) {
+        setSelectedIds(prev => {
+            const next = new Set(prev)
+            next.has(id) ? next.delete(id) : next.add(id)
+            return next
+        })
+    }
+
+    function toggleSelectAll() {
+        setSelectedIds(prev =>
+            prev.size === items.length ? new Set() : new Set(items.map(i => i.id))
+        )
+    }
         const name = editValue.trim()
         if (!name || name === item.name) { setEditingId(null); return }
 
@@ -249,9 +291,21 @@ function CategorySection({ title, table, color, onDataChange }) {
     return (
         <div className="edit-section">
             <div className="cat-section-header">
+                <input
+                    type="checkbox"
+                    className="cat-select-all"
+                    checked={items.length > 0 && selectedIds.size === items.length}
+                    onChange={toggleSelectAll}
+                    title="Select all"
+                />
                 <h3 className="cat-section-title">
                     {title} <span className="cat-total">({items.length})</span>
                 </h3>
+                {selectedIds.size > 0 && (
+                    <button className="cat-add-btn delete-selected" onClick={handleBulkDelete} disabled={saving}>
+                        <Trash2 size={14} /> Delete {selectedIds.size}
+                    </button>
+                )}
                 <button className="cat-add-btn" onClick={startAdd}>
                     <Plus size={14} /> Add
                 </button>
@@ -320,7 +374,13 @@ function CategorySection({ title, table, color, onDataChange }) {
             )}
 
             {items.map(item => (
-                <div key={item.id} className="category-row">
+                <div key={item.id} className={`category-row ${selectedIds.has(item.id) ? 'selected' : ''}`}>
+                    <input
+                        type="checkbox"
+                        className="cat-row-checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                    />
                     {editingId === item.id ? (
                         <input
                             className="category-rename-input"
