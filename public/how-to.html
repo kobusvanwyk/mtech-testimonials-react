@@ -16,14 +16,16 @@
       --lime-dark:  #8fa822;
       --lime-light: #f4f9e0;
       --offwhite:   #f4faf9;
+      --white:      #ffffff;
       --text:       #1a2e2b;
       --muted:      #5a7570;
       --border:     #d4ece9;
+      --font:       "acumin-pro", "Helvetica Neue", Arial, sans-serif;
     }
 
     body {
-      font-family: "acumin-pro", sans-serif;
-      background: var(--offwhite);
+      font-family: var(--font);
+      background: var(--white);
       color: var(--text);
       margin: 0;
     }
@@ -33,7 +35,7 @@
     ───────────────────────────────────────── */
     .header {
       background: var(--teal);
-      padding: 36px 48px 32px;
+      padding: 36px 48px 52px;
       position: relative;
       overflow: hidden;
     }
@@ -42,7 +44,7 @@
       position: absolute;
       bottom: -1px; left: -5%; right: -5%;
       height: 36px;
-      background: var(--offwhite);
+      background: var(--offwhite); /* matches first section */
       border-radius: 60% 60% 0 0;
     }
     .header-inner {
@@ -57,6 +59,7 @@
       display: inline-block;
       background: rgba(255,255,255,0.2);
       color: white;
+      font-family: var(--font);
       font-size: 9px;
       font-weight: 700;
       letter-spacing: 2.5px;
@@ -66,6 +69,7 @@
       margin-bottom: 12px;
     }
     .header h1 {
+      font-family: var(--font);
       font-size: 28px;
       font-weight: 800;
       color: white;
@@ -73,12 +77,14 @@
       margin-bottom: 8px;
     }
     .header-sub {
+      font-family: var(--font);
       font-size: 13px;
       color: rgba(255,255,255,0.82);
       line-height: 1.55;
       max-width: 380px;
     }
     .header-logo {
+      font-family: var(--font);
       color: white;
       text-align: right;
       font-size: 10px;
@@ -94,42 +100,71 @@
       font-weight: 800;
       letter-spacing: 0;
     }
-
-    /* Lime accent bar */
     .accent-bar { height: 4px; background: var(--lime); }
 
     /* ─────────────────────────────────────────
-       PAGE BODY
+       SECTIONS — full width alternating bands
     ───────────────────────────────────────── */
-    .page-body {
+    .section {
+      width: 100%;
+      padding: 52px 24px;
+    }
+    .section:nth-child(odd)  { background: var(--offwhite); }
+    .section:nth-child(even) { background: var(--white); }
+
+    .section-inner {
       max-width: 960px;
       margin: 0 auto;
-      padding: 48px 24px 64px;
     }
 
-    .intro {
-      font-size: 13px;
+    /* intro section */
+    .intro-text {
+      font-family: var(--font);
+      font-size: 13.5px;
       color: var(--muted);
       line-height: 1.7;
-      margin-bottom: 40px;
-      padding-bottom: 28px;
-      border-bottom: 1px solid var(--border);
       max-width: 680px;
     }
-    .intro strong { color: var(--text); }
+    .intro-text strong { color: var(--text); }
+
+    /* tip section — always lime tint regardless of nth */
+    .section.tip-section {
+      background: var(--lime-light) !important;
+      border-top: 1px solid #d6e87a;
+      border-bottom: 1px solid #d6e87a;
+      padding: 32px 24px;
+    }
+    .tip-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      border-left: 4px solid var(--lime);
+      padding-left: 18px;
+    }
+    .tip-lbl {
+      font-family: var(--font);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--lime-dark);
+      margin-bottom: 6px;
+    }
+    .tip-text {
+      font-family: var(--font);
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
 
     /* ─────────────────────────────────────────
        STEP BLOCK — responsive row
     ───────────────────────────────────────── */
     .step-block {
       display: flex;
-      gap: 40px;
+      gap: 48px;
       align-items: center;
-      margin-bottom: 52px;
     }
-
-    /* alternate phone left/right on desktop */
-    .step-block:nth-child(even) { flex-direction: row-reverse; }
+    .step-block.reverse { flex-direction: row-reverse; }
 
     .step-info { flex: 1; min-width: 0; }
 
@@ -137,16 +172,16 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
-
     .step-num {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: var(--teal);
       color: white;
-      font-size: 15px;
+      font-family: var(--font);
+      font-size: 16px;
       font-weight: 800;
       display: flex;
       align-items: center;
@@ -154,143 +189,122 @@
       flex-shrink: 0;
     }
     .step-num.lime { background: var(--lime); }
-
     .step-label {
-      font-size: 20px;
+      font-family: var(--font);
+      font-size: 21px;
       font-weight: 800;
       color: var(--text);
     }
     .step-optional {
-      font-size: 12px;
+      font-family: var(--font);
+      font-size: 13px;
       font-weight: 400;
       color: var(--muted);
       margin-left: 6px;
     }
-
     .step-instruction {
-      font-size: 14px;
+      font-family: var(--font);
+      font-size: 14.5px;
       color: var(--muted);
-      line-height: 1.7;
+      line-height: 1.75;
     }
     .step-instruction strong { color: var(--text); }
-
     .step-example {
       display: inline-block;
       background: white;
       border: 1px solid var(--border);
       border-radius: 6px;
+      font-family: var(--font);
       font-size: 12px;
       font-weight: 600;
       color: var(--teal-dark);
-      padding: 3px 10px;
-      margin-top: 10px;
+      padding: 4px 12px;
+      margin-top: 12px;
     }
+    /* when section is white, example bg should be offwhite */
+    .section:nth-child(even) .step-example { background: var(--offwhite); }
 
     /* ─────────────────────────────────────────
        PHONE MOCKUP
     ───────────────────────────────────────── */
-    .phone-wrap {
-      flex-shrink: 0;
-      display: flex;
-      justify-content: center;
-    }
-
+    .phone-wrap { flex-shrink: 0; display: flex; justify-content: center; }
     .phone {
-      width: 230px;
+      width: 235px;
       background: #1c1c2e;
       border-radius: 34px;
       padding: 12px 8px 16px;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1);
+      box-shadow: 0 28px 64px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.1);
     }
     .phone-notch {
-      width: 64px;
-      height: 5px;
-      background: #333;
-      border-radius: 3px;
+      width: 64px; height: 5px;
+      background: #333; border-radius: 3px;
       margin: 0 auto 8px;
     }
-    .phone-screen {
-      background: white;
-      border-radius: 22px;
-      overflow: hidden;
-    }
+    .phone-screen { background: white; border-radius: 22px; overflow: hidden; }
 
     /* ─────────────────────────────────────────
        FORM ELEMENTS INSIDE PHONE
     ───────────────────────────────────────── */
-    .f { padding: 12px 11px; font-family: "acumin-pro", sans-serif; }
+    .f { padding: 12px 11px; font-family: var(--font); }
     .f-bar-wrap { height: 4px; background: #e2e8e6; border-radius: 99px; margin-bottom: 5px; }
     .f-bar { height: 100%; background: var(--teal); border-radius: 99px; }
     .f-labels { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    .f-cur { font-size: 9px; font-weight: 700; color: var(--teal); }
-    .f-nxt { font-size: 8.5px; color: #aaa; }
-    .f-h { font-size: 11.5px; font-weight: 800; color: var(--text); margin-bottom: 6px; line-height: 1.3; }
-    .f-info { background: #f0faf8; border: 1px solid #b2e0d8; border-left: 3px solid var(--teal); border-radius: 5px; padding: 6px 8px; font-size: 8.5px; color: #2a6b62; line-height: 1.5; margin-bottom: 8px; }
-    .f-lbl { font-size: 9px; font-weight: 600; color: #666; margin-bottom: 3px; display: block; }
-    .f-inp { width: 100%; padding: 7px 8px; border: 2px solid #e2e8e6; border-radius: 6px; font-size: 10px; color: var(--text); margin-bottom: 6px; font-family: "acumin-pro", sans-serif; }
+    .f-cur { font-family: var(--font); font-size: 9px; font-weight: 700; color: var(--teal); }
+    .f-nxt { font-family: var(--font); font-size: 8.5px; color: #aaa; }
+    .f-h { font-family: var(--font); font-size: 11.5px; font-weight: 800; color: var(--text); margin-bottom: 6px; line-height: 1.3; }
+    .f-info { background: #f0faf8; border: 1px solid #b2e0d8; border-left: 3px solid var(--teal); border-radius: 5px; padding: 6px 8px; font-family: var(--font); font-size: 8.5px; color: #2a6b62; line-height: 1.5; margin-bottom: 8px; }
+    .f-lbl { font-family: var(--font); font-size: 9px; font-weight: 600; color: #666; margin-bottom: 3px; display: block; }
+    .f-inp { width: 100%; padding: 7px 8px; border: 2px solid #e2e8e6; border-radius: 6px; font-family: var(--font); font-size: 10px; color: var(--text); margin-bottom: 6px; }
     .f-inp.active { border-color: var(--teal); }
-    .f-inp.ph { color: #bbb; }
-    .f-textarea { width: 100%; padding: 7px 8px; border: 2px solid var(--teal); border-radius: 6px; font-size: 8.5px; color: var(--text); margin-bottom: 6px; font-family: "acumin-pro", sans-serif; line-height: 1.5; resize: none; }
+    .f-textarea { width: 100%; padding: 7px 8px; border: 2px solid var(--teal); border-radius: 6px; font-family: var(--font); font-size: 8.5px; color: var(--text); margin-bottom: 6px; line-height: 1.5; resize: none; }
     .f-toggle { display: flex; align-items: center; gap: 7px; border: 2px solid #e2e8e6; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; }
     .f-track { width: 24px; height: 13px; border-radius: 7px; background: #e2e8e6; position: relative; flex-shrink: 0; }
     .f-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; border-radius: 50%; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-    .f-ttxt { font-size: 9px; font-weight: 600; color: var(--text); }
-    .f-tsub { font-size: 8px; color: #aaa; display: block; }
+    .f-ttxt { font-family: var(--font); font-size: 9px; font-weight: 600; color: var(--text); }
+    .f-tsub { font-family: var(--font); font-size: 8px; color: #aaa; display: block; }
     .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
-    .f-prod { padding: 5px 6px; border: 2px solid #e2e8e6; border-radius: 5px; font-size: 8px; color: #666; display: flex; align-items: center; gap: 4px; }
+    .f-prod { padding: 5px 6px; border: 2px solid #e2e8e6; border-radius: 5px; font-family: var(--font); font-size: 8px; color: #666; display: flex; align-items: center; gap: 4px; }
     .f-prod.on { border-color: var(--teal); background: var(--teal-light); color: var(--teal-dark); font-weight: 600; }
     .f-dot { width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid currentColor; flex-shrink: 0; }
     .f-prod.on .f-dot { background: var(--teal); border-color: var(--teal); }
     .f-drop { border: 2px dashed #e2e8e6; border-radius: 8px; padding: 14px 8px; text-align: center; margin-bottom: 6px; }
     .f-drop-icon { font-size: 16px; margin-bottom: 3px; }
-    .f-drop-main { font-size: 9px; font-weight: 600; color: var(--text); }
-    .f-drop-sub { font-size: 8px; color: #aaa; }
+    .f-drop-main { font-family: var(--font); font-size: 9px; font-weight: 600; color: var(--text); }
+    .f-drop-sub { font-family: var(--font); font-size: 8px; color: #aaa; }
     .f-term { display: flex; align-items: flex-start; gap: 6px; border: 2px solid #e2e8e6; border-radius: 5px; padding: 6px 8px; margin-bottom: 4px; }
     .f-term.on { border-color: var(--teal); background: var(--teal-light); }
     .f-chk { width: 12px; height: 12px; border: 2px solid #e2e8e6; border-radius: 2px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 7px; }
     .f-term.on .f-chk { background: var(--teal); border-color: var(--teal); color: white; }
-    .f-term-txt { font-size: 8px; color: #555; line-height: 1.4; }
+    .f-term-txt { font-family: var(--font); font-size: 8px; color: #555; line-height: 1.4; }
     .f-term-lnk { color: var(--teal); font-weight: 600; }
     .f-rev { background: #f8faf9; border-radius: 6px; padding: 6px 8px; margin-bottom: 4px; }
-    .f-rev-lbl { font-size: 7.5px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-    .f-rev-val { font-size: 9px; color: var(--text); font-weight: 600; }
+    .f-rev-lbl { font-family: var(--font); font-size: 7.5px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .f-rev-val { font-family: var(--font); font-size: 9px; color: var(--text); font-weight: 600; }
     .f-nav { display: flex; justify-content: space-between; margin-top: 8px; gap: 5px; }
-    .f-back { padding: 6px 11px; background: #f0f0f0; border: none; border-radius: 20px; font-size: 8.5px; font-weight: 700; color: #666; font-family: "acumin-pro", sans-serif; }
-    .f-next { padding: 6px 14px; background: var(--teal); border: none; border-radius: 20px; font-size: 8.5px; font-weight: 700; color: white; font-family: "acumin-pro", sans-serif; }
+    .f-back { padding: 6px 11px; background: #f0f0f0; border: none; border-radius: 20px; font-family: var(--font); font-size: 8.5px; font-weight: 700; color: #666; }
+    .f-next { padding: 6px 14px; background: var(--teal); border: none; border-radius: 20px; font-family: var(--font); font-size: 8.5px; font-weight: 700; color: white; }
     .f-next.dim { opacity: 0.4; }
-    .f-submit { width: 100%; padding: 9px; background: var(--lime); border: none; border-radius: 20px; font-size: 10px; font-weight: 800; color: white; font-family: "acumin-pro", sans-serif; margin-top: 8px; }
+    .f-submit { width: 100%; padding: 9px; background: var(--lime); border: none; border-radius: 20px; font-family: var(--font); font-size: 10px; font-weight: 800; color: white; margin-top: 8px; }
 
     /* ─────────────────────────────────────────
-       TIP BOX
+       CTA SECTION
     ───────────────────────────────────────── */
-    .tip {
-      background: var(--lime-light);
-      border: 1px solid #d6e87a;
-      border-left: 4px solid var(--lime);
-      border-radius: 12px;
-      padding: 16px 18px;
-      margin: 8px 0 52px;
+    .section.cta-section {
+      background: var(--teal) !important;
+      padding: 56px 24px;
     }
-    .tip-lbl { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--lime-dark); margin-bottom: 6px; }
-    .tip p { font-size: 13px; color: var(--muted); line-height: 1.6; }
-
-    /* ─────────────────────────────────────────
-       CTA
-    ───────────────────────────────────────── */
-    .cta {
-      background: var(--teal);
-      border-radius: 20px;
-      padding: 36px 32px;
+    .cta-inner {
+      max-width: 960px;
+      margin: 0 auto;
       text-align: center;
-      margin-top: 16px;
     }
-    .cta h3 { color: white; font-size: 22px; font-weight: 800; margin-bottom: 10px; }
-    .cta p { font-size: 14px; color: rgba(255,255,255,0.82); margin-bottom: 20px; line-height: 1.55; }
+    .cta-inner h3 { font-family: var(--font); color: white; font-size: 24px; font-weight: 800; margin-bottom: 10px; }
+    .cta-inner p  { font-family: var(--font); font-size: 14px; color: rgba(255,255,255,0.82); margin-bottom: 22px; line-height: 1.55; }
     .cta-btn {
       display: inline-block;
       background: var(--lime);
       color: white;
-      font-family: "acumin-pro", sans-serif;
+      font-family: var(--font);
       font-size: 15px;
       font-weight: 700;
       padding: 14px 36px;
@@ -301,43 +315,44 @@
     /* ─────────────────────────────────────────
        FOOTER
     ───────────────────────────────────────── */
-    .footer { text-align: center; padding: 24px 20px; font-size: 11px; color: var(--muted); }
+    .footer {
+      background: var(--text);
+      text-align: center;
+      padding: 20px;
+      font-family: var(--font);
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+    }
 
     /* ─────────────────────────────────────────
-       MOBILE — stack everything
+       MOBILE
     ───────────────────────────────────────── */
     @media (max-width: 640px) {
-      .header { padding: 32px 20px 48px; }
+      .header { padding: 30px 20px 48px; }
       .header h1 { font-size: 22px; }
       .header-logo { display: none; }
-      .header::after { height: 32px; }
+      .header::after { height: 30px; background: var(--offwhite); }
 
-      .page-body { padding: 32px 18px 48px; }
+      .section { padding: 36px 18px; }
 
       .step-block,
-      .step-block:nth-child(even) {
-        flex-direction: column;
-        gap: 18px;
-        margin-bottom: 40px;
-      }
+      .step-block.reverse { flex-direction: column; gap: 24px; }
 
-      .step-label { font-size: 17px; }
+      .step-label { font-size: 18px; }
       .step-instruction { font-size: 13.5px; }
-
       .phone { width: 260px; }
 
-      .tip { margin-bottom: 40px; }
-      .cta { padding: 28px 20px; }
-      .cta h3 { font-size: 18px; }
+      .section.tip-section { padding: 24px 18px; }
+      .section.cta-section { padding: 40px 18px; }
+      .cta-inner h3 { font-size: 20px; }
     }
 
     /* ─────────────────────────────────────────
        PRINT
     ───────────────────────────────────────── */
     @media print {
-      body { background: white; }
-      .cta, .footer { display: none; }
-      .step-block { break-inside: avoid; }
+      .section.cta-section, .footer { display: none; }
+      .section { break-inside: avoid; }
       .phone { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     }
   </style>
@@ -360,222 +375,231 @@
 </div>
 <div class="accent-bar"></div>
 
-<!-- ── Body ── -->
-<div class="page-body">
+<!-- ── Intro (odd = offwhite) ── -->
+<div class="section">
+  <div class="section-inner">
+    <p class="intro-text">Open the form on your phone or computer at <strong>mtechtestimonials.co.za/submit</strong>. Use the <strong>Next</strong> button to move forward and the <strong>Back</strong> button if you need to change something.</p>
+  </div>
+</div>
 
-  <p class="intro">Open the form on your phone or computer at <strong>mtechtestimonials.co.za/submit</strong>. Use the <strong>Next</strong> button to move forward and the <strong>Back</strong> button if you need to change something.</p>
-
-  <!-- STEP 1 -->
-  <div class="step-block">
-    <div class="step-info">
-      <div class="step-header">
-        <div class="step-num">1</div>
-        <div class="step-label">Your Details</div>
-      </div>
-      <div class="step-instruction">
-        Enter your <strong>first and last name</strong>.<br><br>
-        If you prefer not to show your name publicly, tap the <strong>"Stay anonymous"</strong> toggle and your name will not appear anywhere on the website.
-      </div>
-    </div>
-    <div class="phone-wrap"><div class="phone">
-      <div class="phone-notch"></div>
-      <div class="phone-screen"><div class="f">
-        <div class="f-bar-wrap"><div class="f-bar" style="width:14%"></div></div>
-        <div class="f-labels"><span class="f-cur">Step 1 — Your details</span><span class="f-nxt">Next: Condition</span></div>
-        <div class="f-h">Who is sharing this testimonial?</div>
-        <div class="f-info">💡 Enter your name. Use the toggle below to stay anonymous if you prefer.</div>
-        <span class="f-lbl">First name</span><div class="f-inp active">Maria</div>
-        <span class="f-lbl">Last name</span><div class="f-inp active">van der Berg</div>
-        <div class="f-toggle">
-          <div class="f-track"></div>
-          <div><div class="f-ttxt">Stay anonymous</div><span class="f-tsub">Your name won't be shown publicly</span></div>
+<!-- ── Step 1 (even = white) ── -->
+<div class="section">
+  <div class="section-inner">
+    <div class="step-block">
+      <div class="step-info">
+        <div class="step-header"><div class="step-num">1</div><div class="step-label">Your Details</div></div>
+        <div class="step-instruction">
+          Enter your <strong>first and last name</strong>.<br><br>
+          If you prefer not to show your name publicly, tap the <strong>"Stay anonymous"</strong> toggle and your name will not appear anywhere on the website.
         </div>
-        <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
+      </div>
+      <div class="phone-wrap"><div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen"><div class="f">
+          <div class="f-bar-wrap"><div class="f-bar" style="width:14%"></div></div>
+          <div class="f-labels"><span class="f-cur">Step 1 — Your details</span><span class="f-nxt">Next: Condition</span></div>
+          <div class="f-h">Who is sharing this testimonial?</div>
+          <div class="f-info">💡 Enter your name. Toggle "Stay anonymous" if you prefer.</div>
+          <span class="f-lbl">First name</span><div class="f-inp active">Maria</div>
+          <span class="f-lbl">Last name</span><div class="f-inp active">van der Berg</div>
+          <div class="f-toggle"><div class="f-track"></div><div><div class="f-ttxt">Stay anonymous</div><span class="f-tsub">Your name won't be shown publicly</span></div></div>
+          <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
+        </div></div>
       </div></div>
-    </div></div>
-  </div>
-
-  <!-- STEP 2 -->
-  <div class="step-block">
-    <div class="step-info">
-      <div class="step-header">
-        <div class="step-num">2</div>
-        <div class="step-label">Health Condition</div>
-      </div>
-      <div class="step-instruction">
-        Type the health condition(s) your story relates to.<br><br>
-        If there is more than one condition, <strong>separate them with a comma.</strong>
-      </div>
-      <span class="step-example">e.g. Diabetes, High Blood Pressure</span>
     </div>
-    <div class="phone-wrap"><div class="phone">
-      <div class="phone-notch"></div>
-      <div class="phone-screen"><div class="f">
-        <div class="f-bar-wrap"><div class="f-bar" style="width:28%"></div></div>
-        <div class="f-labels"><span class="f-cur">Step 2 — Health condition</span><span class="f-nxt">Next: Products</span></div>
-        <div class="f-h">What health challenge does this relate to?</div>
-        <div class="f-info">💡 Separate multiple conditions with a comma — e.g. <em>Diabetes, High Blood Pressure</em></div>
-        <span class="f-lbl">Health conditions</span>
-        <div class="f-inp active">Diabetes, High Blood Pressure</div>
-        <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
-      </div></div>
-    </div></div>
   </div>
+</div>
 
-  <!-- STEP 3 -->
-  <div class="step-block">
-    <div class="step-info">
-      <div class="step-header">
-        <div class="step-num">3</div>
-        <div class="step-label">Products Used</div>
-      </div>
-      <div class="step-instruction">
-        Tap the Mannatech <strong>product(s)</strong> your testimonial is about to select them.<br><br>
-        You can select more than one. Selected products will highlight in green.
-      </div>
-    </div>
-    <div class="phone-wrap"><div class="phone">
-      <div class="phone-notch"></div>
-      <div class="phone-screen"><div class="f">
-        <div class="f-bar-wrap"><div class="f-bar" style="width:43%"></div></div>
-        <div class="f-labels"><span class="f-cur">Step 3 — Products</span><span class="f-nxt">Next: Your story</span></div>
-        <div class="f-h">Which products does this relate to?</div>
-        <div class="f-info">💡 Tap each product to select it. Tap again to deselect.</div>
-        <div class="f-grid">
-          <div class="f-prod on"><div class="f-dot"></div>Ambrotose Complex</div>
-          <div class="f-prod on"><div class="f-dot"></div>Manapol</div>
-          <div class="f-prod"><div class="f-dot"></div>PLUS</div>
-          <div class="f-prod"><div class="f-dot"></div>Ambrotose AO</div>
-          <div class="f-prod"><div class="f-dot"></div>Omega 3</div>
-          <div class="f-prod"><div class="f-dot"></div>NutriVerus</div>
+<!-- ── Step 2 (odd = offwhite) ── -->
+<div class="section">
+  <div class="section-inner">
+    <div class="step-block reverse">
+      <div class="step-info">
+        <div class="step-header"><div class="step-num">2</div><div class="step-label">Health Condition</div></div>
+        <div class="step-instruction">
+          Type the health condition(s) your story relates to.<br><br>
+          If there is more than one condition, <strong>separate them with a comma.</strong>
         </div>
-        <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
+        <span class="step-example">e.g. Diabetes, High Blood Pressure</span>
+      </div>
+      <div class="phone-wrap"><div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen"><div class="f">
+          <div class="f-bar-wrap"><div class="f-bar" style="width:28%"></div></div>
+          <div class="f-labels"><span class="f-cur">Step 2 — Health condition</span><span class="f-nxt">Next: Products</span></div>
+          <div class="f-h">What health challenge does this relate to?</div>
+          <div class="f-info">💡 Separate multiple conditions with a comma — e.g. <em>Diabetes, High Blood Pressure</em></div>
+          <span class="f-lbl">Health conditions</span>
+          <div class="f-inp active">Diabetes, High Blood Pressure</div>
+          <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
+        </div></div>
       </div></div>
-    </div></div>
-  </div>
-
-  <!-- STEP 4 -->
-  <div class="step-block">
-    <div class="step-info">
-      <div class="step-header">
-        <div class="step-num">4</div>
-        <div class="step-label">Your Story</div>
-      </div>
-      <div class="step-instruction">
-        Write your testimonial in your own words.<br><br>
-        <strong>What was your health challenge? What changed after using the product?</strong><br><br>
-        There is no right or wrong way to write it — just be honest. A few sentences is perfectly fine.
-      </div>
     </div>
-    <div class="phone-wrap"><div class="phone">
-      <div class="phone-notch"></div>
-      <div class="phone-screen"><div class="f">
-        <div class="f-bar-wrap"><div class="f-bar" style="width:57%"></div></div>
-        <div class="f-labels"><span class="f-cur">Step 4 — Your story</span><span class="f-nxt">Next: Photos</span></div>
-        <div class="f-h">Tell us your story</div>
-        <div class="f-info">💡 Write it the way you'd tell a friend. A few honest sentences is perfect.</div>
-        <span class="f-lbl">Your testimonial</span>
-        <textarea class="f-textarea" rows="5" readonly>I struggled with high blood pressure for years. After starting Ambrotose Complex and Manapol, my readings improved significantly within three months…</textarea>
-        <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
-      </div></div>
-    </div></div>
   </div>
+</div>
 
-  <div class="tip">
+<!-- ── Step 3 (even = white) ── -->
+<div class="section">
+  <div class="section-inner">
+    <div class="step-block">
+      <div class="step-info">
+        <div class="step-header"><div class="step-num">3</div><div class="step-label">Products Used</div></div>
+        <div class="step-instruction">
+          Tap the Mannatech <strong>product(s)</strong> your testimonial is about to select them.<br><br>
+          You can select more than one. Selected products will highlight in green.
+        </div>
+      </div>
+      <div class="phone-wrap"><div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen"><div class="f">
+          <div class="f-bar-wrap"><div class="f-bar" style="width:43%"></div></div>
+          <div class="f-labels"><span class="f-cur">Step 3 — Products</span><span class="f-nxt">Next: Your story</span></div>
+          <div class="f-h">Which products does this relate to?</div>
+          <div class="f-info">💡 Tap each product to select it. Tap again to deselect.</div>
+          <div class="f-grid">
+            <div class="f-prod on"><div class="f-dot"></div>Ambrotose Complex</div>
+            <div class="f-prod on"><div class="f-dot"></div>Manapol</div>
+            <div class="f-prod"><div class="f-dot"></div>PLUS</div>
+            <div class="f-prod"><div class="f-dot"></div>Ambrotose AO</div>
+            <div class="f-prod"><div class="f-dot"></div>Omega 3</div>
+            <div class="f-prod"><div class="f-dot"></div>NutriVerus</div>
+          </div>
+          <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
+        </div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Step 4 (odd = offwhite) ── -->
+<div class="section">
+  <div class="section-inner">
+    <div class="step-block reverse">
+      <div class="step-info">
+        <div class="step-header"><div class="step-num">4</div><div class="step-label">Your Story</div></div>
+        <div class="step-instruction">
+          Write your testimonial in your own words.<br><br>
+          <strong>What was your health challenge? What changed after using the product?</strong><br><br>
+          There is no right or wrong way — just be honest. A few sentences is perfectly fine.
+        </div>
+      </div>
+      <div class="phone-wrap"><div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen"><div class="f">
+          <div class="f-bar-wrap"><div class="f-bar" style="width:57%"></div></div>
+          <div class="f-labels"><span class="f-cur">Step 4 — Your story</span><span class="f-nxt">Next: Photos</span></div>
+          <div class="f-h">Tell us your story</div>
+          <div class="f-info">💡 Write it the way you'd tell a friend. A few honest sentences is perfect.</div>
+          <span class="f-lbl">Your testimonial</span>
+          <textarea class="f-textarea" rows="5" readonly>I struggled with high blood pressure for years. After starting Ambrotose Complex and Manapol, my readings improved significantly within three months…</textarea>
+          <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
+        </div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tip (lime, always) ── -->
+<div class="section tip-section">
+  <div class="tip-inner">
     <div class="tip-lbl">💡 Tip</div>
-    <p>You don't need to write an essay. Even just a few honest sentences about what changed for you is perfect and very valuable to others.</p>
+    <p class="tip-text">You don't need to write an essay. Even just a few honest sentences about what changed for you is perfect and very valuable to others.</p>
   </div>
+</div>
 
-  <!-- STEP 5 -->
-  <div class="step-block">
-    <div class="step-info">
-      <div class="step-header">
-        <div class="step-num">5</div>
-        <div class="step-label">Photos <span class="step-optional">(optional)</span></div>
-      </div>
-      <div class="step-instruction">
-        You may add photos if you like — for example before/after photos or product photos.<br><br>
-        <strong>This step is completely optional.</strong> Simply tap the "Next" button to skip it if you don't have any photos to add.
-      </div>
-    </div>
-    <div class="phone-wrap"><div class="phone">
-      <div class="phone-notch"></div>
-      <div class="phone-screen"><div class="f">
-        <div class="f-bar-wrap"><div class="f-bar" style="width:71%"></div></div>
-        <div class="f-labels"><span class="f-cur">Step 5 — Photos</span><span class="f-nxt">Next: Consent</span></div>
-        <div class="f-h">Add photos <em style="font-weight:400;font-size:9px;color:#aaa">(optional)</em></div>
-        <div class="f-info">💡 This step is optional. Tap "Next" to skip it.</div>
-        <div class="f-drop">
-          <div class="f-drop-icon">📷</div>
-          <div class="f-drop-main">Tap to add photos</div>
-          <div class="f-drop-sub">JPG or PNG · Max 5MB each</div>
+<!-- ── Step 5 (even = white) ── -->
+<div class="section">
+  <div class="section-inner">
+    <div class="step-block">
+      <div class="step-info">
+        <div class="step-header"><div class="step-num">5</div><div class="step-label">Photos <span class="step-optional">(optional)</span></div></div>
+        <div class="step-instruction">
+          You may add photos if you like — for example before/after photos or product photos.<br><br>
+          <strong>This step is completely optional.</strong> Simply tap the "Next" button to skip it.
         </div>
-        <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
+      </div>
+      <div class="phone-wrap"><div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen"><div class="f">
+          <div class="f-bar-wrap"><div class="f-bar" style="width:71%"></div></div>
+          <div class="f-labels"><span class="f-cur">Step 5 — Photos</span><span class="f-nxt">Next: Consent</span></div>
+          <div class="f-h">Add photos <em style="font-weight:400;font-size:9px;color:#aaa">(optional)</em></div>
+          <div class="f-info">💡 This step is optional. Tap "Next" to skip it.</div>
+          <div class="f-drop">
+            <div class="f-drop-icon">📷</div>
+            <div class="f-drop-main">Tap to add photos</div>
+            <div class="f-drop-sub">JPG or PNG · Max 5MB each</div>
+          </div>
+          <div class="f-nav"><button class="f-back">← Back</button><button class="f-next">Next →</button></div>
+        </div></div>
       </div></div>
-    </div></div>
-  </div>
-
-  <!-- STEP 6 -->
-  <div class="step-block">
-    <div class="step-info">
-      <div class="step-header">
-        <div class="step-num lime">6</div>
-        <div class="step-label">Consent</div>
-      </div>
-      <div class="step-instruction">
-        Tick <strong>all three checkboxes</strong> to confirm you agree to the Terms &amp; Conditions, Privacy Policy, and that Mannatech South Africa may use your story.<br><br>
-        The Next button will only become active once all three are ticked.
-      </div>
     </div>
-    <div class="phone-wrap"><div class="phone">
-      <div class="phone-notch"></div>
-      <div class="phone-screen"><div class="f">
-        <div class="f-bar-wrap"><div class="f-bar" style="width:85%"></div></div>
-        <div class="f-labels"><span class="f-cur">Step 6 — Consent</span><span class="f-nxt">Next: Review</span></div>
-        <div class="f-h">Before you submit…</div>
-        <div class="f-term on"><div class="f-chk">✓</div><div class="f-term-txt">I agree to the <span class="f-term-lnk">Terms &amp; Conditions</span></div></div>
-        <div class="f-term on"><div class="f-chk">✓</div><div class="f-term-txt">I agree to the <span class="f-term-lnk">Privacy Policy</span></div></div>
-        <div class="f-term"><div class="f-chk"></div><div class="f-term-txt">I consent to my story being collected and used by Mannatech South Africa</div></div>
-        <div class="f-nav"><button class="f-back">← Back</button><button class="f-next dim">Next →</button></div>
-      </div></div>
-    </div></div>
   </div>
+</div>
 
-  <!-- STEP 7 -->
-  <div class="step-block">
-    <div class="step-info">
-      <div class="step-header">
-        <div class="step-num lime">7</div>
-        <div class="step-label">Review &amp; Submit</div>
+<!-- ── Step 6 (odd = offwhite) ── -->
+<div class="section">
+  <div class="section-inner">
+    <div class="step-block reverse">
+      <div class="step-info">
+        <div class="step-header"><div class="step-num lime">6</div><div class="step-label">Consent</div></div>
+        <div class="step-instruction">
+          Tick <strong>all three checkboxes</strong> to confirm you agree to the Terms &amp; Conditions, Privacy Policy, and that Mannatech South Africa may use your story.<br><br>
+          The Next button will only become active once all three are ticked.
+        </div>
       </div>
-      <div class="step-instruction">
-        A summary of everything you entered will appear on screen.<br><br>
-        Check that it all looks correct, then tap the big <strong>green "Submit" button.</strong><br><br>
-        That's it — you're done! Your testimonial has been sent for review. Thank you!
-      </div>
+      <div class="phone-wrap"><div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen"><div class="f">
+          <div class="f-bar-wrap"><div class="f-bar" style="width:85%"></div></div>
+          <div class="f-labels"><span class="f-cur">Step 6 — Consent</span><span class="f-nxt">Next: Review</span></div>
+          <div class="f-h">Before you submit…</div>
+          <div class="f-term on"><div class="f-chk">✓</div><div class="f-term-txt">I agree to the <span class="f-term-lnk">Terms &amp; Conditions</span></div></div>
+          <div class="f-term on"><div class="f-chk">✓</div><div class="f-term-txt">I agree to the <span class="f-term-lnk">Privacy Policy</span></div></div>
+          <div class="f-term"><div class="f-chk"></div><div class="f-term-txt">I consent to my story being collected and used by Mannatech South Africa</div></div>
+          <div class="f-nav"><button class="f-back">← Back</button><button class="f-next dim">Next →</button></div>
+        </div></div>
+      </div></div>
     </div>
-    <div class="phone-wrap"><div class="phone">
-      <div class="phone-notch"></div>
-      <div class="phone-screen"><div class="f">
-        <div class="f-bar-wrap"><div class="f-bar" style="width:100%"></div></div>
-        <div class="f-labels"><span class="f-cur">Step 7 — Review</span><span class="f-nxt">Almost done!</span></div>
-        <div class="f-h">Review your testimonial</div>
-        <div class="f-rev"><div class="f-rev-lbl">Name</div><div class="f-rev-val">Maria van der Berg</div></div>
-        <div class="f-rev"><div class="f-rev-lbl">Conditions</div><div class="f-rev-val">Diabetes, High Blood Pressure</div></div>
-        <div class="f-rev"><div class="f-rev-lbl">Products</div><div class="f-rev-val">Ambrotose Complex, Manapol</div></div>
-        <div class="f-rev"><div class="f-rev-lbl">Story</div><div class="f-rev-val" style="font-weight:400;font-size:8px;line-height:1.5">I struggled with high blood pressure for years. After starting Ambrotose Complex and Manapol…</div></div>
-        <button class="f-submit">✓ Submit My Testimonial</button>
-      </div></div>
-    </div></div>
   </div>
+</div>
 
-  <!-- CTA -->
-  <div class="cta">
+<!-- ── Step 7 (even = white) ── -->
+<div class="section">
+  <div class="section-inner">
+    <div class="step-block">
+      <div class="step-info">
+        <div class="step-header"><div class="step-num lime">7</div><div class="step-label">Review &amp; Submit</div></div>
+        <div class="step-instruction">
+          A summary of everything you entered will appear on screen.<br><br>
+          Check that it all looks correct, then tap the big <strong>green "Submit" button.</strong><br><br>
+          That's it — you're done! Your testimonial has been sent for review. Thank you!
+        </div>
+      </div>
+      <div class="phone-wrap"><div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen"><div class="f">
+          <div class="f-bar-wrap"><div class="f-bar" style="width:100%"></div></div>
+          <div class="f-labels"><span class="f-cur">Step 7 — Review</span><span class="f-nxt">Almost done!</span></div>
+          <div class="f-h">Review your testimonial</div>
+          <div class="f-rev"><div class="f-rev-lbl">Name</div><div class="f-rev-val">Maria van der Berg</div></div>
+          <div class="f-rev"><div class="f-rev-lbl">Conditions</div><div class="f-rev-val">Diabetes, High Blood Pressure</div></div>
+          <div class="f-rev"><div class="f-rev-lbl">Products</div><div class="f-rev-val">Ambrotose Complex, Manapol</div></div>
+          <div class="f-rev"><div class="f-rev-lbl">Story</div><div class="f-rev-val" style="font-weight:400;font-size:8px;line-height:1.5">I struggled with high blood pressure for years. After starting Ambrotose Complex and Manapol…</div></div>
+          <button class="f-submit">✓ Submit My Testimonial</button>
+        </div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CTA ── -->
+<div class="section cta-section">
+  <div class="cta-inner">
     <h3>Ready to share your story?</h3>
     <p>Tap the button below to open the form and follow these steps.</p>
     <a class="cta-btn" href="/submit">Start My Testimonial →</a>
   </div>
-
 </div>
 
 <div class="footer">© Mannatech South Africa · mtechtestimonials.co.za · Your story helps others discover better health.</div>
