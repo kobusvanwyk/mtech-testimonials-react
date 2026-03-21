@@ -1,11 +1,119 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, MinusCircle, Trash2, Eye, Pencil, X, Flag } from 'lucide-react'
+import { Check, MinusCircle, Trash2, Eye, Pencil, X, Flag, ChevronDown, ChevronUp, Save } from 'lucide-react'
 import { PDFDownloadButton } from './PDFDownloadButton'
+import { useProducts, useConditions } from '../lib/ProductsContext'
 
-export default function TestimonialTable({ testimonials, onStatusChange, onDelete, loading }) {
-    const [selected, setSelected] = useState([])
-    const [search, setSearch] = useState('')
+function QuickViewPanel({ t, onStatusChange, onQuickSave, onClose }) {
+    const ALL_PRODUCTS   = useProducts()
+    const ALL_CONDITIONS = useConditions()
+
+    const [title,       setTitle]       = useState(t.title || '')
+    const [personName,  setPersonName]  = useState(t.person_name || '')
+    const [anonymous,   setAnonymous]   = useState(t.anonymous || false)
+    const [condText,    setCondText]    = useState((t.conditions || []).join(', '))
+    const [products,    setProducts]    = useState(t.products || [])
+    const [saving,      setSaving]      = useState(false)
+    const [saved,       setSaved]       = useState(false)
+
+    function toggleProduct(p) {
+        setProducts(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
+    }
+
+    async function handleSave() {
+        setSaving(true)
+        const conditions = condText.split(',').map(s => s.trim()).filter(Boolean)
+        await onQuickSave(t.id, { title, person_name: personName, anonymous, conditions, products })
+        setSaving(false)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+    }
+
+    return (
+        <tr className="quick-view-row">
+            <td colSpan={8}>
+                <div className="quick-view-panel">
+
+                    {/* ── Story ── */}
+                    <div className="qv-story">
+                        <div className="qv-section-label">Story</div>
+                        <p className="qv-story-text">{t.story_text || <em>No story text.</em>}</p>
+                    </div>
+
+                    {/* ── Editable fields ── */}
+                    <div className="qv-fields">
+                        <div className="qv-field">
+                            <label className="qv-label">Title</label>
+                            <input className="qv-input" value={title} onChange={e => setTitle(e.target.value)} />
+                        </div>
+                        <div className="qv-field">
+                            <label className="qv-label">Author</label>
+                            <div className="qv-author-row">
+                                <input
+                                    className="qv-input"
+                                    value={personName}
+                                    onChange={e => setPersonName(e.target.value)}
+                                    disabled={anonymous}
+                                    placeholder={anonymous ? 'Anonymous' : 'Author name'}
+                                />
+                                <label className="qv-anon-toggle">
+                                    <input type="checkbox" checked={anonymous} onChange={e => setAnonymous(e.target.checked)} />
+                                    Anonymous
+                                </label>
+                            </div>
+                        </div>
+                        <div className="qv-field">
+                            <label className="qv-label">Conditions <span className="qv-hint">(comma-separated)</span></label>
+                            <input className="qv-input" value={condText} onChange={e => setCondText(e.target.value)} placeholder="e.g. Diabetes, High Blood Pressure" />
+                        </div>
+                        <div className="qv-field qv-field-full">
+                            <label className="qv-label">Products</label>
+                            <div className="qv-products">
+                                {ALL_PRODUCTS.map(p => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        className={`qv-product-btn ${products.includes(p) ? 'on' : ''}`}
+                                        onClick={() => toggleProduct(p)}
+                                    >{p}</button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Actions ── */}
+                    <div className="qv-actions">
+                        <button className="qv-btn save" onClick={handleSave} disabled={saving}>
+                            <Save size={13} /> {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Changes'}
+                        </button>
+                        {t.status !== 'approved' && (
+                            <button className="qv-btn publish" onClick={() => onStatusChange(t.id, 'approved')}>
+                                <Check size={13} /> Publish
+                            </button>
+                        )}
+                        {t.status === 'approved' && (
+                            <button className="qv-btn unpublish" onClick={() => onStatusChange(t.id, 'unpublished')}>
+                                <MinusCircle size={13} /> Unpublish
+                            </button>
+                        )}
+                        <Link to={`/admin/edit/${t.id}`} className="qv-btn edit">
+                            <Pencil size={13} /> Full Edit
+                        </Link>
+                        <button className="qv-btn close" onClick={onClose}>
+                            <X size={13} /> Close
+                        </button>
+                    </div>
+
+                </div>
+            </td>
+        </tr>
+    )
+}
+
+export default function TestimonialTable({ testimonials, onStatusChange, onDelete, onQuickSave, loading }) {
+    const [selected,   setSelected]   = useState([])
+    const [search,     setSearch]     = useState('')
+    const [expandedId, setExpandedId] = useState(null)
 
     const statusBadge = (status) => {
         const map = {
@@ -78,7 +186,8 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                     </thead>
                     <tbody>
                         {filtered.map(t => (
-                            <tr key={t.id} className={selected.includes(t.id) ? 'row-selected' : ''}>
+                            <>
+                            <tr key={t.id} className={`${selected.includes(t.id) ? 'row-selected' : ''} ${expandedId === t.id ? 'row-expanded' : ''}`}>
                                 <td><input type="checkbox" checked={selected.includes(t.id)} onChange={() => toggleSelect(t.id)} /></td>
                                 <td className="col-title">
                                     <Link to={`/admin/edit/${t.id}`}>{t.title}</Link>
@@ -95,6 +204,13 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                 <td>{statusBadge(t.status)}</td>
                                 <td>
                                     <div className="row-actions">
+                                        <button
+                                            className={`row-action-btn quick-view ${expandedId === t.id ? 'active' : ''}`}
+                                            onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
+                                            title="Quick view"
+                                        >
+                                            {expandedId === t.id ? <ChevronUp size={13} /> : <ChevronDown size={13} />} View
+                                        </button>
                                         <Link to={`/admin/edit/${t.id}`} className="row-action-btn">Edit</Link>
                                         {t.status !== 'approved' && (
                                             <button className="row-action-btn approve" onClick={() => onStatusChange(t.id, 'approved')}>Publish</button>
@@ -112,6 +228,16 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                     </div>
                                 </td>
                             </tr>
+                            {expandedId === t.id && (
+                                <QuickViewPanel
+                                    key={`qv-${t.id}`}
+                                    t={t}
+                                    onStatusChange={onStatusChange}
+                                    onQuickSave={onQuickSave}
+                                    onClose={() => setExpandedId(null)}
+                                />
+                            )}
+                            </>
                         ))}
                     </tbody>
                 </table>

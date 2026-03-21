@@ -38,7 +38,10 @@ export default function AllTestimonials() {
         setTestimonials(prev => prev.map(t => t.id === id ? { ...t, status } : t))
     }
 
-    async function handleDelete(id) {
+    async function handleQuickSave(id, fields) {
+        await supabase.from('testimonials').update(fields).eq('id', id)
+        setTestimonials(prev => prev.map(t => t.id === id ? { ...t, ...fields } : t))
+    }
         await supabase.from('testimonials').delete().eq('id', id)
         setTestimonials(prev => prev.filter(t => t.id !== id))
     }
@@ -101,6 +104,7 @@ export default function AllTestimonials() {
                 testimonials={filtered}
                 onStatusChange={handleStatusChange}
                 onDelete={handleDelete}
+                onQuickSave={handleQuickSave}
                 loading={loading}
             />
         </div>
