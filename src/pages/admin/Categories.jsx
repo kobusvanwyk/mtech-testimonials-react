@@ -2,13 +2,31 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Tag, Plus, Pencil, Trash2, Check, X, GitMerge } from 'lucide-react'
 
+// ── Fuzzy similarity (Levenshtein) ────────────────────────────────────────────
+function similarity(a, b) {
+    a = a.toLowerCase().trim()
+    b = b.toLowerCase().trim()
+    if (a === b) return 1
+    if (!a.length || !b.length) return 0
+    const dp = Array.from({ length: a.length + 1 }, (_, i) =>
+        Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    )
+    for (let i = 1; i <= a.length; i++)
+        for (let j = 1; j <= b.length; j++)
+            dp[i][j] = a[i-1] === b[j-1]
+                ? dp[i-1][j-1]
+                : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+    return 1 - dp[a.length][b.length] / Math.max(a.length, b.length)
+}
+const SIMILARITY_THRESHOLD = 0.62
+
 // ── Merge warning banner ──────────────────────────────────────────────────────
 function MergeWarning({ duplicateGroups, onMerge }) {
     if (!duplicateGroups.length) return null
     return (
         <div className="merge-warning">
-            <strong>⚠ Duplicate conditions detected</strong>
-            <p>The following conditions appear to be the same (different capitalisation). Use Merge to combine them into one.</p>
+            <strong>⚠ Possible duplicates detected</strong>
+            <p>The following conditions look similar and may be the same (different capitalisation or typos). Use Merge to combine them into one.</p>
             {duplicateGroups.map(group => (
                 <MergeGroup key={group[0].name} group={group} onMerge={onMerge} />
             ))}
@@ -264,15 +282,29 @@ function CategorySection({ title, table, color, onDataChange }) {
         setSaving(false)
     }
 
-    // Detect case-insensitive duplicate groups (conditions only for now, but works for both)
+    // Detect duplicates: exact case-insensitive matches + fuzzy similar names
     const duplicateGroups = (() => {
-        const grouped = {}
-        items.forEach(item => {
-            const key = item.name.toLowerCase()
-            if (!grouped[key]) grouped[key] = []
-            grouped[key].push(item)
-        })
-        return Object.values(grouped).filter(g => g.length > 1)
+        const visited = new Set()
+        const groups = []
+
+        for (let i = 0; i < items.length; i++) {
+            if (visited.has(items[i].id)) continue
+            const group = [items[i]]
+
+            for (let j = i + 1; j < items.length; j++) {
+                if (visited.has(items[j].id)) continue
+                if (similarity(items[i].name, items[j].name) >= SIMILARITY_THRESHOLD) {
+                    group.push(items[j])
+                    visited.add(items[j].id)
+                }
+            }
+
+            if (group.length > 1) {
+                visited.add(items[i].id)
+                groups.push(group)
+            }
+        }
+        return groups
     })()
 
     function startEdit(item) {
