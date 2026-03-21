@@ -11,8 +11,6 @@ export default function Submit() {
     const [step, setStep] = useState(1)
 
     useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, [step])
-    const [conditionSuggestions, setConditionSuggestions] = useState([])
-    const [suggestionIndex, setSuggestionIndex] = useState(-1)
     const [submitted, setSubmitted] = useState(false)
     const [loading, setLoading] = useState(false)
     const [galleryImages, setGalleryImages] = useState([])
@@ -20,6 +18,7 @@ export default function Submit() {
     const [terms, setTerms] = useState({ tc: false, privacy: false, consent: false })
     const allTermsAccepted = terms.tc && terms.privacy && terms.consent
     const [honeypot, setHoneypot] = useState('')
+    const [conditionText, setConditionText] = useState('')
     const [form, setForm] = useState({
         title: '',
         person_name: '',
@@ -27,60 +26,17 @@ export default function Submit() {
         conditions: [],
         products: [],
         story_text: '',
-        conditionInput: ''
     })
 
     function updateForm(field, value) {
         setForm(prev => ({ ...prev, [field]: value }))
     }
 
-    function addCondition(val) {
-        const trimmed = (val ?? form.conditionInput).trim()
-        if (trimmed && !form.conditions.includes(trimmed)) {
-            updateForm('conditions', [...form.conditions, trimmed])
-        }
-        updateForm('conditionInput', '')
-        setConditionSuggestions([])
-        setSuggestionIndex(-1)
-    }
-
-    function handleConditionInput(e) {
-        const val = e.target.value
-        updateForm('conditionInput', val)
-        setSuggestionIndex(-1)
-        if (val.trim().length < 1) {
-            setConditionSuggestions([])
-            return
-        }
-        const lower = val.toLowerCase()
-        const matches = ALL_CONDITIONS.filter(c =>
-            c.toLowerCase().includes(lower) && !form.conditions.includes(c)
-        ).slice(0, 6)
-        setConditionSuggestions(matches)
-    }
-
-    function handleConditionKeyDown(e) {
-        if (e.key === 'ArrowDown') {
-            e.preventDefault()
-            setSuggestionIndex(i => Math.min(i + 1, conditionSuggestions.length - 1))
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault()
-            setSuggestionIndex(i => Math.max(i - 1, -1))
-        } else if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault()
-            if (suggestionIndex >= 0 && conditionSuggestions[suggestionIndex]) {
-                addCondition(conditionSuggestions[suggestionIndex])
-            } else {
-                addCondition()
-            }
-        } else if (e.key === 'Escape') {
-            setConditionSuggestions([])
-            setSuggestionIndex(-1)
-        }
-    }
-
-    function removeCondition(c) {
-        updateForm('conditions', form.conditions.filter(x => x !== c))
+    function parseConditions() {
+        return conditionText
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean)
     }
 
     function toggleProduct(p) {
@@ -187,7 +143,8 @@ export default function Submit() {
                     <button className="btn-success-another" onClick={() => {
                         setSubmitted(false)
                         setStep(1)
-                        setForm({ title: '', person_name: '', anonymous: false, conditions: [], products: [], story_text: '', conditionInput: '' })
+                        setForm({ title: '', person_name: '', anonymous: false, conditions: [], products: [], story_text: '' })
+                        setConditionText('')
                         setGalleryImages([])
                         setTerms({ tc: false, privacy: false, consent: false })
                     }}>
@@ -322,57 +279,25 @@ export default function Submit() {
                 {step === 2 && (
                     <div className="step">
                         <h2>What health challenge does this testimonial relate to?</h2>
-                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Search for your health condition below and select it from the list. If it's not listed, type it in and press Enter (or tap "Add" on mobile) to add it. You can add more than one.</span></p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Type the health condition(s) this testimonial relates to. If there is more than one, separate them with a comma — for example: <em>Diabetes, High Blood Pressure</em></span></p>
                         <label className="form-label">Health conditions</label>
-                        <div className="tag-input-area">
-                            {form.conditions.map(c => (
-                                <span key={c} className="tag-pill">
-                                    {c} <button onClick={() => removeCondition(c)}><X size={10} /></button>
-                                </span>
-                            ))}
-                            <div className="condition-autocomplete-wrap">
-                                <input
-                                    className="tag-input"
-                                    type="text"
-                                    placeholder="e.g. High blood pressure"
-                                    value={form.conditionInput}
-                                    onChange={handleConditionInput}
-                                    onKeyDown={handleConditionKeyDown}
-                                    onBlur={() => setTimeout(() => {
-                                        setConditionSuggestions([])
-                                        setSuggestionIndex(-1)
-                                    }, 150)}
-                                    autoComplete="off"
-                                />
-                                {conditionSuggestions.length > 0 && (
-                                    <div className="condition-suggestions">
-                                        {conditionSuggestions.map((s, i) => (
-                                            <button
-                                                key={s}
-                                                className={`condition-suggestion-item ${i === suggestionIndex ? 'highlighted' : ''}`}
-                                                onMouseDown={e => { e.preventDefault(); addCondition(s) }}
-                                            >
-                                                {s}
-                                            </button>
-                                        ))}
-                                        {form.conditionInput.trim() && !ALL_CONDITIONS.map(c => c.toLowerCase()).includes(form.conditionInput.trim().toLowerCase()) && (
-                                            <button
-                                                className={`condition-suggestion-item condition-suggestion-new ${suggestionIndex === conditionSuggestions.length ? 'highlighted' : ''}`}
-                                                onMouseDown={e => { e.preventDefault(); addCondition() }}
-                                            >
-                                                Add "<strong>{form.conditionInput.trim()}</strong>"
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <input
+                            className="form-input"
+                            type="text"
+                            placeholder="e.g. Diabetes, High Blood Pressure, Arthritis"
+                            value={conditionText}
+                            onChange={e => setConditionText(e.target.value)}
+                            autoComplete="off"
+                        />
                         <div className="step-nav">
                             <button className="btn-back" onClick={() => setStep(1)}><ArrowLeft size={15} /> Back</button>
                             <button
                                 className="btn-next"
-                                disabled={form.conditions.length === 0}
-                                onClick={() => setStep(3)}
+                                disabled={!conditionText.trim()}
+                                onClick={() => {
+                                    updateForm('conditions', parseConditions())
+                                    setStep(3)
+                                }}
                             >
                                 Next <ArrowRight size={15} />
                             </button>
