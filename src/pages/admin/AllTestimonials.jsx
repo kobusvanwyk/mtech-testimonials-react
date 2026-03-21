@@ -42,6 +42,8 @@ export default function AllTestimonials() {
         await supabase.from('testimonials').update(fields).eq('id', id)
         setTestimonials(prev => prev.map(t => t.id === id ? { ...t, ...fields } : t))
     }
+
+    async function handleDelete(id) {
         await supabase.from('testimonials').delete().eq('id', id)
         setTestimonials(prev => prev.filter(t => t.id !== id))
     }
