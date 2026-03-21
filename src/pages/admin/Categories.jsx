@@ -178,6 +178,8 @@ function CategorySection({ title, table, color, onDataChange }) {
             prev.size === items.length ? new Set() : new Set(items.map(i => i.id))
         )
     }
+
+    async function handleRename(item) {
         const name = editValue.trim()
         if (!name || name === item.name) { setEditingId(null); return }
 
