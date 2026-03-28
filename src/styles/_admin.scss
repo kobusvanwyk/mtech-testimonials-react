@@ -666,7 +666,40 @@
 .page-sub    { color: var(--muted-dark); margin-bottom: 20px; font-size: 0.9rem; margin-top: -16px; }
 
 // === STATUS FILTER TABS ===
-.status-filter-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.status-filter-bar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+
+.date-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.date-filter-label { font-size: var(--text-sm); font-weight: 600; color: var(--muted-dark); }
+.date-filter-input {
+    padding: 6px 10px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-family: inherit;
+    color: var(--text-body);
+    &:focus { outline: none; border-color: var(--primary); }
+}
+.date-filter-sep { color: var(--muted); font-size: var(--text-sm); }
+.date-filter-clear {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: none;
+    border: 1.5px solid var(--danger, #dc2626);
+    border-radius: var(--radius-pill);
+    color: var(--danger, #dc2626);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    &:hover { background: #fee2e2; }
+}
 
 .filter-tab {
     background: var(--surface);

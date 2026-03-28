@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import TestimonialTable from '../../components/TestimonialTable'
-import { List, Download } from 'lucide-react'
+import { List, Download, X } from 'lucide-react'
 
 const STATUS_FILTERS = [
     { value: 'all',              label: 'All' },
@@ -19,6 +19,8 @@ export default function AllTestimonials() {
     const [testimonials, setTestimonials] = useState([])
     const [loading, setLoading] = useState(true)
     const [statusFilter, setStatusFilter] = useState('all')
+    const [dateFrom, setDateFrom] = useState('')
+    const [dateTo, setDateTo]     = useState('')
 
     useEffect(() => { fetch() }, [])
 
@@ -49,7 +51,6 @@ export default function AllTestimonials() {
         setTestimonials(prev => prev.filter(t => t.id !== id))
     }
 
-
     function exportCSV() {
         const rows = [
             ['Title', 'Author', 'Status', 'Conditions', 'Products', 'Date', 'Words'],
@@ -73,13 +74,22 @@ export default function AllTestimonials() {
         URL.revokeObjectURL(url)
     }
 
-    const filtered = statusFilter === 'all'
+    const byStatus = statusFilter === 'all'
         ? testimonials
         : statusFilter === 'imported_pending'
             ? testimonials.filter(t => t.is_imported && t.status === 'pending')
             : statusFilter === 'imported'
                 ? testimonials.filter(t => t.is_imported)
                 : testimonials.filter(t => t.status === statusFilter)
+
+    const filtered = byStatus.filter(t => {
+        const created = new Date(t.created_at)
+        if (dateFrom && created < new Date(dateFrom)) return false
+        if (dateTo   && created > new Date(dateTo))   return false
+        return true
+    })
+
+    const hasDateFilter = dateFrom || dateTo
 
     return (
         <div className="admin-page-content">
@@ -106,6 +116,27 @@ export default function AllTestimonials() {
                         </span>
                     </button>
                 ))}
+            </div>
+            <div className="date-filter-bar">
+                <span className="date-filter-label">Date range:</span>
+                <input
+                    type="datetime-local"
+                    className="date-filter-input"
+                    value={dateFrom}
+                    onChange={e => setDateFrom(e.target.value)}
+                />
+                <span className="date-filter-sep">→</span>
+                <input
+                    type="datetime-local"
+                    className="date-filter-input"
+                    value={dateTo}
+                    onChange={e => setDateTo(e.target.value)}
+                />
+                {hasDateFilter && (
+                    <button className="date-filter-clear" onClick={() => { setDateFrom(''); setDateTo('') }}>
+                        <X size={13} /> Clear
+                    </button>
+                )}
             </div>
             <TestimonialTable
                 testimonials={filtered}
