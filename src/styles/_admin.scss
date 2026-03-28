@@ -494,6 +494,9 @@
 
 .col-tags .tags-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
 .col-date { white-space: nowrap; color: var(--muted-dark); }
+.col-imgs { white-space: nowrap; text-align: center; }
+.img-count-badge { font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+.img-count-none  { color: var(--muted); font-size: 0.85rem; }
 
 .row-actions { display: flex; gap: 6px; }
 

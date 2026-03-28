@@ -197,6 +197,7 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                             <th>Author</th>
                             <th>Conditions</th>
                             <th>Products</th>
+                            <th>Imgs</th>
                             <th>Date</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -218,6 +219,12 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                 <td>{t.anonymous ? <em>Anonymous</em> : t.person_name}</td>
                                 <td className="col-tags"><div className="tags-wrap">{t.conditions?.map(c => <span key={c} className="tag tag-condition">{c}</span>)}</div></td>
                                 <td className="col-tags"><div className="tags-wrap">{t.products?.map(p => <span key={p} className="tag tag-product">{p}</span>)}</div></td>
+                                <td className="col-imgs">
+                                    {(t.gallery_urls?.length > 0)
+                                        ? <span className="img-count-badge" title={`${t.gallery_urls.length} image${t.gallery_urls.length !== 1 ? 's' : ''}`}>🖼 {t.gallery_urls.length}</span>
+                                        : <span className="img-count-none">—</span>
+                                    }
+                                </td>
                                 <td className="col-date">{new Date(t.created_at).toLocaleDateString('en-ZA')}</td>
                                 <td>{statusBadge(t.status)}</td>
                                 <td>
