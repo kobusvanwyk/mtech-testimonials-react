@@ -225,7 +225,10 @@ export default function TestimonialTable({ testimonials, onStatusChange, onDelet
                                         : <span className="img-count-none">—</span>
                                     }
                                 </td>
-                                <td className="col-date">{new Date(t.created_at).toLocaleDateString('en-ZA')}</td>
+                                <td className="col-date">
+                                    <span>{new Date(t.created_at).toLocaleDateString('en-ZA')}</span>
+                                    <span className="col-time">{new Date(t.created_at).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </td>
                                 <td>{statusBadge(t.status)}</td>
                                 <td>
                                     <div className="row-actions">
