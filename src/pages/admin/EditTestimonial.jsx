@@ -113,6 +113,20 @@ export default function EditTestimonial() {
         return data.publicUrl
     }
 
+    function handleGalleryFiles(files) {
+        const valid = Array.from(files).filter(f => f.type.startsWith('image/'))
+        if (!valid.length) return
+        // Preview immediately
+        const previews = valid.map(f => URL.createObjectURL(f))
+        update('gallery_urls', [...(form.gallery_urls || []), ...previews])
+        setNewGalleryImages(prev => [...prev, ...valid])
+    }
+
+    function handleDrop(e) {
+        e.preventDefault()
+        handleGalleryFiles(e.dataTransfer.files)
+    }
+
     async function handleSave() {
         setSaving(true)
         try {
@@ -120,7 +134,13 @@ export default function EditTestimonial() {
 
             if (newGalleryImages.length > 0) {
                 const newUrls = await Promise.all(newGalleryImages.map(f => uploadImage(f, 'gallery')))
-                updates.gallery_urls = [...(form.gallery_urls || []), ...newUrls]
+                // Replace blob preview URLs with real uploaded URLs
+                const blobPreviews = newGalleryImages.map(f => {
+                    // Find matching blob URL in gallery_urls by matching file order
+                    return null
+                })
+                const existing = (updates.gallery_urls || []).filter(u => !u.startsWith('blob:'))
+                updates.gallery_urls = [...existing, ...newUrls]
             }
 
             const historyEntry = { at: new Date().toISOString(), note: `Status: ${updates.status}` }
@@ -239,17 +259,50 @@ export default function EditTestimonial() {
                                 {(form.gallery_urls || []).map((url, i) => (
                                     <div key={url} className="gallery-manage-item">
                                         <img src={url} alt={`Gallery ${i + 1}`} />
-                                        <div className="gallery-manage-actions">
-                                            <button onClick={() => moveGalleryImage(i, -1)} disabled={i === 0} title="Move left"><ArrowLeft size={13} /></button>
-                                            <button onClick={() => moveGalleryImage(i, 1)} disabled={i === (form.gallery_urls.length - 1)} title="Move right"><ArrowRight size={13} /></button>
-                                            <button onClick={() => removeGalleryImage(url)} className="btn-remove-gallery" title="Remove"><X size={13} /></button>
+                                        <div className="gallery-overlay-actions">
+                                            <button
+                                                className="gallery-overlay-btn"
+                                                onClick={() => moveGalleryImage(i, -1)}
+                                                disabled={i === 0}
+                                                title="Move left"
+                                            ><ArrowLeft size={12} /></button>
+                                            <button
+                                                className="gallery-overlay-btn remove"
+                                                onClick={() => removeGalleryImage(url)}
+                                                title="Remove"
+                                            ><X size={12} /></button>
+                                            <button
+                                                className="gallery-overlay-btn"
+                                                onClick={() => moveGalleryImage(i, 1)}
+                                                disabled={i === (form.gallery_urls.length - 1)}
+                                                title="Move right"
+                                            ><ArrowRight size={12} /></button>
                                         </div>
+                                        {url.startsWith('blob:') && (
+                                            <span className="gallery-unsaved-badge">unsaved</span>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         )}
-                        <input type="file" accept="image/*" multiple onChange={e => setNewGalleryImages(Array.from(e.target.files))} className="file-input" />
-                        {newGalleryImages.length > 0 && <p className="upload-hint">{newGalleryImages.length} new photo(s) to add (not saved yet)</p>}
+                        <div
+                            className="gallery-dropzone"
+                            onDragOver={e => e.preventDefault()}
+                            onDrop={handleDrop}
+                            onClick={() => document.getElementById('gallery-file-input').click()}
+                        >
+                            <span className="gallery-dropzone-icon">📷</span>
+                            <span className="gallery-dropzone-text">Drag & drop photos here, or click to browse</span>
+                            <span className="gallery-dropzone-hint">JPG or PNG · Multiple files supported</span>
+                        </div>
+                        <input
+                            id="gallery-file-input"
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            style={{ display: 'none' }}
+                            onChange={e => handleGalleryFiles(e.target.files)}
+                        />
                     </div>
 
                     <div className="edit-section">
