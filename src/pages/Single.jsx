@@ -27,7 +27,10 @@ export default function Single({ shareMode = false }) {
                 : query.eq('slug', slug).single())
             setTestimonial(data)
             setLoading(false)
-            if (data) fetchRelated(data)
+            if (data) {
+                document.title = `Mannatech Testimonial — ${data.title}`
+                fetchRelated(data)
+            }
             // Pre-load image dimensions for PhotoSwipe
             if (data?.gallery_urls?.length) {
                 const dims = {}
@@ -68,6 +71,7 @@ export default function Single({ shareMode = false }) {
         }
         fetchTestimonial()
         checkSession()
+        return () => { document.title = 'Mannatech Testimonials Database' }
     }, [slug])
 
     function handleShare() {
