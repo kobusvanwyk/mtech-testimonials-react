@@ -117,6 +117,23 @@
         color: var(--primary);
         background: var(--primary-light);
     }
+
+    &.has-active-filter {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-light);
+
+        &::after {
+            content: '';
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin-left: 2px;
+            flex-shrink: 0;
+        }
+    }
 }
 
 .nav-chevron {
@@ -171,6 +188,23 @@
     &:hover {
         background: var(--primary-light);
         color: var(--primary-dark);
+    }
+
+    &.nav-dropdown-item-active {
+        background: var(--primary-light);
+        color: var(--primary);
+        font-weight: 700;
+
+        &::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin-right: 6px;
+            flex-shrink: 0;
+        }
     }
 }
 
@@ -284,6 +318,14 @@
     &:hover, &:active {
         background: var(--primary-light);
         color: var(--primary-dark);
+    }
+
+    &.bs-item-active {
+        background: var(--primary-light);
+        color: var(--primary);
+        font-weight: 700;
+        border-left: 3px solid var(--primary);
+        padding-left: 17px;
     }
 
     &:last-child { border-bottom: none; }

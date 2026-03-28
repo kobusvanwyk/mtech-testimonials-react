@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase'
 import { useProducts, useConditions } from '../lib/ProductsContext'
 import TestimonialCard from '../components/TestimonialCard'
 import SearchBar from '../components/SearchBar'
-import CategorySidebar from '../components/CategorySidebar'
 
 const PAGE_SIZE = 12
 
@@ -67,39 +66,30 @@ export default function Home() {
 
     return (
         <div className="home-layout">
-            <div className="main-column">
-                <SearchBar />
-                <p className="results-count">
-                    {activeFilter
-                        ? `${totalCount} testimonial${totalCount === 1 ? '' : 's'} for "${activeFilter}"`
-                        : `${totalCount} testimonial${totalCount === 1 ? '' : 's'}`
-                    }
-                </p>
-                <div className="testimonials-grid">
-                    {testimonials.map(t => <TestimonialCard key={t.id} testimonial={t} />)}
-                </div>
-                {testimonials.length === 0 && !loading && (
-                    <p className="no-results">No testimonials found for "{activeFilter}".</p>
-                )}
-                {hasMore && (
-                    <div className="load-more-wrap">
-                        <button
-                            className="btn-load-more"
-                            onClick={handleLoadMore}
-                            disabled={loadingMore}
-                        >
-                            {loadingMore ? 'Loading...' : `Load more testimonials`}
-                        </button>
-                    </div>
-                )}
+            <SearchBar />
+            <p className="results-count">
+                {activeFilter
+                    ? `${totalCount} testimonial${totalCount === 1 ? '' : 's'} for "${activeFilter}"`
+                    : `${totalCount} testimonial${totalCount === 1 ? '' : 's'}`
+                }
+            </p>
+            <div className="testimonials-grid">
+                {testimonials.map(t => <TestimonialCard key={t.id} testimonial={t} />)}
             </div>
-            <CategorySidebar
-                conditions={CONDITIONS}
-                products={PRODUCTS}
-                activeFilter={activeFilter}
-                onFilter={setActiveFilter}
-                testimonials={testimonials}
-            />
+            {testimonials.length === 0 && !loading && (
+                <p className="no-results">No testimonials found for "{activeFilter}".</p>
+            )}
+            {hasMore && (
+                <div className="load-more-wrap">
+                    <button
+                        className="btn-load-more"
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                    >
+                        {loadingMore ? 'Loading...' : `Load more testimonials`}
+                    </button>
+                </div>
+            )}
         </div>
     )
 }

@@ -17,7 +17,7 @@ function useIsMobile() {
 }
 
 // ── Bottom sheet (mobile) ─────────────────────────────────────────────────────
-function BottomSheet({ title, items, counts = {}, open, onClose, onSelect }) {
+function BottomSheet({ title, items, counts = {}, open, onClose, onSelect, activeFilter }) {
     useEffect(() => {
         if (open) document.body.style.overflow = 'hidden'
         else       document.body.style.overflow = ''
@@ -30,20 +30,19 @@ function BottomSheet({ title, items, counts = {}, open, onClose, onSelect }) {
         <>
             <div className="bs-backdrop" onClick={onClose} />
             <div className="bs-sheet">
-                <div className="bs-handle" />
+                <div class="bs-handle" />
                 <div className="bs-header">
                     <span className="bs-title">{title}</span>
                     <button className="bs-close" onClick={onClose}><X size={20} /></button>
                 </div>
                 <div className="bs-list">
-                    {/* View All entry */}
-                    <button className="bs-item bs-item-all" onClick={() => { onSelect(null); onClose() }}>
+                    <button className={`bs-item bs-item-all ${!activeFilter ? 'bs-item-active' : ''}`} onClick={() => { onSelect(null); onClose() }}>
                         <span>All testimonials</span>
                     </button>
                     {items.map(item => (
                         <button
                             key={item}
-                            className="bs-item"
+                            className={`bs-item ${activeFilter === item ? 'bs-item-active' : ''}`}
                             onClick={() => { onSelect(item); onClose() }}
                         >
                             <span>{item}</span>
@@ -59,7 +58,7 @@ function BottomSheet({ title, items, counts = {}, open, onClose, onSelect }) {
 }
 
 // ── Desktop dropdown ──────────────────────────────────────────────────────────
-function DesktopDropdown({ label, items, counts = {}, onSelect }) {
+function DesktopDropdown({ label, items, counts = {}, onSelect, activeFilter }) {
     const [open, setOpen] = useState(false)
     const ref = useRef()
 
@@ -71,10 +70,12 @@ function DesktopDropdown({ label, items, counts = {}, onSelect }) {
         return () => document.removeEventListener('mousedown', handleClick)
     }, [])
 
+    const hasActive = items.includes(activeFilter)
+
     return (
         <div className="nav-dropdown" ref={ref}>
             <button
-                className={`nav-dropdown-trigger ${open ? 'active' : ''}`}
+                className={`nav-dropdown-trigger ${open ? 'active' : ''} ${hasActive ? 'has-active-filter' : ''}`}
                 onClick={() => setOpen(o => !o)}
             >
                 {label}
@@ -83,9 +84,8 @@ function DesktopDropdown({ label, items, counts = {}, onSelect }) {
             {open && (
                 <div className="nav-dropdown-menu">
                     <div className="nav-dropdown-scroll">
-                        {/* View All entry */}
                         <button
-                            className="nav-dropdown-item nav-dropdown-item-all"
+                            className={`nav-dropdown-item nav-dropdown-item-all ${!activeFilter ? 'nav-dropdown-item-active' : ''}`}
                             onClick={() => { onSelect(null); setOpen(false) }}
                         >
                             <span>All testimonials</span>
@@ -94,7 +94,7 @@ function DesktopDropdown({ label, items, counts = {}, onSelect }) {
                         {items.map(item => (
                             <button
                                 key={item}
-                                className="nav-dropdown-item"
+                                className={`nav-dropdown-item ${activeFilter === item ? 'nav-dropdown-item-active' : ''}`}
                                 onClick={() => { onSelect(item); setOpen(false) }}
                             >
                                 <span>{item}</span>
@@ -111,7 +111,7 @@ function DesktopDropdown({ label, items, counts = {}, onSelect }) {
 }
 
 // ── Smart menu ────────────────────────────────────────────────────────────────
-function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect }) {
+function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect, activeFilter }) {
     const isMobile = useIsMobile()
     const [open, setOpen] = useState(false)
 
@@ -119,7 +119,7 @@ function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect }) {
         return (
             <>
                 <button
-                    className={`nav-dropdown-trigger mobile ${open ? 'active' : ''}`}
+                    className={`nav-dropdown-trigger mobile ${open ? 'active' : ''} ${items.includes(activeFilter) ? 'has-active-filter' : ''}`}
                     onClick={() => setOpen(true)}
                 >
                     {mobileLabel}
@@ -132,6 +132,7 @@ function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect }) {
                     open={open}
                     onClose={() => setOpen(false)}
                     onSelect={onSelect}
+                    activeFilter={activeFilter}
                 />
             </>
         )
@@ -143,6 +144,7 @@ function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect }) {
             items={items}
             counts={counts}
             onSelect={onSelect}
+            activeFilter={activeFilter}
         />
     )
 }
@@ -176,6 +178,8 @@ export default function Navbar() {
     const products   = useProducts()
     const conditions = useConditions()
     const navigate   = useNavigate()
+    const [searchParams] = useSearchParams()
+    const activeFilter   = searchParams.get('filter') || null
     const [counts, setCounts] = useState({})
 
     useEffect(() => {
@@ -215,6 +219,7 @@ export default function Navbar() {
                         items={conditions.filter(c => counts[c] > 0)}
                         counts={counts}
                         onSelect={handleFilter}
+                        activeFilter={activeFilter}
                     />
                     <NavMenu
                         desktopLabel="View by Product"
@@ -222,6 +227,7 @@ export default function Navbar() {
                         items={products.filter(p => counts[p] > 0)}
                         counts={counts}
                         onSelect={handleFilter}
+                        activeFilter={activeFilter}
                     />
                 </div>
             </nav>
