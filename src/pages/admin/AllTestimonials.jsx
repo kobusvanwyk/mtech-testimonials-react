@@ -5,13 +5,14 @@ import TestimonialTable from '../../components/TestimonialTable'
 import { List, Download } from 'lucide-react'
 
 const STATUS_FILTERS = [
-    { value: 'all', label: 'All' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Published' },
-    { value: 'unpublished', label: 'Unpublished' },
-    { value: 'needs_editing', label: 'Needs Editing' },
-    { value: 'rejected', label: 'Rejected' },
+    { value: 'all',              label: 'All' },
+    { value: 'pending',          label: 'Pending' },
+    { value: 'approved',         label: 'Published' },
+    { value: 'unpublished',      label: 'Unpublished' },
+    { value: 'needs_editing',    label: 'Needs Editing' },
+    { value: 'rejected',         label: 'Rejected' },
     { value: 'imported_pending', label: 'Imported Pending' },
+    { value: 'imported',         label: 'Imported' },
 ]
 
 export default function AllTestimonials() {
@@ -76,7 +77,9 @@ export default function AllTestimonials() {
         ? testimonials
         : statusFilter === 'imported_pending'
             ? testimonials.filter(t => t.is_imported && t.status === 'pending')
-            : testimonials.filter(t => t.status === statusFilter)
+            : statusFilter === 'imported'
+                ? testimonials.filter(t => t.is_imported)
+                : testimonials.filter(t => t.status === statusFilter)
 
     return (
         <div className="admin-page-content">
@@ -97,7 +100,9 @@ export default function AllTestimonials() {
                                 ? testimonials.length
                                 : f.value === 'imported_pending'
                                     ? testimonials.filter(t => t.is_imported && t.status === 'pending').length
-                                    : testimonials.filter(t => t.status === f.value).length}
+                                    : f.value === 'imported'
+                                        ? testimonials.filter(t => t.is_imported).length
+                                        : testimonials.filter(t => t.status === f.value).length}
                         </span>
                     </button>
                 ))}
