@@ -21,20 +21,37 @@ function similarity(a, b) {
 const SIMILARITY_THRESHOLD = 0.62
 
 // ── Merge warning banner ──────────────────────────────────────────────────────
+function getDismissedKey(group) {
+    return 'dismissed_merge_' + [...group].map(i => i.name).sort().join('|')
+}
+
 function MergeWarning({ duplicateGroups, onMerge }) {
-    if (!duplicateGroups.length) return null
+    const [dismissed, setDismissed] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('dismissed_merges') || '[]') } catch { return [] }
+    })
+
+    function dismiss(group) {
+        const key = getDismissedKey(group)
+        const next = [...dismissed, key]
+        setDismissed(next)
+        localStorage.setItem('dismissed_merges', JSON.stringify(next))
+    }
+
+    const visible = duplicateGroups.filter(g => !dismissed.includes(getDismissedKey(g)))
+    if (!visible.length) return null
+
     return (
         <div className="merge-warning">
             <strong>⚠ Possible duplicates detected</strong>
-            <p>The following conditions look similar and may be the same (different capitalisation or typos). Use Merge to combine them into one.</p>
-            {duplicateGroups.map(group => (
-                <MergeGroup key={group[0].name} group={group} onMerge={onMerge} />
+            <p>The following conditions look similar and may be the same (different capitalisation or typos). Use Merge to combine them, or Dismiss if they are intentionally different.</p>
+            {visible.map(group => (
+                <MergeGroup key={group[0].name} group={group} onMerge={onMerge} onDismiss={() => dismiss(group)} />
             ))}
         </div>
     )
 }
 
-function MergeGroup({ group, onMerge }) {
+function MergeGroup({ group, onMerge, onDismiss }) {
     // Default winner = whichever has the most testimonials; tie = first alphabetically
     const sorted = [...group].sort((a, b) => (b._count - a._count) || a.name.localeCompare(b.name))
     const [winner, setWinner] = useState(sorted[0].name)
@@ -56,9 +73,14 @@ function MergeGroup({ group, onMerge }) {
                     </label>
                 ))}
             </div>
-            <button className="merge-btn" onClick={() => onMerge(group, winner)}>
-                <GitMerge size={13} /> Keep "{winner}"
-            </button>
+            <div className="merge-group-actions">
+                <button className="merge-btn" onClick={() => onMerge(group, winner)}>
+                    <GitMerge size={13} /> Keep "{winner}"
+                </button>
+                <button className="merge-dismiss-btn" onClick={onDismiss}>
+                    Not a duplicate
+                </button>
+            </div>
         </div>
     )
 }
@@ -127,7 +149,7 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
             flash(`Added "${name}"`)
             setAddValue('')
             setAdding(false)
-            fetchItems()
+            await fetchItems()
         }
         setSaving(false)
     }

@@ -1686,6 +1686,29 @@
     &:hover { background: #d97706; }
 }
 
+.merge-group-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.merge-dismiss-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    background: none;
+    color: var(--muted-dark);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    &:hover { border-color: var(--muted-dark); color: var(--text-body); }
+}
+
 // ─── PDF Footer Preview (Settings page) ─────────────────────────────────────
 .settings-logo-preview {
     img {
