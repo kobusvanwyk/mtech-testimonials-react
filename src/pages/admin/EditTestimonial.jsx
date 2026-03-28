@@ -27,6 +27,7 @@ export default function EditTestimonial() {
     const [form, setForm] = useState(null)
     const [pendingNav, setPendingNav] = useState(null)
     const originalForm = useRef(null)
+    const storyRef     = useRef(null)
 
     const isDirty = useCallback(() => {
         if (!form || !originalForm.current) return false
@@ -90,6 +91,37 @@ export default function EditTestimonial() {
     function toggleProduct(p) {
         const current = form.products || []
         update('products', current.includes(p) ? current.filter(x => x !== p) : [...current, p])
+    }
+
+    function formatText(type) {
+        const el = storyRef.current
+        if (!el) return
+        const start = el.selectionStart
+        const end   = el.selectionEnd
+        const text  = form.story_text || ''
+        const sel   = text.slice(start, end)
+
+        let replacement = sel
+        if (type === 'bold')   replacement = `**${sel}**`
+        if (type === 'italic') replacement = `_${sel}_`
+        if (type === 'ul') {
+            replacement = sel
+                ? sel.split('\n').map(l => `- ${l}`).join('\n')
+                : '- '
+        }
+        if (type === 'ol') {
+            replacement = sel
+                ? sel.split('\n').map((l, i) => `${i + 1}. ${l}`).join('\n')
+                : '1. '
+        }
+
+        const newText = text.slice(0, start) + replacement + text.slice(end)
+        update('story_text', newText)
+        // Restore cursor after React re-render
+        setTimeout(() => {
+            el.focus()
+            el.setSelectionRange(start + replacement.length, start + replacement.length)
+        }, 0)
     }
 
     function removeGalleryImage(url) {
@@ -207,7 +239,20 @@ export default function EditTestimonial() {
 
                     <div className="edit-section">
                         <label className="edit-label">Testimonial</label>
-                        <textarea className="edit-textarea" value={form.story_text || ''} onChange={e => update('story_text', e.target.value)} rows={12} />
+                        <div className="story-toolbar">
+                            <button type="button" className="story-toolbar-btn" onClick={() => formatText('bold')} title="Bold"><strong>B</strong></button>
+                            <button type="button" className="story-toolbar-btn" onClick={() => formatText('italic')} title="Italic"><em>I</em></button>
+                            <span className="story-toolbar-sep" />
+                            <button type="button" className="story-toolbar-btn" onClick={() => formatText('ul')} title="Bullet list">• List</button>
+                            <button type="button" className="story-toolbar-btn" onClick={() => formatText('ol')} title="Numbered list">1. List</button>
+                        </div>
+                        <textarea
+                            ref={storyRef}
+                            className="edit-textarea"
+                            value={form.story_text || ''}
+                            onChange={e => update('story_text', e.target.value)}
+                            rows={12}
+                        />
                         <div className="story-count">
                             <span>{(form.story_text || '').trim().split(/\s+/).filter(Boolean).length} words</span>
                             <span>{(form.story_text || '').length} characters</span>

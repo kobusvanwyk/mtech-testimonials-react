@@ -92,6 +92,14 @@
             line-height: 1.8;
             color: var(--text-body);
         }
+        ul, ol {
+            margin: 0 0 16px 24px;
+            line-height: 1.8;
+            color: var(--text-body);
+        }
+        li { margin-bottom: 4px; }
+        strong { font-weight: 700; }
+        em { font-style: italic; }
     }
 
     .single-gallery {

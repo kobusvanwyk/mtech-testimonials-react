@@ -7,6 +7,58 @@ import TestimonialCard from '../components/TestimonialCard'
 import { Gallery, Item } from 'react-photoswipe-gallery'
 import 'photoswipe/dist/photoswipe.css'
 
+// Render plain text with simple markdown: **bold**, _italic_, - bullets, 1. numbered
+function renderStory(text) {
+    if (!text) return null
+    const lines = text.split('\n')
+    const elements = []
+    let ulBuffer = []
+    let olBuffer = []
+
+    function flushUl() {
+        if (ulBuffer.length) {
+            elements.push(<ul key={`ul-${elements.length}`}>{ulBuffer.map((l, i) => <li key={i}>{inlineFormat(l)}</li>)}</ul>)
+            ulBuffer = []
+        }
+    }
+    function flushOl() {
+        if (olBuffer.length) {
+            elements.push(<ol key={`ol-${elements.length}`}>{olBuffer.map((l, i) => <li key={i}>{inlineFormat(l)}</li>)}</ol>)
+            olBuffer = []
+        }
+    }
+
+    lines.forEach((line, i) => {
+        if (/^- (.+)/.test(line)) {
+            flushOl()
+            ulBuffer.push(line.replace(/^- /, ''))
+        } else if (/^\d+\. (.+)/.test(line)) {
+            flushUl()
+            olBuffer.push(line.replace(/^\d+\. /, ''))
+        } else {
+            flushUl(); flushOl()
+            if (line.trim()) elements.push(<p key={i}>{inlineFormat(line)}</p>)
+        }
+    })
+    flushUl(); flushOl()
+    return elements
+}
+
+function inlineFormat(text) {
+    // Split on **bold** and _italic_ markers
+    const parts = []
+    const regex = /(\*\*(.+?)\*\*|_(.+?)_)/g
+    let last = 0, match
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > last) parts.push(text.slice(last, match.index))
+        if (match[0].startsWith('**')) parts.push(<strong key={match.index}>{match[2]}</strong>)
+        else parts.push(<em key={match.index}>{match[3]}</em>)
+        last = match.index + match[0].length
+    }
+    if (last < text.length) parts.push(text.slice(last))
+    return parts.length === 1 && typeof parts[0] === 'string' ? parts[0] : parts
+}
+
 export default function Single({ shareMode = false }) {
     const { slug } = useParams()
     const [testimonial, setTestimonial] = useState(null)
@@ -117,9 +169,7 @@ export default function Single({ shareMode = false }) {
                     {t.products?.map(p => <span key={p} className="tag tag-product">{p}</span>)}
                 </div>
                 <div className="single-body">
-                    {t.story_text?.split('\n').map((para, i) => (
-                        <p key={i}>{para}</p>
-                    ))}
+                    {renderStory(t.story_text)}
                 </div>
                 {t.gallery_urls?.length > 0 && (
                     <div className="single-gallery">
