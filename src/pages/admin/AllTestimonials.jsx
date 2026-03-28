@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import TestimonialTable from '../../components/TestimonialTable'
-import { List, Download, X } from 'lucide-react'
+import { List, Download, X, Calendar } from 'lucide-react'
+import flatpickr from 'flatpickr'
+import 'flatpickr/dist/flatpickr.min.css'
 
 const STATUS_FILTERS = [
     { value: 'all',              label: 'All' },
@@ -19,10 +21,28 @@ export default function AllTestimonials() {
     const [testimonials, setTestimonials] = useState([])
     const [loading, setLoading] = useState(true)
     const [statusFilter, setStatusFilter] = useState('all')
-    const [dateFrom, setDateFrom] = useState('')
-    const [dateTo, setDateTo]     = useState('')
+    const [dateFrom, setDateFrom] = useState(null)
+    const [dateTo, setDateTo]     = useState(null)
+    const dateInputRef = useRef(null)
+    const fpRef        = useRef(null)
 
     useEffect(() => { fetch() }, [])
+
+    useEffect(() => {
+        if (!dateInputRef.current) return
+        fpRef.current = flatpickr(dateInputRef.current, {
+            mode: 'range',
+            enableTime: true,
+            time_24hr: true,
+            dateFormat: 'd M Y H:i',
+            placeholder: 'Filter by date range…',
+            onChange: (dates) => {
+                setDateFrom(dates[0] || null)
+                setDateTo(dates[1] || null)
+            },
+        })
+        return () => fpRef.current?.destroy()
+    }, [])
 
     async function fetch() {
         const { data } = await supabase
@@ -84,12 +104,18 @@ export default function AllTestimonials() {
 
     const filtered = byStatus.filter(t => {
         const created = new Date(t.created_at)
-        if (dateFrom && created < new Date(dateFrom)) return false
-        if (dateTo   && created > new Date(dateTo))   return false
+        if (dateFrom && created < dateFrom) return false
+        if (dateTo   && created > dateTo)   return false
         return true
     })
 
     const hasDateFilter = dateFrom || dateTo
+
+    function clearDates() {
+        fpRef.current?.clear()
+        setDateFrom(null)
+        setDateTo(null)
+    }
 
     return (
         <div className="admin-page-content">
@@ -118,22 +144,15 @@ export default function AllTestimonials() {
                 ))}
             </div>
             <div className="date-filter-bar">
-                <span className="date-filter-label">Date range:</span>
+                <Calendar size={15} className="date-filter-icon" />
                 <input
-                    type="datetime-local"
+                    ref={dateInputRef}
                     className="date-filter-input"
-                    value={dateFrom}
-                    onChange={e => setDateFrom(e.target.value)}
-                />
-                <span className="date-filter-sep">→</span>
-                <input
-                    type="datetime-local"
-                    className="date-filter-input"
-                    value={dateTo}
-                    onChange={e => setDateTo(e.target.value)}
+                    placeholder="Filter by date &amp; time range…"
+                    readOnly
                 />
                 {hasDateFilter && (
-                    <button className="date-filter-clear" onClick={() => { setDateFrom(''); setDateTo('') }}>
+                    <button className="date-filter-clear" onClick={clearDates}>
                         <X size={13} /> Clear
                     </button>
                 )}

@@ -671,21 +671,22 @@
 .date-filter-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 20px;
-    flex-wrap: wrap;
 }
-.date-filter-label { font-size: var(--text-sm); font-weight: 600; color: var(--muted-dark); }
+.date-filter-icon { color: var(--muted-dark); flex-shrink: 0; }
 .date-filter-input {
-    padding: 6px 10px;
+    padding: 7px 12px;
     border: 1.5px solid var(--border-soft);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-family: inherit;
     color: var(--text-body);
+    width: 260px;
+    cursor: pointer;
+    background: white;
     &:focus { outline: none; border-color: var(--primary); }
 }
-.date-filter-sep { color: var(--muted); font-size: var(--text-sm); }
 .date-filter-clear {
     display: flex;
     align-items: center;
@@ -700,6 +701,37 @@
     cursor: pointer;
     &:hover { background: #fee2e2; }
 }
+
+// Flatpickr brand overrides
+.flatpickr-calendar {
+    font-family: var(--base-font-family);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    border: 1px solid var(--border-soft);
+}
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+.flatpickr-day.inRange {
+    background: var(--teal-light, #e6f7f5) !important;
+    border-color: var(--teal-light, #e6f7f5) !important;
+    box-shadow: -5px 0 0 var(--teal-light, #e6f7f5), 5px 0 0 var(--teal-light, #e6f7f5) !important;
+}
+.flatpickr-day:hover { background: var(--primary-light); }
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month,
+.flatpickr-monthDropdown-months { background: var(--primary) !important; color: white; }
+.flatpickr-current-month .flatpickr-monthDropdown-months { color: white; }
+.flatpickr-weekday { color: var(--primary) !important; font-weight: 700; }
+.flatpickr-time input:hover,
+.flatpickr-time input:focus { background: var(--primary-light); }
+.numInputWrapper:hover { background: var(--primary-light); }
 
 .filter-tab {
     background: var(--surface);
