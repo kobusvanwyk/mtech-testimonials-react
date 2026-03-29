@@ -14,7 +14,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 // ── Set to false when you're happy with the preview ───────────────────────────
-const DRY_RUN = true
+const DRY_RUN = false
 
 // ── Load env from .env.local ──────────────────────────────────────────────────
 const __dirname = dirname(fileURLToPath(import.meta.url))
