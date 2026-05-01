@@ -49,7 +49,16 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 npm run dev
 ```
 
-Opens at `http://localhost:5173`.
+Opens at `http://localhost:5173`. This is sufficient for most development work.
+
+If you need to test serverless functions locally (e.g. the duplicate scanner), use the Netlify CLI instead:
+
+```
+npm install -g netlify-cli
+netlify dev
+```
+
+Opens at `http://localhost:8888` and runs both the Vite dev server and the serverless functions together. Requires a `.env` file (not `.env.local`) with `ANTHROPIC_API_KEY` set.
 
 ---
 
@@ -87,6 +96,7 @@ Opens at `http://localhost:5173`.
 | `/admin/categories` | Manage health conditions and product tags |
 | `/admin/images` | Image manager |
 | `/admin/import` | Bulk import from CSV |
+| `/admin/duplicates` | AI duplicate scanner — detect likely duplicate testimonials |
 | `/admin/settings` | Site settings — private mode, OpenGraph metadata |
 | `/admin/pdf-settings` | PDF footer — contact details, logo, tagline |
 
@@ -114,6 +124,7 @@ Opens at `http://localhost:5173`.
 - Bulk CSV import (see the companion `process.py` tool for generating import-ready CSVs from Telegram exports)
 - PDF branding customisation (logo, footer contact info)
 - OpenGraph metadata configuration for social sharing previews
+- AI duplicate scanner — one-click scan using Claude Haiku that identifies likely duplicate testimonials across the full published set, with side-by-side comparison cards and direct edit links
 
 ---
 
@@ -130,13 +141,37 @@ Supabase migrations are in `supabase/migrations/`. Run them in order when settin
 
 ---
 
+## Serverless functions
+
+The `netlify/functions/` directory contains Node.js serverless functions deployed automatically by Netlify.
+
+| Function | Purpose |
+|---|---|
+| `detect-duplicates.js` | Receives condensed testimonial data from the admin, calls Claude Haiku, and returns suspected duplicate pairs as JSON |
+
+The duplicate scanner requires one additional environment variable set in Netlify project settings:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+For local development with `netlify dev`, create a `.env` file (not `.env.local`) in the project root with the same key. This file is gitignored and must never be committed.
+
+---
+
 ## Deployment
 
 The app is deployed on Netlify. On push to `main` or `develop`, Netlify automatically rebuilds and deploys.
 
-Set the same two environment variables (`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`) in the Netlify project settings under Environment Variables.
+Set these environment variables in the Netlify project settings under Environment Variables:
 
-The `netlify.toml` file handles routing and can optionally route social crawler requests to a Supabase edge function (`og-meta`) for per-testimonial OpenGraph tags.
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+The `netlify.toml` file handles routing, the functions directory, and optionally routes social crawler requests to a Supabase edge function (`og-meta`) for per-testimonial OpenGraph tags.
 
 ---
 
