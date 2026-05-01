@@ -20,6 +20,7 @@ import ImageManager from './pages/admin/ImageManager'
 import ImportTestimonials from './pages/admin/ImportTestimonials'
 import Settings from './pages/admin/Settings'
 import PDFSettings from './pages/admin/PDFSettings'
+import Duplicates from './pages/admin/Duplicates'
 import NotFound from './pages/NotFound'
 import { useSiteSettings } from './lib/SiteSettingsContext'
 
@@ -67,8 +68,9 @@ function AppRoutes() {
                     <Route path="categories" element={<Categories />} />
                     <Route path="images"     element={<ImageManager />} />
                     <Route path="import"     element={<ImportTestimonials />} />
-                    <Route path="settings"   element={<Settings />} />
+                    <Route path="settings"    element={<Settings />} />
                     <Route path="pdf-settings" element={<PDFSettings />} />
+                    <Route path="duplicates"  element={<Duplicates />} />
                 </Route>
 
                 {/* Everything else — neutral dead end */}
@@ -94,8 +96,9 @@ function AppRoutes() {
                 <Route path="categories" element={<Categories />} />
                 <Route path="images"     element={<ImageManager />} />
                 <Route path="import"     element={<ImportTestimonials />} />
-                <Route path="settings"   element={<Settings />} />
+                <Route path="settings"    element={<Settings />} />
                 <Route path="pdf-settings" element={<PDFSettings />} />
+                <Route path="duplicates"  element={<Duplicates />} />
             </Route>
             <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
         </Routes>

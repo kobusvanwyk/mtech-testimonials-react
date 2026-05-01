@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
     LayoutDashboard, List, Tag,
-    Images, Globe, LogOut, Lock, Upload, Settings, FileText, Eye, EyeOff
+    Images, Globe, LogOut, Lock, Upload, Settings, FileText, Eye, EyeOff, ScanSearch
 } from 'lucide-react'
 
 export default function AdminLayout() {
@@ -102,9 +102,10 @@ export default function AdminLayout() {
         { to: '/admin/categories', label: 'Categories',      icon: <Tag size={16} /> },
         { to: '/admin/images',     label: 'Image Manager',   icon: <Images size={16} /> },
         null,
-        { to: '/admin/import',     label: 'Import CSV',      icon: <Upload size={16} /> },
+        { to: '/admin/import',      label: 'Import CSV',       icon: <Upload size={16} /> },
+        { to: '/admin/duplicates',  label: 'Duplicate Scanner',icon: <ScanSearch size={16} /> },
         null,
-        { to: '/admin/settings',      label: 'Settings',        icon: <Settings size={16} /> },
+        { to: '/admin/settings',    label: 'Settings',         icon: <Settings size={16} /> },
         { to: '/admin/pdf-settings',  label: 'PDF Settings',    icon: <FileText size={16} /> },
     ]
 

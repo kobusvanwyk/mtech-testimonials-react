@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useProducts } from '../../lib/ProductsContext'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
-import { ArrowLeft, ArrowRight, Eye, Check, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, Check, X, Trash2 } from 'lucide-react'
 import { PDFDownloadButton } from '../../components/PDFDownloadButton'
 
 const STATUS_OPTIONS = [
@@ -20,7 +20,9 @@ export default function EditTestimonial() {
     const { id } = useParams()
     const navigate = useNavigate()
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
+    const [saving, setSaving]   = useState(false)
+    const [deleting, setDeleting] = useState(false)
+    const [confirmDelete, setConfirmDelete] = useState(false)
     const [saved, setSaved] = useState(false)
     const [conditionInput, setConditionInput] = useState('')
     const [newGalleryImages, setNewGalleryImages] = useState([])
@@ -199,6 +201,17 @@ export default function EditTestimonial() {
         }
     }
 
+    async function handleDelete() {
+        setDeleting(true)
+        const { error } = await supabase.from('testimonials').delete().eq('id', id)
+        if (error) {
+            alert('Error deleting. Please try again.')
+            setDeleting(false)
+            return
+        }
+        navigate('/admin/all')
+    }
+
     if (loading) return <div className="admin-page-content"><div className="loading">Loading...</div></div>
     if (!form) return <div className="admin-page-content"><p>Testimonial not found.</p></div>
 
@@ -210,6 +223,9 @@ export default function EditTestimonial() {
                 <button className="back-link btn-link" onClick={() => safeNavigate('/admin/all')}><ArrowLeft size={15} /> Back</button>
                 <h2>Edit Testimonial</h2>
                 <div className="edit-header-actions">
+                    <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
+                        <Trash2 size={14} /> Delete
+                    </button>
                     <Link to={`/testimonial/${form.slug || id}`} target="_blank" className="btn-preview">
                         <Eye size={14} /> Preview
                     </Link>
@@ -392,6 +408,24 @@ export default function EditTestimonial() {
                     <span className="unsaved-indicator">You have unsaved changes</span>
                 )}
             </div>
+
+            {/* Delete confirmation modal */}
+            {confirmDelete && (
+                <div className="unsaved-modal-backdrop">
+                    <div className="unsaved-modal">
+                        <h3>Delete this testimonial?</h3>
+                        <p>This will permanently remove <strong>{form.title}</strong> from the database. This cannot be undone.</p>
+                        <div className="unsaved-modal-actions">
+                            <button className="btn-secondary" onClick={() => setConfirmDelete(false)} disabled={deleting}>
+                                Cancel
+                            </button>
+                            <button className="btn-danger" onClick={handleDelete} disabled={deleting}>
+                                {deleting ? 'Deleting…' : 'Yes, delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Navigation confirmation modal */}
             {pendingNav && (

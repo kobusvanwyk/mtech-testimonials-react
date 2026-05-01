@@ -778,6 +778,23 @@
     text-decoration: none;
 }
 
+.btn-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    color: var(--danger);
+    border: 2px solid var(--danger);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover { background: var(--danger); color: white; }
+}
+
 .btn-save {
     background: var(--primary);
     color: white;
@@ -2355,6 +2372,156 @@
     text-align: right;
     font-weight: 600;
     color: var(--text-secondary, #555);
+}
+
+// ── Duplicate Scanner ─────────────────────────────────────────────────────────
+.dup-scan-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.btn-dup-scan {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    background: var(--dark-navy);
+    color: white;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover:not(:disabled) { background: var(--primary); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.dup-scan-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: var(--radius-pill);
+
+    &.ok   { background: #f0fff4; color: #276749; }
+    &.warn { background: #fffbeb; color: #92400e; }
+}
+
+.dup-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff0f0;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    margin-bottom: 20px;
+}
+
+.dup-scanning {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted-dark);
+    font-size: 0.9rem;
+    padding: 20px 0;
+}
+
+.dup-spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid var(--border-soft);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+.dup-pairs {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.dup-pair-card {
+    background: white;
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.dup-pair-reason {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #fffbeb;
+    border-bottom: 1px solid #fcd34d;
+    padding: 10px 18px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: #92400e;
+}
+
+.dup-pair-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+
+    @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+.dup-card {
+    padding: 18px 20px;
+    border-right: 1px solid var(--border-subtle);
+
+    &:last-child { border-right: none; }
+}
+
+.dup-card-title  { font-weight: 700; font-size: 0.95rem; color: var(--dark-navy); margin-bottom: 3px; }
+.dup-card-author { font-size: 0.82rem; color: var(--muted-mid); margin-bottom: 10px; }
+
+.dup-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.dup-tag {
+    background: var(--primary-light);
+    color: var(--primary-darker);
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.dup-card-excerpt {
+    font-size: 0.85rem;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+}
+
+.dup-card-edit {
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
 }
 
 // ── Private Mode Toggle ───────────────────────────────────────────────────────
