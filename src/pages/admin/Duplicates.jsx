@@ -19,33 +19,37 @@ function findCandidatePairs(testimonials) {
             const b = testimonials[j]
             const reasons = []
 
-            // Rule 1 — same person name
             const nameA = (a.person_name || '').trim().toLowerCase()
             const nameB = (b.person_name || '').trim().toLowerCase()
+            const condsA = new Set((a.conditions || []).map(c => c.toLowerCase()))
+            const condsB = new Set((b.conditions || []).map(c => c.toLowerCase()))
+            const overlap = [...condsA].filter(c => condsB.has(c)).length
+
+            // Rule 1 — same full name (non-anonymous)
             if (!a.anonymous && !b.anonymous && nameA && nameB && nameA === nameB) {
                 reasons.push('same name')
             }
 
-            // Rule 2 — identical story opening
-            const norm = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 150)
+            // Rule 2 — identical story opening (80 chars)
+            const norm = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 80)
             const openA = norm(a.story_text)
             const openB = norm(b.story_text)
-            if (openA.length > 40 && openA === openB) {
+            if (openA.length > 30 && openA === openB) {
                 reasons.push('identical story opening')
             }
 
-            // Rule 3 — same first name + 2+ overlapping conditions
+            // Rule 3 — same first name + any overlapping condition
             if (reasons.length === 0) {
                 const firstA = nameA.split(' ')[0]
                 const firstB = nameB.split(' ')[0]
-                if (firstA && firstB && firstA === firstB) {
-                    const condsA = new Set((a.conditions || []).map(c => c.toLowerCase()))
-                    const condsB = new Set((b.conditions || []).map(c => c.toLowerCase()))
-                    const overlap = [...condsA].filter(c => condsB.has(c)).length
-                    if (overlap >= 2) {
-                        reasons.push(`same first name with ${overlap} shared conditions`)
-                    }
+                if (firstA && firstB && firstA === firstB && overlap >= 1) {
+                    reasons.push(`same first name with ${overlap} shared condition${overlap > 1 ? 's' : ''}`)
                 }
+            }
+
+            // Rule 4 — same conditions set (3+ conditions, full match)
+            if (reasons.length === 0 && condsA.size >= 3 && condsA.size === condsB.size && overlap === condsA.size) {
+                reasons.push('identical condition set')
             }
 
             if (reasons.length > 0) {
@@ -157,7 +161,7 @@ export default function Duplicates() {
                 {pairs !== null && !scanning && (
                     <span className={`dup-scan-summary ${pairs.length === 0 ? 'ok' : 'warn'}`}>
                         {pairs.length === 0
-                            ? <><CheckCircle size={14} /> No duplicates found across {scannedCount} testimonials</>
+                            ? <><CheckCircle size={14} /> No duplicates found — {scannedCount} scanned, {candidateCount} candidates reviewed by Haiku</>
                             : <><AlertTriangle size={14} /> {pairs.length} confirmed duplicate{pairs.length > 1 ? 's' : ''} found in {scannedCount} testimonials</>
                         }
                     </span>
