@@ -21,6 +21,7 @@ import ImportTestimonials from './pages/admin/ImportTestimonials'
 import Settings from './pages/admin/Settings'
 import PDFSettings from './pages/admin/PDFSettings'
 import Duplicates from './pages/admin/Duplicates'
+import WhatsAppSync from './pages/admin/WhatsAppSync'
 import NotFound from './pages/NotFound'
 import { useSiteSettings } from './lib/SiteSettingsContext'
 
@@ -67,7 +68,8 @@ function AppRoutes() {
                     <Route path="edit/:id"   element={<EditTestimonial />} />
                     <Route path="categories" element={<Categories />} />
                     <Route path="images"     element={<ImageManager />} />
-                    <Route path="import"     element={<ImportTestimonials />} />
+                    <Route path="import"       element={<ImportTestimonials />} />
+                    <Route path="whatsapp"    element={<WhatsAppSync />} />
                     <Route path="settings"    element={<Settings />} />
                     <Route path="pdf-settings" element={<PDFSettings />} />
                     <Route path="duplicates"  element={<Duplicates />} />
