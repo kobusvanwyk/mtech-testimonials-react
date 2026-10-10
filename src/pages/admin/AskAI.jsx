@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useProducts, useConditions } from '../../lib/ProductsContext'
+import { PDFDownloadButton } from '../../components/PDFDownloadButton'
 import { Sparkles, AlertTriangle, ExternalLink } from 'lucide-react'
 
 // Does a testimonial match a single concept group? Matches on the curated
@@ -59,7 +60,7 @@ export default function AskAI() {
             // 2) Fetch testimonials and filter by the intent
             const { data, error: fErr } = await supabase
                 .from('testimonials')
-                .select('id, title, person_name, anonymous, conditions, products, story_text, status, imported_from, slug')
+                .select('id, title, person_name, anonymous, conditions, products, story_text, status, imported_from, slug, gallery_urls')
             if (fErr) throw new Error('Could not load testimonials: ' + fErr.message)
 
             const filterBy = (logic) => {
@@ -166,6 +167,7 @@ export default function AskAI() {
                                     <div className="ask-ai-card-actions">
                                         <a href={`/testimonial/${t.slug || t.id}`} target="_blank" rel="noopener noreferrer">View <ExternalLink size={12} /></a>
                                         <Link to={`/admin/edit/${t.id}`}>Edit</Link>
+                                        <PDFDownloadButton testimonial={t} variant="icon" className="ask-ai-pdf" />
                                     </div>
                                 </div>
                             ))}
