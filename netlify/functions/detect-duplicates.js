@@ -27,19 +27,21 @@ export const handler = async function (event) {
         const condsA = (p.a.conditions || []).join(', ') || 'none'
         const condsB = (p.b.conditions || []).join(', ') || 'none'
         return [
-            `Pair ${i + 1} [flagged: ${p.heuristic}]`,
-            `  A: ${p.a.name} | ${condsA} | "${p.a.excerpt}"`,
-            `  B: ${p.b.name} | ${condsB} | "${p.b.excerpt}"`,
+            `Pair ${i + 1} [signals: ${p.heuristic}${p.imageMatch ? '; SAME IMAGE' : ''}]`,
+            `  A: ${p.a.name} | conditions: ${condsA} | "${p.a.excerpt}"`,
+            `  B: ${p.b.name} | conditions: ${condsB} | "${p.b.excerpt}"`,
         ].join('\n')
     }).join('\n\n')
 
-    const prompt = `You are reviewing suspected duplicate testimonials. For each pair below, decide if they are genuine duplicates — the same person submitting the same story more than once (possibly with minor differences).
+    const prompt = `You are reviewing suspected duplicate testimonials for a health-product testimonial database.
+
+A "duplicate" means the SAME person's story appearing more than once — even if it has been reworded, summarised, translated (e.g. Afrikaans vs English), told in first-person vs third-person, or is a different length. Two testimonials that share the same image are almost certainly duplicates. Distinct people who happen to have similar conditions or used the same products are NOT duplicates.
+
+For each pair, decide whether they are the same underlying testimonial:
 
 ${pairList}
 
-Return ONLY a JSON array of confirmed duplicate pairs. Each entry: {"index": <pair number minus 1>, "reason": "<one short sentence>"}
-If none are confirmed, return [].
-No explanation, no markdown — only the raw JSON array.`
+Lean towards flagging: if the people, specific facts (names, numbers, places, timelines) and overall story plausibly describe the same case, treat it as a duplicate. Return ONLY a JSON array; each entry {"index": <pair number minus 1>, "reason": "<one short sentence citing the shared specifics>"}. If none match, return []. No markdown, no explanation — only the raw JSON array.`
 
     try {
         console.log(`Confirming ${pairs.length} candidate pair(s) with Haiku`)
@@ -53,7 +55,7 @@ No explanation, no markdown — only the raw JSON array.`
             },
             body: JSON.stringify({
                 model:      'claude-haiku-4-5-20251001',
-                max_tokens: 1024,
+                max_tokens: 2048,
                 messages:   [{ role: 'user', content: prompt }],
             }),
         })

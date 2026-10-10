@@ -2498,6 +2498,69 @@
     color: #92400e;
 }
 
+.dup-pair-score {
+    margin-left: auto;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.dup-note {
+    background: var(--primary-light);
+    border: 1px solid var(--primary-mid);
+    color: var(--primary-darker);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: var(--text-sm);
+    margin-bottom: 16px;
+}
+
+.dup-card-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+
+    .dup-card-status {
+        font-size: 0.66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        padding: 2px 7px;
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--slate-light);
+
+        &.status-approved { background: var(--success-light); color: var(--success-dark); }
+        &.status-pending  { background: var(--warning-light); color: var(--warning-darker); }
+        &.status-rejected { background: var(--danger-light);  color: var(--danger-dark); }
+    }
+
+    .dup-card-src {
+        font-size: 0.66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: var(--radius-sm);
+        background: #eef1f5;
+        color: #475569;
+    }
+
+    .dup-card-imgs {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--primary);
+    }
+}
+
 .dup-pair-cols {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2540,7 +2603,9 @@
 }
 
 .dup-card-edit {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 0.82rem;
     font-weight: 600;
     color: var(--primary);

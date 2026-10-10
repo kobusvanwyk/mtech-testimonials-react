@@ -1,95 +1,146 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { ScanSearch, AlertTriangle, CheckCircle } from 'lucide-react'
+import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon } from 'lucide-react'
 
-// ── Heuristic pre-filter ──────────────────────────────────────────────────────
-// Finds candidate pairs before sending to Haiku for confirmation.
-// Rules (any one match flags the pair):
-//   1. Same non-anonymous person_name (case-insensitive)
-//   2. Story text opens with the same 150 chars (whitespace-normalised)
-//   3. Same first name + 2 or more overlapping conditions
-function findCandidatePairs(testimonials) {
+// ── Text similarity (TF-IDF cosine) ───────────────────────────────────────────
+// Down-weights ubiquitous domain words (mannatech, product, health…) so that
+// distinctive tokens — names, numbers, places, specific conditions — dominate.
+// This catches reworded / translated / first-vs-third-person retellings that
+// share little literal text but lots of distinctive vocabulary.
+const STOP = new Set((
+    'a about after all also am an and are as at be been before being but by can could did do does for from ' +
+    'had has have he her him his how i if in into is it its just me more most my no not of on only or our out ' +
+    'over she so some such than that the their them then there these they this to too under up us very was we ' +
+    'were what when where which who will with would you your yours it\'s i\'m i\'ve'
+).split(/\s+/))
+
+function tokenize(text) {
+    return (text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9%]+/g, ' ')
+        .split(' ')
+        .filter(w => w.length >= 2 && !STOP.has(w))
+}
+
+function buildVectors(items) {
+    const N = items.length
+    const docs = items.map(t => {
+        const tf = new Map()
+        for (const w of tokenize(`${t.title || ''} ${t.story_text || ''}`)) {
+            tf.set(w, (tf.get(w) || 0) + 1)
+        }
+        return { tf }
+    })
+    const df = new Map()
+    docs.forEach(d => { for (const w of d.tf.keys()) df.set(w, (df.get(w) || 0) + 1) })
+    docs.forEach(d => {
+        d.vec = new Map()
+        let sq = 0
+        for (const [w, c] of d.tf) {
+            const idf = Math.log(N / (df.get(w) || 1))
+            const wt = c * idf
+            if (wt > 0) { d.vec.set(w, wt); sq += wt * wt }
+        }
+        d.norm = Math.sqrt(sq) || 1
+    })
+    return docs
+}
+
+function cosine(docs, i, j) {
+    const A = docs[i].vec, B = docs[j].vec
+    const [small, large] = A.size < B.size ? [A, B] : [B, A]
+    let dot = 0
+    for (const [w, wa] of small) { const wb = large.get(w); if (wb) dot += wa * wb }
+    return dot / (docs[i].norm * docs[j].norm)
+}
+
+// ── Candidate pre-filter ──────────────────────────────────────────────────────
+const TEXT_THRESHOLD = 0.30   // sensitive
+const MAX_CANDIDATES = 160    // cap sent to Claude
+
+function findCandidatePairs(items) {
+    const N = items.length
+    const docs = buildVectors(items)
+
+    // Map shared gallery images → pairs
+    const imageOwners = new Map()
+    items.forEach((t, idx) => (t.gallery_urls || []).forEach(u => {
+        const key = (u || '').trim()
+        if (!key) return
+        if (!imageOwners.has(key)) imageOwners.set(key, [])
+        imageOwners.get(key).push(idx)
+    }))
+    const sharedImage = new Set()
+    for (const ids of imageOwners.values()) {
+        if (ids.length > 1) {
+            for (let x = 0; x < ids.length; x++)
+                for (let y = x + 1; y < ids.length; y++)
+                    sharedImage.add(`${Math.min(ids[x], ids[y])}-${Math.max(ids[x], ids[y])}`)
+        }
+    }
+
     const pairs = []
-    const n = testimonials.length
-
-    for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-            const a = testimonials[i]
-            const b = testimonials[j]
+    for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+            const a = items[i], b = items[j]
             const reasons = []
+            let score = 0
+            let imageMatch = false
 
-            const nameA = (a.person_name || '').trim().toLowerCase()
-            const nameB = (b.person_name || '').trim().toLowerCase()
-            const condsA = new Set((a.conditions || []).map(c => c.toLowerCase()))
-            const condsB = new Set((b.conditions || []).map(c => c.toLowerCase()))
-            const overlap = [...condsA].filter(c => condsB.has(c)).length
-
-            // Rule 1 — same full name (non-anonymous)
-            if (!a.anonymous && !b.anonymous && nameA && nameB && nameA === nameB) {
-                reasons.push('same name')
+            if (sharedImage.has(`${i}-${j}`)) {
+                reasons.push('same image')
+                imageMatch = true
+                score = Math.max(score, 0.98)
             }
 
-            // Rule 2 — identical story opening (80 chars)
-            const norm = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 80)
-            const openA = norm(a.story_text)
-            const openB = norm(b.story_text)
-            if (openA.length > 30 && openA === openB) {
-                reasons.push('identical story opening')
+            const sim = cosine(docs, i, j)
+            if (sim >= TEXT_THRESHOLD) {
+                reasons.push(`similar text (${Math.round(sim * 100)}%)`)
+                score = Math.max(score, sim)
             }
 
-            // Rule 3 — same first name + any overlapping condition
-            if (reasons.length === 0) {
-                const firstA = nameA.split(' ')[0]
-                const firstB = nameB.split(' ')[0]
-                if (firstA && firstB && firstA === firstB && overlap >= 1) {
-                    reasons.push(`same first name with ${overlap} shared condition${overlap > 1 ? 's' : ''}`)
+            // Same name is only a *booster* on a pair that's already similar — on
+            // its own it's noisy here (many testimonials share a common name but
+            // tell different stories), and would otherwise swamp the candidate cap.
+            if (reasons.length > 0 && !a.anonymous && !b.anonymous) {
+                const nameA = (a.person_name || '').trim().toLowerCase()
+                const nameB = (b.person_name || '').trim().toLowerCase()
+                if (nameA && nameA === nameB) {
+                    reasons.push('same name')
+                    score = Math.min(1, score + 0.05)
                 }
             }
 
-            // Rule 4 — same conditions set (3+ conditions, full match)
-            if (reasons.length === 0 && condsA.size >= 3 && condsA.size === condsB.size && overlap === condsA.size) {
-                reasons.push('identical condition set')
-            }
-
             if (reasons.length > 0) {
-                pairs.push({
-                    a:        { id: a.id, name: a.anonymous ? 'Anonymous' : (a.person_name || 'Unknown'), conditions: a.conditions, excerpt: (a.story_text || '').slice(0, 220) },
-                    b:        { id: b.id, name: b.anonymous ? 'Anonymous' : (b.person_name || 'Unknown'), conditions: b.conditions, excerpt: (b.story_text || '').slice(0, 220) },
-                    heuristic: reasons.join(', '),
-                    // Keep full testimonial data for display
-                    _a: a,
-                    _b: b,
-                })
+                pairs.push({ i, j, reasons, score, sim, imageMatch })
             }
         }
     }
 
-    return pairs
+    pairs.sort((p, q) => q.score - p.score)
+    return { pairs: pairs.slice(0, MAX_CANDIDATES), total: pairs.length }
 }
+
+const CHUNK = 8
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Duplicates() {
-    const [scanning, setScanning]         = useState(false)
-    const [phase, setPhase]               = useState('')
-    const [pairs, setPairs]               = useState(null)
-    const [scannedCount, setScannedCount] = useState(0)
-    const [candidateCount, setCandidateCount] = useState(0)
-    const [error, setError]               = useState(null)
+    const [scanning, setScanning] = useState(false)
+    const [phase, setPhase]       = useState('')
+    const [pairs, setPairs]       = useState(null)
+    const [stats, setStats]       = useState({ scanned: 0, candidates: 0, capped: false })
+    const [error, setError]       = useState(null)
 
     async function runScan() {
         setScanning(true)
         setError(null)
         setPairs(null)
-        setScannedCount(0)
-        setCandidateCount(0)
+        setStats({ scanned: 0, candidates: 0, capped: false })
 
-        // Step 1 — fetch
-        setPhase('Fetching testimonials…')
+        setPhase('Fetching all testimonials…')
         const { data, error: fetchError } = await supabase
             .from('testimonials')
-            .select('id, title, person_name, anonymous, conditions, story_text')
-            .eq('status', 'approved')
+            .select('id, title, person_name, anonymous, conditions, products, story_text, gallery_urls, status, imported_from')
 
         if (fetchError) {
             setError('Could not fetch testimonials: ' + fetchError.message)
@@ -97,46 +148,65 @@ export default function Duplicates() {
             return
         }
 
-        setScannedCount(data.length)
-
-        // Step 2 — heuristic pre-filter (client-side, no API cost)
-        setPhase('Running heuristic checks…')
-        const candidates = findCandidatePairs(data)
-        setCandidateCount(candidates.length)
+        setPhase('Scoring similarity (image + text)…')
+        // let the spinner paint before the (brief) synchronous work
+        await new Promise(r => setTimeout(r, 30))
+        const { pairs: candidates, total } = findCandidatePairs(data)
+        setStats({ scanned: data.length, candidates: total, capped: total > candidates.length })
 
         if (candidates.length === 0) {
             setPairs([])
             setScanning(false)
+            setPhase('')
             return
         }
 
-        // Step 3 — send candidates to Haiku for confirmation
-        setPhase(`Confirming ${candidates.length} suspect pair${candidates.length > 1 ? 's' : ''} with Claude Haiku…`)
+        // Build payload + a lookup for merging Claude's verdict back with our scores
+        const idMap = Object.fromEntries(data.map(t => [t.id, t]))
+        const candById = {}
+        const payloads = candidates.map(c => {
+            const a = data[c.i], b = data[c.j]
+            candById[`${a.id}|${b.id}`] = c
+            return {
+                a: { id: a.id, name: a.anonymous ? 'Anonymous' : (a.person_name || 'Unknown'), conditions: a.conditions, excerpt: (a.story_text || '').slice(0, 400) },
+                b: { id: b.id, name: b.anonymous ? 'Anonymous' : (b.person_name || 'Unknown'), conditions: b.conditions, excerpt: (b.story_text || '').slice(0, 400) },
+                heuristic: c.reasons.join(', '),
+                imageMatch: c.imageMatch,
+            }
+        })
 
         try {
-            const resp = await fetch('/.netlify/functions/detect-duplicates', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ pairs: candidates }),
-            })
-
-            const result = await resp.json()
-
-            if (!resp.ok) {
-                throw new Error(result.message || 'Scan failed')
+            const confirmed = []
+            for (let k = 0; k < payloads.length; k += CHUNK) {
+                const chunk = payloads.slice(k, k + CHUNK)
+                setPhase(`Confirming ${Math.min(k + chunk.length, payloads.length)} of ${payloads.length} candidate pairs with Claude…`)
+                const resp = await fetch('/.netlify/functions/detect-duplicates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pairs: chunk }),
+                })
+                const result = await resp.json()
+                if (!resp.ok) throw new Error(result.message || 'Scan failed')
+                confirmed.push(...(result.confirmed || []))
             }
 
-            // Map confirmed ids back to full testimonial objects
-            const idMap = Object.fromEntries(data.map(t => [t.id, t]))
-            const confirmed = (result.confirmed || [])
-                .map(c => ({
-                    a:      idMap[c.a_id],
-                    b:      idMap[c.b_id],
-                    reason: c.reason,
-                }))
+            const merged = confirmed
+                .map(c => {
+                    const cand = candById[`${c.a_id}|${c.b_id}`] || candById[`${c.b_id}|${c.a_id}`]
+                    return {
+                        a: idMap[c.a_id],
+                        b: idMap[c.b_id],
+                        reason: c.reason,
+                        score: cand?.score ?? 0,
+                        sim: cand?.sim ?? 0,
+                        imageMatch: cand?.imageMatch ?? false,
+                        signals: cand?.reasons ?? [],
+                    }
+                })
                 .filter(p => p.a && p.b)
+                .sort((p, q) => q.score - p.score)
 
-            setPairs(confirmed)
+            setPairs(merged)
         } catch (err) {
             setError(err.message)
         }
@@ -149,7 +219,9 @@ export default function Duplicates() {
         <div className="admin-page-content">
             <h2>Duplicate Scanner</h2>
             <p className="page-sub">
-                Finds likely duplicates using heuristics, then confirms with Claude Haiku.
+                Scans <strong>all</strong> testimonials for duplicates using shared images and TF-IDF text
+                similarity, then confirms suspects with Claude. Tuned to be sensitive — review before deleting.
+                Nothing is changed automatically.
             </p>
 
             <div className="dup-scan-bar">
@@ -161,12 +233,19 @@ export default function Duplicates() {
                 {pairs !== null && !scanning && (
                     <span className={`dup-scan-summary ${pairs.length === 0 ? 'ok' : 'warn'}`}>
                         {pairs.length === 0
-                            ? <><CheckCircle size={14} /> No duplicates found — {scannedCount} scanned, {candidateCount} candidates reviewed by Haiku</>
-                            : <><AlertTriangle size={14} /> {pairs.length} confirmed duplicate{pairs.length > 1 ? 's' : ''} found in {scannedCount} testimonials</>
+                            ? <><CheckCircle size={14} /> No duplicates confirmed — {stats.scanned} scanned, {stats.candidates} candidate pairs reviewed</>
+                            : <><AlertTriangle size={14} /> {pairs.length} likely duplicate{pairs.length > 1 ? 's' : ''} across {stats.scanned} testimonials</>
                         }
                     </span>
                 )}
             </div>
+
+            {stats.capped && pairs !== null && !scanning && (
+                <div className="dup-note">
+                    Showing the top {MAX_CANDIDATES} candidate pairs by similarity (of {stats.candidates}).
+                    Re-run after cleaning these up to catch the rest.
+                </div>
+            )}
 
             {error && (
                 <div className="dup-error">
@@ -186,8 +265,14 @@ export default function Duplicates() {
                     {pairs.map((pair, i) => (
                         <div key={i} className="dup-pair-card">
                             <div className="dup-pair-reason">
-                                <AlertTriangle size={13} />
+                                {pair.imageMatch
+                                    ? <ImageIcon size={13} />
+                                    : <AlertTriangle size={13} />}
                                 {pair.reason}
+                                <span className="dup-pair-score">
+                                    {pair.imageMatch && 'same image · '}
+                                    {Math.round((pair.sim || 0) * 100)}% text match
+                                </span>
                             </div>
                             <div className="dup-pair-cols">
                                 <DupCard t={pair.a} />
@@ -201,9 +286,26 @@ export default function Duplicates() {
     )
 }
 
+function sourceLabel(from) {
+    const f = (from || '').toLowerCase()
+    if (f.startsWith('whatsapp')) return 'WhatsApp'
+    if (f.includes('telegram'))  return 'Telegram'
+    if (f.endsWith('.csv'))      return 'CSV'
+    if (f === 'manual_import')   return 'Manual'
+    return null
+}
+
 function DupCard({ t }) {
+    const src = sourceLabel(t.imported_from)
     return (
         <div className="dup-card">
+            <div className="dup-card-head">
+                <span className={`dup-card-status status-${t.status}`}>{t.status === 'approved' ? 'Published' : t.status}</span>
+                {src && <span className="dup-card-src">{src}</span>}
+                {(t.gallery_urls || []).length > 0 && (
+                    <span className="dup-card-imgs"><ImageIcon size={11} /> {t.gallery_urls.length}</span>
+                )}
+            </div>
             <div className="dup-card-title">{t.title}</div>
             <div className="dup-card-author">
                 {t.anonymous ? 'Anonymous' : t.person_name}
@@ -218,9 +320,14 @@ function DupCard({ t }) {
             <p className="dup-card-excerpt">
                 {(t.story_text || '').slice(0, 260)}{t.story_text?.length > 260 ? '…' : ''}
             </p>
-            <Link to={`/admin/edit/${t.id}`} className="dup-card-edit">
-                Open to edit / delete →
-            </Link>
+            <a
+                href={`/admin/edit/${t.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="dup-card-edit"
+            >
+                Open to edit / delete <ExternalLink size={12} />
+            </a>
         </div>
     )
 }
