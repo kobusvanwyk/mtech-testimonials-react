@@ -62,6 +62,45 @@ function loadPDFSettings() {
     return settingsPromise
 }
 
+// ─── Filename ─────────────────────────────────────────────────────────────────
+// Human-readable, brand-prefixed PDF filename built from the title (falls back to
+// person name, then a generic label). When the title isn't unique in the database,
+// a sequential number is appended so same-titled testimonials stay distinguishable.
+function sanitizeForFilename(s) {
+    return (s || '')
+        .replace(/\*\*|__/g, '')                       // strip stray markdown
+        .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '')     // illegal filename chars
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120)
+        .trim()
+}
+
+async function buildPdfFilename(t) {
+    const raw = (t.title || '').trim()
+        || (t.anonymous ? '' : (t.person_name || '').trim())
+        || 'Testimonial'
+    const safe = sanitizeForFilename(raw) || 'Testimonial'
+
+    let suffix = ''
+    try {
+        if (t.title) {
+            const { data } = await supabase
+                .from('testimonials')
+                .select('id, created_at')
+                .eq('title', t.title)
+                .order('created_at', { ascending: true })
+                .order('id', { ascending: true })
+            if (data && data.length > 1) {
+                const pos = data.findIndex(r => r.id === t.id)
+                suffix = ` (${pos >= 0 ? pos + 1 : data.length})`
+            }
+        }
+    } catch { /* on any error, fall back to no number */ }
+
+    return `Mannatech Testimonial - ${safe}${suffix}.pdf`
+}
+
 // ─── Button variants ──────────────────────────────────────────────────────────
 // variant="full"  → teal button with icon + text (for Single page & EditTestimonial)
 // variant="icon"  → icon-only small button (for table rows)
@@ -93,7 +132,7 @@ export function PDFDownloadButton({ testimonial, variant = 'full', className = '
             const url = URL.createObjectURL(blob)
             const a   = document.createElement('a')
             a.href     = url
-            a.download = `testimonial-${testimonial.slug || testimonial.id}.pdf`
+            a.download = await buildPdfFilename(testimonial)
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
