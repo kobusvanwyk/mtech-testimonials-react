@@ -145,6 +145,30 @@ function findCandidatePairs(items) {
 
 const CHUNK = 8
 
+// Suggest which copy of a duplicate pair to keep. Content length is the primary
+// signal (the user's ask), with published status, images and a named author as
+// boosters/tie-breakers. Returns the side to keep plus a short rationale.
+function keepScore(t) {
+    let s = (t.story_text || '').trim().length
+    if (t.status === 'approved') s += 400
+    s += (t.gallery_urls || []).length * 150
+    if (!t.anonymous && (t.person_name || '').trim()) s += 100
+    return s
+}
+
+function recommendKeep(a, b) {
+    const keep = keepScore(a) >= keepScore(b) ? a : b
+    const other = keep === a ? b : a
+    const lenK = (keep.story_text || '').trim().length
+    const lenO = (other.story_text || '').trim().length
+    const bits = []
+    if (lenK > lenO) bits.push(`longer (${lenK.toLocaleString()} vs ${lenO.toLocaleString()} chars)`)
+    else if (lenK === lenO) bits.push('same length')
+    if (keep.status === 'approved' && other.status !== 'approved') bits.push('already published')
+    if ((keep.gallery_urls || []).length > (other.gallery_urls || []).length) bits.push('has more images')
+    return { keepId: keep.id, reason: bits.join(' · ') || 'slightly more complete' }
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Duplicates() {
     const [scanning, setScanning] = useState(false)
@@ -331,7 +355,9 @@ export default function Duplicates() {
 
             {pairs !== null && !scanning && pairs.length > 0 && (
                 <div className="dup-pairs">
-                    {pairs.map((pair, i) => (
+                    {pairs.map((pair, i) => {
+                        const rec = recommendKeep(pair.a, pair.b)
+                        return (
                         <div key={i} className="dup-pair-card">
                             <div className="dup-pair-reason">
                                 {pair.imageMatch
@@ -344,11 +370,12 @@ export default function Duplicates() {
                                 </span>
                             </div>
                             <div className="dup-pair-cols">
-                                <DupCard t={pair.a} onDelete={handleDelete} />
-                                <DupCard t={pair.b} onDelete={handleDelete} />
+                                <DupCard t={pair.a} onDelete={handleDelete} rec={pair.a.id === rec.keepId ? 'keep' : 'remove'} recReason={rec.reason} />
+                                <DupCard t={pair.b} onDelete={handleDelete} rec={pair.b.id === rec.keepId ? 'keep' : 'remove'} recReason={rec.reason} />
                             </div>
                         </div>
-                    ))}
+                        )
+                    })}
                 </div>
             )}
         </div>
@@ -364,10 +391,19 @@ function sourceLabel(from) {
     return null
 }
 
-function DupCard({ t, onDelete }) {
+function DupCard({ t, onDelete, rec, recReason }) {
     const src = sourceLabel(t.imported_from)
     return (
-        <div className="dup-card">
+        <div className={`dup-card ${rec ? `dup-card--${rec}` : ''}`}>
+            {rec === 'keep' && (
+                <div className="dup-rec dup-rec--keep">
+                    <CheckCircle size={12} /> Recommended to keep
+                    {recReason && <span className="dup-rec-reason">{recReason}</span>}
+                </div>
+            )}
+            {rec === 'remove' && (
+                <div className="dup-rec dup-rec--remove">Suggested to remove</div>
+            )}
             <div className="dup-card-head">
                 <span className={`dup-card-status status-${t.status}`}>{t.status === 'approved' ? 'Published' : t.status}</span>
                 {src && <span className="dup-card-src">{src}</span>}

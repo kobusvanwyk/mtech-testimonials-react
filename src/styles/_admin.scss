@@ -2597,6 +2597,31 @@
     border-right: 1px solid var(--border-subtle);
 
     &:last-child { border-right: none; }
+
+    &--keep   { background: rgba(124, 196, 42, 0.05); box-shadow: inset 3px 0 0 var(--success); }
+    &--remove { background: var(--surface-inset); }
+}
+
+.dup-rec {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 10px;
+
+    &--keep   { color: var(--success-dark); }
+    &--remove { color: var(--muted-mid); }
+
+    .dup-rec-reason {
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 600;
+        color: var(--slate-light);
+    }
 }
 
 .dup-card-title  { font-weight: 700; font-size: 0.95rem; color: var(--dark-navy); margin-bottom: 3px; }
