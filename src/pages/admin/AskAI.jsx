@@ -33,6 +33,12 @@ export default function AskAI() {
     const [error, setError]     = useState(null)
     const [result, setResult]   = useState(null)   // { interpretation, logic, groups, matches: [{t, groups:[labels]}] }
 
+    function clearSearch() {
+        setQuery('')
+        setResult(null)
+        setError(null)
+    }
+
     async function ask(q) {
         const question = (q ?? query).trim()
         if (!question || loading) return
@@ -112,6 +118,9 @@ export default function AskAI() {
                 <button className="ask-ai-btn" type="submit" disabled={loading || !query.trim()}>
                     {loading ? <><span className="ask-ai-spinner" /> Searching…</> : <><Sparkles size={15} /> Ask</>}
                 </button>
+                {(result || query) && !loading && (
+                    <button type="button" className="ask-ai-clear" onClick={clearSearch}>Clear</button>
+                )}
             </form>
 
             {!result && !loading && !error && (

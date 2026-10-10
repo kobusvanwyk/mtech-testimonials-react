@@ -43,6 +43,19 @@
     &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
+.ask-ai-clear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0 8px;
+    white-space: nowrap;
+
+    &:hover { color: var(--danger); }
+}
+
 .ask-ai-spinner {
     width: 14px;
     height: 14px;
