@@ -2602,6 +2602,12 @@
     margin-bottom: 14px;
 }
 
+.dup-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
 .dup-card-edit {
     display: inline-flex;
     align-items: center;
@@ -2610,6 +2616,21 @@
     font-weight: 600;
     color: var(--primary);
     text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+}
+
+.dup-card-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--danger);
 
     &:hover { text-decoration: underline; }
 }

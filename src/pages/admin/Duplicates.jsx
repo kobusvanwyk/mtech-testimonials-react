@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon, Trash2 } from 'lucide-react'
 
 // ── Text similarity (TF-IDF cosine) ───────────────────────────────────────────
 // Down-weights ubiquitous domain words (mannatech, product, health…) so that
@@ -215,6 +215,16 @@ export default function Duplicates() {
         setPhase('')
     }
 
+    async function handleDelete(id, title) {
+        if (!window.confirm(
+            `Delete this testimonial?\n\n“${title}”\n\nThis permanently removes it from the database and cannot be undone.`
+        )) return
+        const { error: delError } = await supabase.from('testimonials').delete().eq('id', id)
+        if (delError) { window.alert('Delete failed: ' + delError.message); return }
+        // Drop every pair that referenced the deleted testimonial — those dups are resolved
+        setPairs(prev => prev.filter(p => p.a.id !== id && p.b.id !== id))
+    }
+
     return (
         <div className="admin-page-content">
             <h2>Duplicate Scanner</h2>
@@ -275,8 +285,8 @@ export default function Duplicates() {
                                 </span>
                             </div>
                             <div className="dup-pair-cols">
-                                <DupCard t={pair.a} />
-                                <DupCard t={pair.b} />
+                                <DupCard t={pair.a} onDelete={handleDelete} />
+                                <DupCard t={pair.b} onDelete={handleDelete} />
                             </div>
                         </div>
                     ))}
@@ -295,7 +305,7 @@ function sourceLabel(from) {
     return null
 }
 
-function DupCard({ t }) {
+function DupCard({ t, onDelete }) {
     const src = sourceLabel(t.imported_from)
     return (
         <div className="dup-card">
@@ -320,14 +330,23 @@ function DupCard({ t }) {
             <p className="dup-card-excerpt">
                 {(t.story_text || '').slice(0, 260)}{t.story_text?.length > 260 ? '…' : ''}
             </p>
-            <a
-                href={`/admin/edit/${t.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="dup-card-edit"
-            >
-                Open to edit / delete <ExternalLink size={12} />
-            </a>
+            <div className="dup-card-actions">
+                <a
+                    href={`/admin/edit/${t.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="dup-card-edit"
+                >
+                    Open in editor <ExternalLink size={12} />
+                </a>
+                <button
+                    className="dup-card-delete"
+                    onClick={() => onDelete(t.id, t.title)}
+                    title="Permanently delete this testimonial"
+                >
+                    <Trash2 size={12} /> Delete
+                </button>
+            </div>
         </div>
     )
 }
