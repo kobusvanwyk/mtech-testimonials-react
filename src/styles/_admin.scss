@@ -2426,6 +2426,29 @@
     &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
+.btn-dup-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    background: var(--surface);
+    color: var(--slate);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-pill);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover { border-color: var(--slate-light); color: var(--slate-dark); }
+}
+
+.dup-last-scan {
+    font-size: 0.8rem;
+    color: var(--text-hint);
+    font-style: italic;
+}
+
 .dup-scan-summary {
     display: inline-flex;
     align-items: center;

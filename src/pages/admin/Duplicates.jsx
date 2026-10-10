@@ -1,6 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon, Trash2 } from 'lucide-react'
+import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon, Trash2, RotateCcw } from 'lucide-react'
+
+// Cache the last scan in the browser so results survive navigation / refresh
+// (a scan costs Claude calls — we don't want to re-run it just to come back to it).
+const CACHE_KEY = 'mtech_dup_scan_v1'
+
+function loadCache() {
+    try { const raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null } catch { return null }
+}
+function saveCache(obj) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(obj)) } catch { /* ignore quota/private-mode */ }
+}
+function clearCache() {
+    try { localStorage.removeItem(CACHE_KEY) } catch { /* ignore */ }
+}
+function timeAgo(ts) {
+    if (!ts) return ''
+    const s = Math.round((Date.now() - ts) / 1000)
+    if (s < 60) return 'just now'
+    const m = Math.round(s / 60); if (m < 60) return `${m} min ago`
+    const h = Math.round(m / 60); if (h < 24) return `${h} hour${h > 1 ? 's' : ''} ago`
+    const d = Math.round(h / 24); return `${d} day${d > 1 ? 's' : ''} ago`
+}
 
 // ── Text similarity (TF-IDF cosine) ───────────────────────────────────────────
 // Down-weights ubiquitous domain words (mannatech, product, health…) so that
@@ -130,6 +152,17 @@ export default function Duplicates() {
     const [pairs, setPairs]       = useState(null)
     const [stats, setStats]       = useState({ scanned: 0, candidates: 0, capped: false })
     const [error, setError]       = useState(null)
+    const [lastScan, setLastScan] = useState(null)
+
+    // Restore the last scan from the browser cache on mount
+    useEffect(() => {
+        const cached = loadCache()
+        if (cached?.pairs) {
+            setPairs(cached.pairs)
+            setStats(cached.stats || { scanned: 0, candidates: 0, capped: false })
+            setLastScan(cached.ts || null)
+        }
+    }, [])
 
     async function runScan() {
         setScanning(true)
@@ -206,7 +239,11 @@ export default function Duplicates() {
                 .filter(p => p.a && p.b)
                 .sort((p, q) => q.score - p.score)
 
+            const ts = Date.now()
+            const statsObj = { scanned: data.length, candidates: total, capped: total > candidates.length }
             setPairs(merged)
+            setLastScan(ts)
+            saveCache({ ts, stats: statsObj, pairs: merged })
         } catch (err) {
             setError(err.message)
         }
@@ -222,7 +259,19 @@ export default function Duplicates() {
         const { error: delError } = await supabase.from('testimonials').delete().eq('id', id)
         if (delError) { window.alert('Delete failed: ' + delError.message); return }
         // Drop every pair that referenced the deleted testimonial — those dups are resolved
-        setPairs(prev => prev.filter(p => p.a.id !== id && p.b.id !== id))
+        setPairs(prev => {
+            const next = prev.filter(p => p.a.id !== id && p.b.id !== id)
+            const cached = loadCache()
+            if (cached) saveCache({ ...cached, pairs: next })
+            return next
+        })
+    }
+
+    function clearResults() {
+        clearCache()
+        setPairs(null)
+        setLastScan(null)
+        setStats({ scanned: 0, candidates: 0, capped: false })
     }
 
     return (
@@ -237,14 +286,24 @@ export default function Duplicates() {
             <div className="dup-scan-bar">
                 <button className="btn-dup-scan" onClick={runScan} disabled={scanning}>
                     <ScanSearch size={16} />
-                    {scanning ? 'Scanning…' : 'Scan for Duplicates'}
+                    {scanning ? 'Scanning…' : (pairs !== null ? 'Re-scan' : 'Scan for Duplicates')}
                 </button>
+
+                {pairs !== null && !scanning && (
+                    <button className="btn-dup-clear" onClick={clearResults} title="Clear cached results">
+                        <RotateCcw size={14} /> Clear
+                    </button>
+                )}
+
+                {lastScan && !scanning && (
+                    <span className="dup-last-scan">Last scanned {timeAgo(lastScan)}</span>
+                )}
 
                 {pairs !== null && !scanning && (
                     <span className={`dup-scan-summary ${pairs.length === 0 ? 'ok' : 'warn'}`}>
                         {pairs.length === 0
                             ? <><CheckCircle size={14} /> No duplicates confirmed — {stats.scanned} scanned, {stats.candidates} candidate pairs reviewed</>
-                            : <><AlertTriangle size={14} /> {pairs.length} likely duplicate{pairs.length > 1 ? 's' : ''} across {stats.scanned} testimonials</>
+                            : <><AlertTriangle size={14} /> {pairs.length} likely duplicate{pairs.length > 1 ? 's' : ''} remaining across {stats.scanned} testimonials</>
                         }
                     </span>
                 )}
