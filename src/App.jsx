@@ -22,6 +22,7 @@ import Settings from './pages/admin/Settings'
 import PDFSettings from './pages/admin/PDFSettings'
 import Duplicates from './pages/admin/Duplicates'
 import WhatsAppSync from './pages/admin/WhatsAppSync'
+import AskAI from './pages/admin/AskAI'
 import NotFound from './pages/NotFound'
 import { useSiteSettings } from './lib/SiteSettingsContext'
 
@@ -70,6 +71,7 @@ function AppRoutes() {
                     <Route path="images"     element={<ImageManager />} />
                     <Route path="import"       element={<ImportTestimonials />} />
                     <Route path="whatsapp"    element={<WhatsAppSync />} />
+                    <Route path="ask"         element={<AskAI />} />
                     <Route path="settings"    element={<Settings />} />
                     <Route path="pdf-settings" element={<PDFSettings />} />
                     <Route path="duplicates"  element={<Duplicates />} />
@@ -99,6 +101,7 @@ function AppRoutes() {
                 <Route path="images"     element={<ImageManager />} />
                 <Route path="import"       element={<ImportTestimonials />} />
                 <Route path="whatsapp"    element={<WhatsAppSync />} />
+                <Route path="ask"         element={<AskAI />} />
                 <Route path="settings"    element={<Settings />} />
                 <Route path="pdf-settings" element={<PDFSettings />} />
                 <Route path="duplicates"  element={<Duplicates />} />

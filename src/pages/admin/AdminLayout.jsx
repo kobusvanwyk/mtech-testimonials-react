@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
     LayoutDashboard, List, Tag,
-    Images, Globe, LogOut, Lock, Upload, Settings, FileText, Eye, EyeOff, ScanSearch
+    Images, Globe, LogOut, Lock, Upload, Settings, FileText, Eye, EyeOff, ScanSearch, Sparkles
 } from 'lucide-react'
 
 export default function AdminLayout() {
@@ -98,6 +98,7 @@ export default function AdminLayout() {
     const nav = [
         { to: '/admin',            label: 'Dashboard',       icon: <LayoutDashboard size={16} /> },
         { to: '/admin/all',        label: 'All Testimonials',icon: <List size={16} /> },
+        { to: '/admin/ask',        label: 'Ask AI',          icon: <Sparkles size={16} /> },
         null,
         { to: '/admin/categories', label: 'Categories',      icon: <Tag size={16} /> },
         { to: '/admin/images',     label: 'Image Manager',   icon: <Images size={16} /> },
