@@ -1,36 +1,59 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { generateUniqueSlug } from '../../lib/slugify'
+import {
+  Search, CheckCircle2, User, Activity, Pill, AlertTriangle,
+  ChevronDown, ChevronRight,
+} from 'lucide-react'
 
-// Matches both Android and iOS WhatsApp export formats:
-// [DD/MM/YYYY, HH:MM:SS] Sender: Text
-// DD/MM/YYYY, HH:MM - Sender: Text
-const MSG_REGEX = /^[\[\(]?(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?)[\]\)]?\s*[-–]\s*([^:]+?):\s(.+)$/
+// Matches both WhatsApp export formats:
+//   iOS:     [5/13/26, 5:24:13 PM] Sender: Text   (brackets, optional seconds, optional AM/PM)
+//   Android: 13/05/2026, 17:24 - Sender: Text      (dash separator)
+// The timestamp-to-sender separator is a closing bracket, a dash, or both.
+const MSG_REGEX = /^[\[\(]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?\s*(?:[AP]M)?)\s*[\]\)]?\s*(?:-\s*)?([^:]+?):\s(.+)$/i
+
+// Small stable hash so the same message across re-exports gets the same id
+function hashText(str) {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0
+  return (h >>> 0).toString(36)
+}
 
 function parseWhatsAppExport(text) {
   const lines = text.split('\n')
-  const messages = []
+  const raw = []
   let current = null
 
   for (const line of lines) {
     const match = line.match(MSG_REGEX)
     if (match) {
-      if (current) messages.push(current)
+      if (current) raw.push(current)
       const [, date, time, sender, firstLine] = match
       current = {
-        id: `${date}_${time}_${sender.trim()}`.replace(/\s+/g, '_').replace(/[^\w\-]/g, ''),
         sender: sender.trim(),
         timestamp: `${date} ${time}`,
         text: firstLine.trim(),
       }
     } else if (current && line.trim()) {
-      // Continuation of previous message
+      // Continuation of a multi-line message
       current.text += '\n' + line.trim()
     }
   }
-  if (current) messages.push(current)
+  if (current) raw.push(current)
 
-  return messages
+  // Strip WhatsApp's [Forwarded] marker and build a content-stable id.
+  // The id deliberately excludes the sender (the forwarder) — it would otherwise
+  // leak into the Claude prompt via the id and cause author misattribution.
+  // timestamp + content hash is already unique per message.
+  return raw.map(m => {
+    const cleanText = m.text.replace(/^\[Forwarded\]\s*/i, '').trim()
+    return {
+      sender: m.sender,
+      timestamp: m.timestamp,
+      text: cleanText,
+      id: `${m.timestamp}_${hashText(cleanText)}`.replace(/\s+/g, '_').replace(/[^\w\-]/g, ''),
+    }
+  })
 }
 
 function classifyMessage(msg) {
@@ -68,6 +91,8 @@ export default function WhatsAppSync() {
   const [progress, setProgress] = useState('')
   const [error, setError] = useState('')
   const [results, setResults] = useState(null)
+  const [showSkipped, setShowSkipped] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [settings, setSettings] = useState({
     whatsapp_group_name: '',
     whatsapp_last_synced: '',
@@ -103,6 +128,18 @@ export default function WhatsAppSync() {
       [{ key: 'whatsapp_synced_ids', value: JSON.stringify([...ids]) }],
       { onConflict: 'key' }
     )
+  }
+
+  async function resetSyncHistory() {
+    if (!window.confirm(
+      'Reset import history?\n\nThis clears the record of which WhatsApp messages have already been imported. '
+      + 'The next sync will re-examine every message in your export. Already-imported testimonials in the database are not affected.'
+    )) return
+    setResetting(true)
+    await saveSyncedIds(new Set())
+    setResetting(false)
+    setResults(null)
+    window.alert('Import history cleared. Your next sync will re-process all messages.')
   }
 
   async function saveLastSynced() {
@@ -178,29 +215,65 @@ export default function WhatsAppSync() {
         return
       }
 
-      // 3. Enrich via Claude
+      // 3. Enrich via Claude — in small chunks so each request stays well under
+      //    the serverless time limit (~3.5s/message; 10s synchronous cap in prod).
       setStatus('enriching')
-      setProgress(`Enriching ${newMessages.length} messages with Claude...`)
+      const CHUNK_SIZE = 2
+      const enriched = []
 
-      const response = await fetch('/.netlify/functions/whatsapp-import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
-      })
+      for (let i = 0; i < newMessages.length; i += CHUNK_SIZE) {
+        const chunk = newMessages.slice(i, i + CHUNK_SIZE)
+        const done = Math.min(i + chunk.length, newMessages.length)
+        setProgress(`Enriching ${done} of ${newMessages.length} messages with Claude...`)
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}))
-        if (err.error === 'rate_limit') throw new Error('Claude API rate limit reached. Please wait a moment and try again.')
-        if (err.error === 'billing') throw new Error('Claude API billing issue. Check your Anthropic account.')
-        if (err.error === 'overloaded') throw new Error('Claude API is overloaded. Please try again in a minute.')
-        throw new Error('Enrichment failed. Please try again.')
+        const response = await fetch('/.netlify/functions/whatsapp-import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: chunk }),
+        })
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}))
+          if (err.error === 'rate_limit') throw new Error('Claude API rate limit reached. Please wait a moment and try again.')
+          if (err.error === 'billing') throw new Error('Claude API billing issue. Check your Anthropic account.')
+          if (err.error === 'overloaded') throw new Error('Claude API is overloaded. Please try again in a minute.')
+          throw new Error('Enrichment failed. Please try again.')
+        }
+
+        const { results } = await response.json()
+        enriched.push(...results)
       }
-
-      const { results: enriched } = await response.json()
 
       // Separate testimonials from non-testimonials
       const testimonials = enriched.filter(r => r.is_testimonial)
       const notTestimonials = enriched.filter(r => !r.is_testimonial)
+
+      // Build a reviewable list of everything that was skipped, with text
+      const msgById = Object.fromEntries(newMessages.map(m => [m.id, m]))
+      const stageFor = (reason) => {
+        if (reason === 'voice note') return 'Voice note'
+        if (reason === 'media omitted') return 'Media'
+        if (reason === 'too short') return 'Too short'
+        if (reason === 'system message') return 'System'
+        return 'Skipped'
+      }
+      const skippedDetails = [
+        ...preSkipped.map(s => ({
+          stage: stageFor(s.reason),
+          reason: s.reason,
+          timestamp: s.msg.timestamp,
+          text: s.msg.text,
+        })),
+        ...notTestimonials.map(r => {
+          const orig = msgById[r.id]
+          return {
+            stage: 'Not a testimonial',
+            reason: r.skip_reason || 'not a testimonial',
+            timestamp: orig?.timestamp || '',
+            text: orig?.text || '',
+          }
+        }),
+      ]
 
       if (dryRun || testimonials.length === 0) {
         setStatus('done')
@@ -213,6 +286,7 @@ export default function WhatsAppSync() {
           notTestimonials: notTestimonials.length,
           details: testimonials,
           preSkipped,
+          skippedDetails,
         })
         return
       }
@@ -234,10 +308,13 @@ export default function WhatsAppSync() {
             conditions: item.conditions || [],
             products: item.products || [],
             story_text: item.story_text || '',
-            status: 'imported_pending',
+            // Imports use status 'pending' + is_imported (same convention as the
+            // CSV importer) so they surface under the admin "Imported Pending" tab.
+            status: 'pending',
             is_imported: true,
+            // The DB has no `source` column — the import origin is encoded in
+            // imported_from (e.g. "whatsapp:<id>") and derived from there in the UI.
             imported_from: `whatsapp:${item.id}`,
-            source: 'whatsapp',
             slug,
             gallery_urls: [],
           }
@@ -249,8 +326,12 @@ export default function WhatsAppSync() {
         }
       }
 
-      // 5. Update synced IDs (include all processed, even non-testimonials, so we don't reprocess them)
-      const allProcessedIds = [...syncedIds, ...newMessages.map(m => m.id)]
+      // 5. Update synced IDs. Only mark messages we've truly dealt with:
+      //    successfully-saved testimonials + non-testimonials (chat noise).
+      //    Failed inserts are deliberately NOT marked, so they retry next run.
+      const savedIds = saved.map(it => it.id)
+      const noiseIds = notTestimonials.map(r => r.id)
+      const allProcessedIds = [...syncedIds, ...savedIds, ...noiseIds]
       await saveSyncedIds(new Set(allProcessedIds))
       await saveLastSynced()
 
@@ -264,6 +345,7 @@ export default function WhatsAppSync() {
         details: saved,
         failedDetails: failed,
         preSkipped,
+        skippedDetails,
       })
 
     } catch (err) {
@@ -308,6 +390,12 @@ export default function WhatsAppSync() {
         <div className="wa-setting wa-setting--readonly">
           <label>Last Synced</label>
           <span>{lastSynced}</span>
+        </div>
+        <div className="wa-setting wa-setting--action">
+          <label>Import History</label>
+          <button className="wa-reset-btn" onClick={resetSyncHistory} disabled={resetting}>
+            {resetting ? 'Resetting…' : 'Reset'}
+          </button>
         </div>
       </div>
 
@@ -411,7 +499,11 @@ export default function WhatsAppSync() {
       {/* Results */}
       {results && status === 'done' && (
         <div className="wa-results">
-          <h3>{results.dryRun ? '🔍 Dry Run Preview' : '✅ Sync Complete'}</h3>
+          <h3 className="wa-results-title">
+            {results.dryRun
+              ? <><Search size={18} /> Dry Run Preview</>
+              : <><CheckCircle2 size={18} /> Sync Complete</>}
+          </h3>
 
           <div className="wa-stats">
             {results.dryRun ? (
@@ -471,18 +563,47 @@ export default function WhatsAppSync() {
                 <div key={i} className="wa-detail-card">
                   <div className="wa-detail-title">{item.title}</div>
                   <div className="wa-detail-meta">
-                    {item.person_name && <span>👤 {item.person_name}</span>}
-                    {item.conditions?.length > 0 && <span>🏥 {item.conditions.join(', ')}</span>}
-                    {item.products?.length > 0 && <span>💊 {item.products.join(', ')}</span>}
+                    {item.person_name && <span><User size={13} /> {item.person_name}</span>}
+                    {item.conditions?.length > 0 && <span><Activity size={13} /> {item.conditions.join(', ')}</span>}
+                    {item.products?.length > 0 && <span><Pill size={13} /> {item.products.join(', ')}</span>}
                   </div>
                   {item.review_notes && (
-                    <div className="wa-detail-flag">⚠️ {item.review_notes}</div>
+                    <div className="wa-detail-flag"><AlertTriangle size={13} /> {item.review_notes}</div>
                   )}
                   <div className="wa-detail-excerpt">
                     {item.story_text?.slice(0, 200)}{item.story_text?.length > 200 ? '...' : ''}
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Skipped messages — collapsible, for double-checking */}
+          {results.skippedDetails?.length > 0 && (
+            <div className="wa-skipped-section">
+              <button
+                className="wa-skipped-toggle"
+                onClick={() => setShowSkipped(v => !v)}
+              >
+                {showSkipped ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                Review {results.skippedDetails.length} skipped message{results.skippedDetails.length !== 1 ? 's' : ''}
+              </button>
+              {showSkipped && (
+                <div className="wa-skipped-list">
+                  {results.skippedDetails.map((s, i) => (
+                    <div key={i} className="wa-skipped-item">
+                      <div className="wa-skipped-head">
+                        <span className={`wa-skipped-tag wa-skipped-tag--${s.stage.toLowerCase().replace(/\s+/g, '-')}`}>{s.stage}</span>
+                        {s.timestamp && <span className="wa-skipped-time">{s.timestamp}</span>}
+                        {s.reason && s.reason !== s.stage.toLowerCase() && <span className="wa-skipped-reason">{s.reason}</span>}
+                      </div>
+                      <div className="wa-skipped-text">
+                        {s.text?.slice(0, 220) || <em>(no text)</em>}{s.text?.length > 220 ? '…' : ''}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

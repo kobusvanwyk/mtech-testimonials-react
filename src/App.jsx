@@ -97,7 +97,8 @@ function AppRoutes() {
                 <Route path="edit/:id"   element={<EditTestimonial />} />
                 <Route path="categories" element={<Categories />} />
                 <Route path="images"     element={<ImageManager />} />
-                <Route path="import"     element={<ImportTestimonials />} />
+                <Route path="import"       element={<ImportTestimonials />} />
+                <Route path="whatsapp"    element={<WhatsAppSync />} />
                 <Route path="settings"    element={<Settings />} />
                 <Route path="pdf-settings" element={<PDFSettings />} />
                 <Route path="duplicates"  element={<Duplicates />} />

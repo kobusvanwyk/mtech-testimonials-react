@@ -48,6 +48,23 @@ const PDF_FIELDS = [
     },
 ]
 
+// Boolean display toggles. Stored as 'true' / 'false' strings in site_settings.
+// Absent (never saved) defaults to shown, preserving existing PDF behaviour.
+const PDF_TOGGLES = [
+    {
+        key: 'pdf_show_name',
+        label: "Show the person's name",
+        hint: "When on, the testimonial author's name (or “Anonymous”) appears in the line under the title. Turn off to hide it entirely.",
+    },
+    {
+        key: 'pdf_show_date',
+        label: 'Show the date',
+        hint: 'When on, the testimonial date appears in the line under the title. Turn off to hide it entirely.',
+    },
+]
+
+const ALL_KEYS = [...PDF_FIELDS.map(f => f.key), ...PDF_TOGGLES.map(t => t.key)]
+
 export default function PDFSettings() {
     const [values, setValues]   = useState({})
     const [loading, setLoading] = useState(true)
@@ -61,7 +78,7 @@ export default function PDFSettings() {
         const { data, error } = await supabase
             .from('site_settings')
             .select('key, value')
-            .in('key', PDF_FIELDS.map(f => f.key))
+            .in('key', ALL_KEYS)
         if (error) { setError('Could not load settings.'); setLoading(false); return }
         const map = {}
         data.forEach(row => { map[row.key] = row.value })
@@ -72,7 +89,11 @@ export default function PDFSettings() {
     async function handleSave() {
         setSaving(true)
         setError(null)
-        const upserts = PDF_FIELDS.map(f => ({ key: f.key, value: values[f.key] ?? '' }))
+        const upserts = [
+            ...PDF_FIELDS.map(f => ({ key: f.key, value: values[f.key] ?? '' })),
+            // Toggles default to 'true' (shown) when the admin hasn't touched them
+            ...PDF_TOGGLES.map(t => ({ key: t.key, value: values[t.key] === 'false' ? 'false' : 'true' })),
+        ]
         const { error } = await supabase
             .from('site_settings')
             .upsert(upserts, { onConflict: 'key' })
@@ -153,6 +174,29 @@ export default function PDFSettings() {
                                 </div>
                             )}
                         </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Display options */}
+            <div className="settings-section">
+                <h3 className="settings-section-title">Display Options</h3>
+                <p className="settings-section-hint">
+                    Control which details appear in the line beneath the testimonial title on each PDF.
+                </p>
+                <div className="settings-fields">
+                    {PDF_TOGGLES.map(t => (
+                        <label key={t.key} className="pdf-toggle-field">
+                            <input
+                                type="checkbox"
+                                checked={values[t.key] !== 'false'}
+                                onChange={e => setValues(v => ({ ...v, [t.key]: e.target.checked ? 'true' : 'false' }))}
+                            />
+                            <span className="pdf-toggle-text">
+                                <span className="settings-label">{t.label}</span>
+                                <span className="settings-hint">{t.hint}</span>
+                            </span>
+                        </label>
                     ))}
                 </div>
             </div>

@@ -156,6 +156,13 @@ const S = StyleSheet.create({
         lineHeight: 1.75,
         marginBottom: 10,
     },
+    listItem: {
+        fontSize: 11,
+        color: C.body,
+        lineHeight: 1.6,
+        marginBottom: 4,
+        paddingLeft: 12,
+    },
 
     // ── Gallery ──────────────────────────────────────
     gallerySection: {
@@ -245,13 +252,67 @@ function buildContactItems(settings) {
     return items
 }
 
+// Parse inline **bold** and _italic_ into styled runs (mirrors the web renderer
+// in src/pages/Single.jsx). This both renders emphasis and strips the raw markup
+// so no literal ** or _ characters end up in the exported PDF.
+function inlineRuns(text) {
+    const runs = []
+    const regex = /(\*\*(.+?)\*\*|_(.+?)_)/g
+    let last = 0, match
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > last) runs.push({ t: text.slice(last, match.index) })
+        if (match[0].startsWith('**')) runs.push({ t: match[2], bold: true })
+        else runs.push({ t: match[3], italic: true })
+        last = match.index + match[0].length
+    }
+    if (last < text.length) runs.push({ t: text.slice(last) })
+    // Safety net: drop any unmatched/stray markers so they never show in the PDF
+    return runs.map(r => ({ ...r, t: r.t.replace(/\*\*|__/g, '') }))
+}
+
+const runStyle = (r) =>
+    r.bold   ? { fontFamily: 'PlusJakartaSans', fontWeight: 700 } :
+    r.italic ? { fontFamily: 'PlusJakartaSans', fontStyle: 'italic' } :
+    undefined
+
+// Turn story text into PDF blocks, handling bullets (- ), numbered lists (1. )
+// and inline emphasis — matching how the public page renders the same text.
+function renderStory(text, paraStyle, listItemStyle) {
+    const lines = (text || '').split('\n')
+    const blocks = []
+    lines.forEach((line, i) => {
+        if (!line.trim()) return
+        const ul = /^- (.+)/.exec(line)
+        const ol = /^(\d+)\. (.+)/.exec(line)
+        let prefix = null, content = line
+        if (ul)      { prefix = '•  ';            content = ul[1] }
+        else if (ol) { prefix = `${ol[1]}.  `;    content = ol[2] }
+        const runs = inlineRuns(content)
+        blocks.push(
+            <Text key={i} style={prefix ? listItemStyle : paraStyle}>
+                {prefix && <Text>{prefix}</Text>}
+                {runs.map((r, j) => (
+                    <Text key={j} style={runStyle(r)}>{r.t}</Text>
+                ))}
+            </Text>
+        )
+    })
+    return blocks
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export function TestimonialPDF({ testimonial: t, settings = {} }) {
     const hasLogo      = !!settings.pdf_logo_url?.trim()
     const contactItems = buildContactItems(settings)
     const hasFooter    = contactItems.length > 0 || !!settings.pdf_footer_tagline?.trim()
-    const paragraphs   = (t.story_text || '').split('\n').filter(p => p.trim())
     const gallery      = (t.gallery_urls || []).slice(0, 6)
+
+    // Meta line visibility — default to showing unless explicitly turned off
+    const showName = settings.pdf_show_name !== 'false'
+    const showDate = settings.pdf_show_date !== 'false'
+    const nameText = showName ? `By ${t.anonymous ? 'Anonymous' : (t.person_name || 'Unknown')}` : ''
+    const dateText = showDate ? formatDate(t.created_at) : ''
+    const metaText = [nameText, dateText].filter(Boolean).join('   ·   ')
 
     // ── Dynamic gallery grid ──────────────────────────────────────────────────
     // A4 content width = 595 - (44 * 2) = 507pt
@@ -308,11 +369,9 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
                     <View style={S.titleUnderline} />
 
                     {/* Meta */}
-                    <Text style={metaStyle}>
-                        By {t.anonymous ? 'Anonymous' : (t.person_name || 'Unknown')}
-                        {'   ·   '}
-                        {formatDate(t.created_at)}
-                    </Text>
+                    {metaText !== '' && (
+                        <Text style={metaStyle}>{metaText}</Text>
+                    )}
 
                     {/* Condition + Product chips */}
                     {((t.conditions?.length > 0) || (t.products?.length > 0)) && (
@@ -331,9 +390,7 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
                     )}
 
                     {/* Story body */}
-                    {paragraphs.map((para, i) => (
-                        <Text key={i} style={paraStyle}>{para}</Text>
-                    ))}
+                    {renderStory(t.story_text, paraStyle, { ...S.listItem, fontSize: bodySize })}
 
                     {/* Gallery */}
                     {gallery.length > 0 && (
@@ -350,9 +407,10 @@ export function TestimonialPDF({ testimonial: t, settings = {} }) {
 
                 </View>
 
-                {/* ── Footer ── */}
+                {/* ── Footer ── (fixed: pinned to the bottom of every page and
+                     kept out of content flow, which prevents a trailing blank page) */}
                 {hasFooter && (
-                    <View style={S.footer}>
+                    <View fixed style={S.footer}>
                         <View style={S.footerDivider} />
                         {contactItems.length > 0 && (
                             <>

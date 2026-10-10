@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronDown, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, X, Search } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useProducts, useConditions } from '../lib/ProductsContext'
 
@@ -16,30 +16,67 @@ function useIsMobile() {
     return isMobile
 }
 
+// ── Shared live-filter search box ─────────────────────────────────────────────
+function NavSearch({ title, query, setQuery, autoFocus }) {
+    return (
+        <div className="nav-search">
+            <Search size={16} className="nav-search-icon" />
+            <input
+                className="nav-search-input"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={`Search ${title.replace(/^View by /i, '').toLowerCase()}…`}
+                autoComplete="off"
+                autoFocus={autoFocus}
+            />
+            {query && (
+                <button className="nav-search-clear" onClick={() => setQuery('')} aria-label="Clear search">
+                    <X size={15} />
+                </button>
+            )}
+        </div>
+    )
+}
+
+function filterItems(items, query) {
+    const q = query.trim().toLowerCase()
+    return q ? items.filter(i => i.toLowerCase().includes(q)) : items
+}
+
 // ── Bottom sheet (mobile) ─────────────────────────────────────────────────────
 function BottomSheet({ title, items, counts = {}, open, onClose, onSelect, activeFilter }) {
+    const [query, setQuery] = useState('')
+
     useEffect(() => {
         if (open) document.body.style.overflow = 'hidden'
         else       document.body.style.overflow = ''
         return () => { document.body.style.overflow = '' }
     }, [open])
 
+    useEffect(() => { if (!open) setQuery('') }, [open])
+
     if (!open) return null
+
+    const q = query.trim()
+    const filtered = filterItems(items, query)
 
     return (
         <>
             <div className="bs-backdrop" onClick={onClose} />
             <div className="bs-sheet">
-                <div class="bs-handle" />
+                <div className="bs-handle" />
                 <div className="bs-header">
                     <span className="bs-title">{title}</span>
                     <button className="bs-close" onClick={onClose}><X size={20} /></button>
                 </div>
+                <NavSearch title={title} query={query} setQuery={setQuery} />
                 <div className="bs-list">
-                    <button className={`bs-item bs-item-all ${!activeFilter ? 'bs-item-active' : ''}`} onClick={() => { onSelect(null); onClose() }}>
-                        <span>All testimonials</span>
-                    </button>
-                    {items.map(item => (
+                    {!q && (
+                        <button className={`bs-item bs-item-all ${!activeFilter ? 'bs-item-active' : ''}`} onClick={() => { onSelect(null); onClose() }}>
+                            <span>All testimonials</span>
+                        </button>
+                    )}
+                    {filtered.map(item => (
                         <button
                             key={item}
                             className={`bs-item ${activeFilter === item ? 'bs-item-active' : ''}`}
@@ -51,62 +88,73 @@ function BottomSheet({ title, items, counts = {}, open, onClose, onSelect, activ
                             )}
                         </button>
                     ))}
+                    {filtered.length === 0 && (
+                        <p className="nav-search-empty">No matches for “{q}”</p>
+                    )}
                 </div>
             </div>
         </>
     )
 }
 
-// ── Desktop dropdown ──────────────────────────────────────────────────────────
-function DesktopDropdown({ label, items, counts = {}, onSelect, activeFilter }) {
-    const [open, setOpen] = useState(false)
-    const ref = useRef()
+// ── Desktop side drawer ───────────────────────────────────────────────────────
+function SideDrawer({ title, items, counts = {}, open, onClose, onSelect, activeFilter }) {
+    const [query, setQuery] = useState('')
 
     useEffect(() => {
-        function handleClick(e) {
-            if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-        }
-        document.addEventListener('mousedown', handleClick)
-        return () => document.removeEventListener('mousedown', handleClick)
-    }, [])
+        if (open) document.body.style.overflow = 'hidden'
+        else       document.body.style.overflow = ''
+        return () => { document.body.style.overflow = '' }
+    }, [open])
 
-    const hasActive = items.includes(activeFilter)
+    useEffect(() => {
+        if (!open) { setQuery(''); return }
+        function onKey(e) { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', onKey)
+        return () => document.removeEventListener('keydown', onKey)
+    }, [open, onClose])
+
+    if (!open) return null
+
+    const q = query.trim()
+    const filtered = filterItems(items, query)
 
     return (
-        <div className="nav-dropdown" ref={ref}>
-            <button
-                className={`nav-dropdown-trigger ${open ? 'active' : ''} ${hasActive ? 'has-active-filter' : ''}`}
-                onClick={() => setOpen(o => !o)}
-            >
-                {label}
-                <ChevronDown size={14} className={`nav-chevron ${open ? 'flipped' : ''}`} />
-            </button>
-            {open && (
-                <div className="nav-dropdown-menu">
-                    <div className="nav-dropdown-scroll">
+        <>
+            <div className="drawer-backdrop" onClick={onClose} />
+            <div className="side-drawer" role="dialog" aria-label={title}>
+                <div className="drawer-header">
+                    <span className="drawer-title">{title}</span>
+                    <button className="drawer-close" onClick={onClose} aria-label="Close"><X size={20} /></button>
+                </div>
+                <NavSearch title={title} query={query} setQuery={setQuery} autoFocus />
+                <div className="drawer-list">
+                    {!q && (
                         <button
-                            className={`nav-dropdown-item nav-dropdown-item-all ${!activeFilter ? 'nav-dropdown-item-active' : ''}`}
-                            onClick={() => { onSelect(null); setOpen(false) }}
+                            className={`drawer-item drawer-item-all ${!activeFilter ? 'drawer-item-active' : ''}`}
+                            onClick={() => { onSelect(null); onClose() }}
                         >
                             <span>All testimonials</span>
                         </button>
-                        <div className="nav-dropdown-divider" />
-                        {items.map(item => (
-                            <button
-                                key={item}
-                                className={`nav-dropdown-item ${activeFilter === item ? 'nav-dropdown-item-active' : ''}`}
-                                onClick={() => { onSelect(item); setOpen(false) }}
-                            >
-                                <span>{item}</span>
-                                {counts[item] > 0 && (
-                                    <span className="nav-dropdown-count">{counts[item]}</span>
-                                )}
-                            </button>
-                        ))}
-                    </div>
+                    )}
+                    {filtered.map(item => (
+                        <button
+                            key={item}
+                            className={`drawer-item ${activeFilter === item ? 'drawer-item-active' : ''}`}
+                            onClick={() => { onSelect(item); onClose() }}
+                        >
+                            <span>{item}</span>
+                            {counts[item] > 0 && (
+                                <span className="drawer-count">{counts[item]}</span>
+                            )}
+                        </button>
+                    ))}
+                    {filtered.length === 0 && (
+                        <p className="nav-search-empty">No matches for “{q}”</p>
+                    )}
                 </div>
-            )}
-        </div>
+            </div>
+        </>
     )
 }
 
@@ -114,38 +162,31 @@ function DesktopDropdown({ label, items, counts = {}, onSelect, activeFilter }) 
 function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect, activeFilter }) {
     const isMobile = useIsMobile()
     const [open, setOpen] = useState(false)
+    const hasActive = items.includes(activeFilter)
 
-    if (isMobile) {
-        return (
-            <>
-                <button
-                    className={`nav-dropdown-trigger mobile ${open ? 'active' : ''} ${items.includes(activeFilter) ? 'has-active-filter' : ''}`}
-                    onClick={() => setOpen(true)}
-                >
-                    {mobileLabel}
-                    <ChevronDown size={13} className="nav-chevron" />
-                </button>
-                <BottomSheet
-                    title={desktopLabel}
-                    items={items}
-                    counts={counts}
-                    open={open}
-                    onClose={() => setOpen(false)}
-                    onSelect={onSelect}
-                    activeFilter={activeFilter}
-                />
-            </>
-        )
-    }
+    const Panel = isMobile ? BottomSheet : SideDrawer
 
     return (
-        <DesktopDropdown
-            label={desktopLabel}
-            items={items}
-            counts={counts}
-            onSelect={onSelect}
-            activeFilter={activeFilter}
-        />
+        <div className="nav-dropdown">
+            <button
+                className={`nav-dropdown-trigger ${isMobile ? 'mobile' : ''} ${open ? 'active' : ''} ${hasActive ? 'has-active-filter' : ''}`}
+                onClick={() => setOpen(true)}
+            >
+                {isMobile ? mobileLabel : desktopLabel}
+                {isMobile
+                    ? <ChevronDown size={13} className={`nav-chevron ${open ? 'flipped' : ''}`} />
+                    : <ChevronRight size={14} className="nav-chevron" />}
+            </button>
+            <Panel
+                title={desktopLabel}
+                items={items}
+                counts={counts}
+                open={open}
+                onClose={() => setOpen(false)}
+                onSelect={onSelect}
+                activeFilter={activeFilter}
+            />
+        </div>
     )
 }
 

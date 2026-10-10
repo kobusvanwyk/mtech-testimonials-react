@@ -12,6 +12,8 @@ const PDF_KEYS = [
     'pdf_contact_whatsapp',
     'pdf_footer_tagline',
     'pdf_font_threshold',
+    'pdf_show_name',
+    'pdf_show_date',
 ]
 
 // Singleton settings cache — fetched once, reused across all buttons
