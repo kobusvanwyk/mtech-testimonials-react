@@ -1,21 +1,67 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useProducts, useConditions } from '../../lib/ProductsContext'
 import { PDFDownloadButton } from '../../components/PDFDownloadButton'
-import { Sparkles, AlertTriangle, ExternalLink } from 'lucide-react'
+import { Sparkles, AlertTriangle, ExternalLink, Square } from 'lucide-react'
 
-// Does a testimonial match a single concept group? Matches on the curated
-// condition/product TAGS only. Free-text keyword matching was tried but is far
-// too noisy on this corpus (common words like "leg"/"cleared" match everything),
-// so we rely on the rich 185-condition taxonomy that the AI maps the query to.
-function matchGroup(t, g) {
-    const conds = new Set((t.conditions || []).map(x => x.toLowerCase()))
-    const prods = new Set((t.products || []).map(x => x.toLowerCase()))
-    if ((g.conditions || []).some(c => conds.has(c.toLowerCase()))) return 'tag'
-    if ((g.products || []).some(p => prods.has(p.toLowerCase()))) return 'tag'
+// ── Candidate gathering ────────────────────────────────────────────────────────
+// Recall first: a testimonial is a *candidate* for a concept group if it matches
+// the curated condition/product TAGS **or** a distinctive story-text KEYWORD.
+// Keyword matching alone is far too noisy on this corpus (common words match
+// everything), so keywords only widen the candidate net — Claude's relevance pass
+// (netlify/functions/confirm-relevance) does the precision filtering afterwards.
+
+function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Pre-compile each group's tag sets + word-boundary keyword matchers once per search.
+function compileGroups(groups) {
+    return groups
+        .map(g => ({
+            label: g.label || '',
+            conditions: g.conditions || [],
+            products: g.products || [],
+            keywords: g.keywords || [],
+            condSet: new Set((g.conditions || []).map(c => c.toLowerCase())),
+            prodSet: new Set((g.products || []).map(p => p.toLowerCase())),
+            kwRes: (g.keywords || [])
+                .filter(Boolean)
+                .map(k => ({ word: k, re: new RegExp(`\\b${escapeRegExp(k.toLowerCase())}\\b`) })),
+        }))
+        // A group with no usable signal would make an AND search match nothing — drop it.
+        .filter(g => g.condSet.size || g.prodSet.size || g.kwRes.length)
+}
+
+// How did a testimonial match a group? Returns { how, keywords } or null.
+function matchGroup(t, g, hay) {
+    const conds = (t.conditions || []).map(x => x.toLowerCase())
+    const prods = (t.products || []).map(x => x.toLowerCase())
+    if (conds.some(c => g.condSet.has(c)) || prods.some(p => g.prodSet.has(p))) {
+        return { how: 'tag', keywords: [] }
+    }
+    const hits = g.kwRes.filter(k => k.re.test(hay)).map(k => k.word)
+    if (hits.length) return { how: 'keyword', keywords: hits }
     return null
 }
+
+// Pull a focused evidence snippet for Claude: the story opening plus a window of
+// context around each keyword hit (which may be buried deep in a long story).
+function buildEvidence(story, keywords) {
+    const s = story || ''
+    const parts = [s.slice(0, 500)]
+    const lower = s.toLowerCase()
+    for (const k of keywords) {
+        const idx = lower.indexOf(k.toLowerCase())
+        if (idx > 500) {
+            parts.push('…' + s.slice(Math.max(0, idx - 150), idx + k.length + 150) + '…')
+        }
+    }
+    return parts.join(' ').slice(0, 1400)
+}
+
+const CHUNK = 8   // candidates per Claude relevance call (Netlify ~10s sync limit)
 
 const EXAMPLES = [
     'Type 1 diabetes relating to foot conditions',
@@ -30,73 +76,128 @@ export default function AskAI() {
 
     const [query, setQuery]     = useState('')
     const [loading, setLoading] = useState(false)
+    const [phase, setPhase]     = useState('')
     const [error, setError]     = useState(null)
-    const [result, setResult]   = useState(null)   // { interpretation, logic, groups, matches: [{t, groups:[labels]}] }
+    const [result, setResult]   = useState(null)   // { interpretation, logic, matches: [{t, hits, reason}] }
+
+    const abortRef = useRef(null)   // AbortController for the in-flight search
 
     function clearSearch() {
+        stop()
         setQuery('')
         setResult(null)
         setError(null)
     }
 
+    // Cancel the running search: abort in-flight fetches and stop the chunk loop.
+    function stop() {
+        if (abortRef.current) abortRef.current.abort()
+        setLoading(false)
+        setPhase('')
+    }
+
     async function ask(q) {
         const question = (q ?? query).trim()
         if (!question || loading) return
+        const ac = new AbortController()
+        abortRef.current = ac
         setLoading(true)
         setError(null)
         setResult(null)
+        setPhase('Understanding your question…')
 
         try {
-            // 1) Understand the query → structured intent
+            // 1) Understand the query → structured intent (groups + keywords + logic)
             const resp = await fetch('/.netlify/functions/ask-ai', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: question, conditions: allConditions, products: allProducts }),
+                signal: ac.signal,
             })
             const intent = await resp.json()
             if (!resp.ok) throw new Error(intent.message || 'Search failed. Please try again.')
 
-            const groups = intent.groups || []
+            const logic = intent.logic === 'AND' ? 'AND' : 'OR'
+            const groups = compileGroups(intent.groups || [])
             if (groups.length === 0) {
-                setResult({ interpretation: intent.interpretation || '', logic: intent.logic, groups: [], matches: [] })
-                setLoading(false)
+                setResult({ interpretation: intent.interpretation || '', logic, matches: [] })
                 return
             }
 
-            // 2) Fetch testimonials and filter by the intent
+            // 2) Fetch testimonials and gather candidates generously (tags OR keywords)
+            setPhase('Searching testimonials…')
             const { data, error: fErr } = await supabase
                 .from('testimonials')
-                .select('id, title, person_name, anonymous, conditions, products, story_text, status, imported_from, slug, gallery_urls')
+                .select('id, title, person_name, anonymous, conditions, products, story_text, status, imported_from, slug, gallery_urls, created_at')
             if (fErr) throw new Error('Could not load testimonials: ' + fErr.message)
 
-            const filterBy = (logic) => {
-                const out = []
-                for (const t of (data || [])) {
-                    const hits = groups.map(g => ({ label: g.label, how: matchGroup(t, g) }))
-                    const ok = logic === 'AND' ? hits.every(h => h.how) : hits.some(h => h.how)
-                    if (ok) {
-                        const matchedHits = hits.filter(h => h.how)
-                        out.push({ t, hits: matchedHits, tagHits: matchedHits.length })
-                    }
+            const candidates = []
+            for (const t of (data || [])) {
+                const hay = `${t.title || ''} ${t.story_text || ''}`.toLowerCase()
+                const perGroup = groups.map(g => ({ g, m: matchGroup(t, g, hay) }))
+                // AND → every group must have some signal; OR → any group.
+                const matchedGroups = perGroup.filter(x => x.m)
+                const ok = logic === 'AND' ? matchedGroups.length === groups.length : matchedGroups.length > 0
+                if (!ok) continue
+
+                const hits = matchedGroups.map(x => ({ label: x.g.label, how: x.m.how, keywords: x.m.keywords }))
+                const kwHits = [...new Set(matchedGroups.flatMap(x => x.m.keywords))]
+                candidates.push({ t, hits, evidence: buildEvidence(t.story_text, kwHits) })
+            }
+
+            if (candidates.length === 0) {
+                setResult({ interpretation: intent.interpretation || '', logic, matches: [] })
+                return
+            }
+
+            // 3) Relevance pass — Claude confirms genuine matches (precision), chunked.
+            const byId = Object.fromEntries(candidates.map(c => [c.t.id, c]))
+            const confirmed = new Map()   // id → reason
+            for (let k = 0; k < candidates.length; k += CHUNK) {
+                if (ac.signal.aborted) return
+                const chunk = candidates.slice(k, k + CHUNK)
+                setPhase(`Checking relevance — ${Math.min(k + chunk.length, candidates.length)} of ${candidates.length}…`)
+                const rResp = await fetch('/.netlify/functions/confirm-relevance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: question,
+                        interpretation: intent.interpretation || '',
+                        logic,
+                        candidates: chunk.map(c => ({
+                            id: c.t.id,
+                            name: c.t.anonymous ? 'Anonymous' : (c.t.person_name || 'Unknown'),
+                            conditions: c.t.conditions || [],
+                            products: c.t.products || [],
+                            text: c.evidence,
+                        })),
+                    }),
+                    signal: ac.signal,
+                })
+                const rJson = await rResp.json()
+                if (!rResp.ok) throw new Error(rJson.message || 'Relevance check failed.')
+                for (const r of (rJson.relevant || [])) {
+                    if (byId[r.id]) confirmed.set(r.id, r.reason || '')
                 }
-                out.sort((a, b) => b.hits.length - a.hits.length)
-                return out
             }
 
-            let matches = filterBy(intent.logic)
-            let broadened = false
-            // If a strict "all criteria" search finds nothing, broaden to "any criteria"
-            // so outcome-phrased questions don't dead-end.
-            if (intent.logic === 'AND' && matches.length === 0 && groups.length > 1) {
-                matches = filterBy('OR')
-                broadened = true
-            }
+            const matches = candidates
+                .filter(c => confirmed.has(c.t.id))
+                .map(c => ({ t: c.t, hits: c.hits, reason: confirmed.get(c.t.id) }))
+                .sort((a, b) => b.hits.length - a.hits.length)
 
-            setResult({ interpretation: intent.interpretation || '', logic: intent.logic, groups, matches, broadened })
+            setResult({ interpretation: intent.interpretation || '', logic, matches })
         } catch (err) {
-            setError(err.message)
+            // Silently swallow a user-initiated cancellation; surface anything else.
+            if (err.name !== 'AbortError' && !ac.signal.aborted) setError(err.message)
+        } finally {
+            // Only clear loading/phase if a newer search hasn't already taken over.
+            if (abortRef.current === ac) {
+                abortRef.current = null
+                setLoading(false)
+                setPhase('')
+            }
         }
-        setLoading(false)
     }
 
     return (
@@ -104,7 +205,8 @@ export default function AskAI() {
             <h2><Sparkles size={20} /> Ask AI</h2>
             <p className="page-sub">
                 Search testimonials in plain language. The AI maps your question to the right conditions and
-                products, then finds the matching stories. For "X relating to Y" it requires both.
+                products, gathers every story that might fit, then confirms which ones genuinely match — so an
+                empty result means nothing fits, not that the wording was off.
             </p>
 
             <form className="ask-ai-form" onSubmit={e => { e.preventDefault(); ask() }}>
@@ -115,13 +217,27 @@ export default function AskAI() {
                     placeholder="e.g. Type 1 diabetes relating to foot conditions"
                     autoFocus
                 />
-                <button className="ask-ai-btn" type="submit" disabled={loading || !query.trim()}>
-                    {loading ? <><span className="ask-ai-spinner" /> Searching…</> : <><Sparkles size={15} /> Ask</>}
-                </button>
+                {loading ? (
+                    // preventDefault: clicking Stop flips loading→false and React
+                    // re-renders this slot into the submit button mid-click; without
+                    // it the browser then runs the click's default action and submits
+                    // the form, firing a second search.
+                    <button type="button" className="ask-ai-btn ask-ai-stop" onClick={e => { e.preventDefault(); stop() }}>
+                        <Square size={13} fill="currentColor" /> Stop
+                    </button>
+                ) : (
+                    <button className="ask-ai-btn" type="submit" disabled={!query.trim()}>
+                        <Sparkles size={15} /> Ask
+                    </button>
+                )}
                 {(result || query) && !loading && (
                     <button type="button" className="ask-ai-clear" onClick={clearSearch}>Clear</button>
                 )}
             </form>
+
+            {loading && phase && (
+                <div className="ask-ai-phase"><span className="ask-ai-spinner" /> {phase}</div>
+            )}
 
             {!result && !loading && !error && (
                 <div className="ask-ai-examples">
@@ -146,17 +262,11 @@ export default function AskAI() {
                         </div>
                     )}
 
-                    {result.broadened && result.matches.length > 0 && (
-                        <div className="ask-ai-broadened">
-                            No testimonials matched <em>all</em> criteria — showing stories matching <em>any</em> of them.
-                        </div>
-                    )}
-
                     {result.matches.length === 0 ? (
-                        <p className="table-empty">No testimonials matched that search.</p>
+                        <p className="table-empty">No testimonials genuinely matched that search.</p>
                     ) : (
                         <div className="ask-ai-list">
-                            {result.matches.map(({ t, hits }) => (
+                            {result.matches.map(({ t, hits, reason }) => (
                                 <div key={t.id} className="ask-ai-card">
                                     <div className="ask-ai-card-main">
                                         <div className="ask-ai-card-title">{t.title}</div>
@@ -169,6 +279,9 @@ export default function AskAI() {
                                                 <span key={i} className={`ask-ai-hit ask-ai-hit--${h.how}`}>{h.label}</span>
                                             ))}
                                         </div>
+                                        {reason && (
+                                            <p className="ask-ai-card-reason"><Sparkles size={12} /> {reason}</p>
+                                        )}
                                         <p className="ask-ai-card-excerpt">
                                             {(t.story_text || '').slice(0, 220)}{t.story_text?.length > 220 ? '…' : ''}
                                         </p>

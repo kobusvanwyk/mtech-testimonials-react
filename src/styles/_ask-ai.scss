@@ -43,6 +43,11 @@
     &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
+.ask-ai-stop {
+    background: var(--danger);
+    &:hover:not(:disabled) { background: var(--danger); filter: brightness(0.92); }
+}
+
 .ask-ai-clear {
     background: none;
     border: none;
@@ -110,14 +115,33 @@
     }
 }
 
-.ask-ai-broadened {
-    font-size: 0.85rem;
-    color: var(--warning-darker);
-    background: var(--warning-light);
-    border: 1px solid #ffe0b0;
+.ask-ai-phase {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.88rem;
+    color: var(--primary-dark);
+    margin: 4px 0 16px;
+
+    .ask-ai-spinner {
+        border-color: var(--primary-mid);
+        border-top-color: var(--primary);
+    }
+}
+
+.ask-ai-card-reason {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--primary-darker);
+    background: var(--primary-light);
     border-radius: var(--radius-md);
-    padding: 8px 12px;
-    margin-bottom: 12px;
+    padding: 6px 10px;
+    margin: 0 0 8px;
+
+    svg { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
 }
 
 .ask-ai-list {
