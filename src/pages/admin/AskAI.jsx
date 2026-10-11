@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useProducts, useConditions } from '../../lib/ProductsContext'
 import { PDFDownloadButton } from '../../components/PDFDownloadButton'
-import { Sparkles, AlertTriangle, ExternalLink } from 'lucide-react'
+import { Sparkles, AlertTriangle, ExternalLink, Square } from 'lucide-react'
 
 // ── Candidate gathering ────────────────────────────────────────────────────────
 // Recall first: a testimonial is a *candidate* for a concept group if it matches
@@ -80,16 +80,27 @@ export default function AskAI() {
     const [error, setError]     = useState(null)
     const [result, setResult]   = useState(null)   // { interpretation, logic, matches: [{t, hits, reason}] }
 
+    const abortRef = useRef(null)   // AbortController for the in-flight search
+
     function clearSearch() {
+        stop()
         setQuery('')
         setResult(null)
         setError(null)
+    }
+
+    // Cancel the running search: abort in-flight fetches and stop the chunk loop.
+    function stop() {
+        if (abortRef.current) abortRef.current.abort()
+        setLoading(false)
         setPhase('')
     }
 
     async function ask(q) {
         const question = (q ?? query).trim()
         if (!question || loading) return
+        const ac = new AbortController()
+        abortRef.current = ac
         setLoading(true)
         setError(null)
         setResult(null)
@@ -101,6 +112,7 @@ export default function AskAI() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: question, conditions: allConditions, products: allProducts }),
+                signal: ac.signal,
             })
             const intent = await resp.json()
             if (!resp.ok) throw new Error(intent.message || 'Search failed. Please try again.')
@@ -109,8 +121,6 @@ export default function AskAI() {
             const groups = compileGroups(intent.groups || [])
             if (groups.length === 0) {
                 setResult({ interpretation: intent.interpretation || '', logic, matches: [] })
-                setLoading(false)
-                setPhase('')
                 return
             }
 
@@ -118,7 +128,7 @@ export default function AskAI() {
             setPhase('Searching testimonials…')
             const { data, error: fErr } = await supabase
                 .from('testimonials')
-                .select('id, title, person_name, anonymous, conditions, products, story_text, status, imported_from, slug, gallery_urls')
+                .select('id, title, person_name, anonymous, conditions, products, story_text, status, imported_from, slug, gallery_urls, created_at')
             if (fErr) throw new Error('Could not load testimonials: ' + fErr.message)
 
             const candidates = []
@@ -137,8 +147,6 @@ export default function AskAI() {
 
             if (candidates.length === 0) {
                 setResult({ interpretation: intent.interpretation || '', logic, matches: [] })
-                setLoading(false)
-                setPhase('')
                 return
             }
 
@@ -146,6 +154,7 @@ export default function AskAI() {
             const byId = Object.fromEntries(candidates.map(c => [c.t.id, c]))
             const confirmed = new Map()   // id → reason
             for (let k = 0; k < candidates.length; k += CHUNK) {
+                if (ac.signal.aborted) return
                 const chunk = candidates.slice(k, k + CHUNK)
                 setPhase(`Checking relevance — ${Math.min(k + chunk.length, candidates.length)} of ${candidates.length}…`)
                 const rResp = await fetch('/.netlify/functions/confirm-relevance', {
@@ -163,6 +172,7 @@ export default function AskAI() {
                             text: c.evidence,
                         })),
                     }),
+                    signal: ac.signal,
                 })
                 const rJson = await rResp.json()
                 if (!rResp.ok) throw new Error(rJson.message || 'Relevance check failed.')
@@ -178,10 +188,16 @@ export default function AskAI() {
 
             setResult({ interpretation: intent.interpretation || '', logic, matches })
         } catch (err) {
-            setError(err.message)
+            // Silently swallow a user-initiated cancellation; surface anything else.
+            if (err.name !== 'AbortError' && !ac.signal.aborted) setError(err.message)
+        } finally {
+            // Only clear loading/phase if a newer search hasn't already taken over.
+            if (abortRef.current === ac) {
+                abortRef.current = null
+                setLoading(false)
+                setPhase('')
+            }
         }
-        setLoading(false)
-        setPhase('')
     }
 
     return (
@@ -201,9 +217,19 @@ export default function AskAI() {
                     placeholder="e.g. Type 1 diabetes relating to foot conditions"
                     autoFocus
                 />
-                <button className="ask-ai-btn" type="submit" disabled={loading || !query.trim()}>
-                    {loading ? <><span className="ask-ai-spinner" /> Searching…</> : <><Sparkles size={15} /> Ask</>}
-                </button>
+                {loading ? (
+                    // preventDefault: clicking Stop flips loading→false and React
+                    // re-renders this slot into the submit button mid-click; without
+                    // it the browser then runs the click's default action and submits
+                    // the form, firing a second search.
+                    <button type="button" className="ask-ai-btn ask-ai-stop" onClick={e => { e.preventDefault(); stop() }}>
+                        <Square size={13} fill="currentColor" /> Stop
+                    </button>
+                ) : (
+                    <button className="ask-ai-btn" type="submit" disabled={!query.trim()}>
+                        <Sparkles size={15} /> Ask
+                    </button>
+                )}
                 {(result || query) && !loading && (
                     <button type="button" className="ask-ai-clear" onClick={clearSearch}>Clear</button>
                 )}
