@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon, Trash2, RotateCcw } from 'lucide-react'
+import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon, Trash2, RotateCcw, X } from 'lucide-react'
 
 // Cache the last scan in the browser so results survive navigation / refresh
 // (a scan costs Claude calls — we don't want to re-run it just to come back to it).
@@ -22,6 +22,25 @@ function timeAgo(ts) {
     const m = Math.round(s / 60); if (m < 60) return `${m} min ago`
     const h = Math.round(m / 60); if (h < 24) return `${h} hour${h > 1 ? 's' : ''} ago`
     const d = Math.round(h / 24); return `${d} day${d > 1 ? 's' : ''} ago`
+}
+
+// ── "Not a duplicate" dismissals ──────────────────────────────────────────────
+// Persisted in the DB (site_settings) so a pair the admin marks as NOT a
+// duplicate is skipped on every future scan, on any device — unlike the
+// per-browser localStorage result cache. Stored as canonical "<minId>|<maxId>" keys.
+const pairKey = (a, b) => [a, b].sort().join('|')
+
+async function loadDismissed() {
+    const { data } = await supabase
+        .from('site_settings').select('value').eq('key', 'duplicate_dismissals').maybeSingle()
+    if (!data?.value) return new Set()
+    try { return new Set(JSON.parse(data.value)) } catch { return new Set() }
+}
+async function saveDismissed(set) {
+    await supabase.from('site_settings').upsert(
+        [{ key: 'duplicate_dismissals', value: JSON.stringify([...set]) }],
+        { onConflict: 'key' }
+    )
 }
 
 // ── Text similarity (TF-IDF cosine) ───────────────────────────────────────────
@@ -174,18 +193,20 @@ export default function Duplicates() {
     const [scanning, setScanning] = useState(false)
     const [phase, setPhase]       = useState('')
     const [pairs, setPairs]       = useState(null)
-    const [stats, setStats]       = useState({ scanned: 0, candidates: 0, capped: false })
+    const [stats, setStats]       = useState({ scanned: 0, candidates: 0, capped: false, dismissedHidden: 0 })
     const [error, setError]       = useState(null)
     const [lastScan, setLastScan] = useState(null)
+    const [dismissed, setDismissed] = useState(new Set())
 
-    // Restore the last scan from the browser cache on mount
+    // Restore the last scan from the browser cache + load dismissals on mount
     useEffect(() => {
         const cached = loadCache()
         if (cached?.pairs) {
             setPairs(cached.pairs)
-            setStats(cached.stats || { scanned: 0, candidates: 0, capped: false })
+            setStats(cached.stats || { scanned: 0, candidates: 0, capped: false, dismissedHidden: 0 })
             setLastScan(cached.ts || null)
         }
+        loadDismissed().then(setDismissed)
     }, [])
 
     async function runScan() {
@@ -208,8 +229,15 @@ export default function Duplicates() {
         setPhase('Scoring similarity (image + text)…')
         // let the spinner paint before the (brief) synchronous work
         await new Promise(r => setTimeout(r, 30))
-        const { pairs: candidates, total } = findCandidatePairs(data)
-        setStats({ scanned: data.length, candidates: total, capped: total > candidates.length })
+        const { pairs: allCandidates, total } = findCandidatePairs(data)
+
+        // Drop pairs the admin has marked "not a duplicate" — before Claude, so we
+        // never re-confirm or re-show them.
+        const dismissedSet = await loadDismissed()
+        setDismissed(dismissedSet)
+        const candidates = allCandidates.filter(c => !dismissedSet.has(pairKey(data[c.i].id, data[c.j].id)))
+        const dismissedHidden = allCandidates.length - candidates.length
+        setStats({ scanned: data.length, candidates: total, capped: total > allCandidates.length, dismissedHidden })
 
         if (candidates.length === 0) {
             setPairs([])
@@ -264,7 +292,7 @@ export default function Duplicates() {
                 .sort((p, q) => q.score - p.score)
 
             const ts = Date.now()
-            const statsObj = { scanned: data.length, candidates: total, capped: total > candidates.length }
+            const statsObj = { scanned: data.length, candidates: total, capped: total > allCandidates.length, dismissedHidden }
             setPairs(merged)
             setLastScan(ts)
             saveCache({ ts, stats: statsObj, pairs: merged })
@@ -291,11 +319,27 @@ export default function Duplicates() {
         })
     }
 
+    // Mark a pair as "not a duplicate": persist it so future scans skip it, and
+    // drop it from the current view. Reversible (clear the site_settings row).
+    async function handleDismiss(aId, bId) {
+        const key = pairKey(aId, bId)
+        const next = new Set(dismissed); next.add(key)
+        setDismissed(next)
+        try { await saveDismissed(next) }
+        catch (e) { window.alert('Could not save: ' + e.message); return }
+        setPairs(prev => {
+            const np = prev.filter(p => pairKey(p.a.id, p.b.id) !== key)
+            const cached = loadCache()
+            if (cached) saveCache({ ...cached, pairs: np })
+            return np
+        })
+    }
+
     function clearResults() {
         clearCache()
         setPairs(null)
         setLastScan(null)
-        setStats({ scanned: 0, candidates: 0, capped: false })
+        setStats({ scanned: 0, candidates: 0, capped: false, dismissedHidden: 0 })
     }
 
     return (
@@ -340,6 +384,12 @@ export default function Duplicates() {
                 </div>
             )}
 
+            {stats.dismissedHidden > 0 && pairs !== null && !scanning && (
+                <div className="dup-note">
+                    {stats.dismissedHidden} pair{stats.dismissedHidden > 1 ? 's' : ''} you marked “not a duplicate” {stats.dismissedHidden > 1 ? 'were' : 'was'} skipped.
+                </div>
+            )}
+
             {error && (
                 <div className="dup-error">
                     <AlertTriangle size={15} /> {error}
@@ -368,6 +418,13 @@ export default function Duplicates() {
                                     {pair.imageMatch && 'same image · '}
                                     {Math.round((pair.sim || 0) * 100)}% text match
                                 </span>
+                                <button
+                                    className="dup-pair-dismiss"
+                                    onClick={() => handleDismiss(pair.a.id, pair.b.id)}
+                                    title="These are not duplicates — don't show this pair again"
+                                >
+                                    <X size={13} /> Not a duplicate
+                                </button>
                             </div>
                             <div className="dup-pair-cols">
                                 <DupCard t={pair.a} onDelete={handleDelete} rec={pair.a.id === rec.keepId ? 'keep' : 'remove'} recReason={rec.reason} />
