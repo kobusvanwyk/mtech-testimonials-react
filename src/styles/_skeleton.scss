@@ -1,0 +1,66 @@
+// === SKELETON LOADERS === (ui-guide §Skeleton loaders)
+.skel {
+    display: block;
+    background: linear-gradient(
+        90deg,
+        var(--surface-2) 25%,
+        color-mix(in srgb, var(--surface-2) 60%, var(--surface)) 50%,
+        var(--surface-2) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite linear;
+    border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+    to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skel { animation: none; }
+}
+
+// Generic skeleton primitives (admin pages)
+.skel-line       { display: block; height: 12px; }
+.skel-page-title { display: block; width: 180px; height: 28px; margin-bottom: 20px; }
+.skel-field      { display: block; width: 100%; height: 44px; }
+.skel-bar-row    { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.skel-bar        { flex: 1; }
+
+// Card skeleton building blocks
+.card-skeleton {
+    .skel-title  { height: 18px; margin-bottom: 8px; }
+    .skel-title.short { width: 55%; margin-bottom: 14px; }
+    .skel-line   { height: 12px; margin-bottom: 8px; }
+    .skel-author { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
+    .skel-avatar { width: 28px; height: 28px; border-radius: var(--radius-full); }
+    .skel-tags   { display: flex; gap: 6px; margin-top: 14px; }
+    .skel-chip   { width: 68px; height: 22px; border-radius: var(--radius-pill); }
+}
+
+// Admin table skeleton
+.table-skel-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--surface-inset);
+
+    &:last-child { border-bottom: none; }
+
+    .skel-line  { height: 12px; }
+    .skel-chip  { width: 90px; height: 22px; border-radius: var(--radius-pill); margin-left: auto; }
+    .skel-badge { width: 72px; height: 22px; border-radius: var(--radius-pill); }
+}
+
+// Admin image-tile skeleton
+.img-skel-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    padding-bottom: 10px;
+
+    .skel-thumb { width: 100%; height: 150px; border-radius: 0; margin-bottom: 10px; }
+    .skel-line  { height: 11px; margin: 0 10px 6px; }
+}

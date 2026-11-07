@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
+import { postFunction } from '../../lib/authFetch'
+import Alert from '../../components/Alert'
+import EmptyState from '../../components/EmptyState'
+import { useConfirm, useToast, friendlyError } from '../../lib/feedback'
+import { storyExcerpt } from '../../lib/storyText'
 import { supabase } from '../../lib/supabase'
-import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon, Trash2, RotateCcw } from 'lucide-react'
+import { ScanSearch, AlertTriangle, CheckCircle, ExternalLink, Image as ImageIcon, Trash2, RotateCcw, File as FileIcon, Send, MessageCircle, Plus } from 'lucide-react'
 
 // Cache the last scan in the browser so results survive navigation / refresh
-// (a scan costs Claude calls — we don't want to re-run it just to come back to it).
+// (a scan costs Claude calls, we don't want to re-run it just to come back to it).
 const CACHE_KEY = 'mtech_dup_scan_v1'
 
 function loadCache() {
@@ -26,7 +31,7 @@ function timeAgo(ts) {
 
 // ── Text similarity (TF-IDF cosine) ───────────────────────────────────────────
 // Down-weights ubiquitous domain words (mannatech, product, health…) so that
-// distinctive tokens — names, numbers, places, specific conditions — dominate.
+// distinctive tokens, names, numbers, places, specific conditions, dominate.
 // This catches reworded / translated / first-vs-third-person retellings that
 // share little literal text but lots of distinctive vocabulary.
 const STOP = new Set((
@@ -121,7 +126,7 @@ function findCandidatePairs(items) {
                 score = Math.max(score, sim)
             }
 
-            // Same name is only a *booster* on a pair that's already similar — on
+            // Same name is only a *booster* on a pair that's already similar, on
             // its own it's noisy here (many testimonials share a common name but
             // tell different stories), and would otherwise swamp the candidate cap.
             if (reasons.length > 0 && !a.anonymous && !b.anonymous) {
@@ -171,6 +176,8 @@ function recommendKeep(a, b) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Duplicates() {
+    const confirm = useConfirm()
+    const toast = useToast()
     const [scanning, setScanning] = useState(false)
     const [phase, setPhase]       = useState('')
     const [pairs, setPairs]       = useState(null)
@@ -200,7 +207,7 @@ export default function Duplicates() {
             .select('id, title, person_name, anonymous, conditions, products, story_text, gallery_urls, status, imported_from')
 
         if (fetchError) {
-            setError('Could not fetch testimonials: ' + fetchError.message)
+            setError(friendlyError(fetchError, 'The testimonials could not be loaded.'))
             setScanning(false)
             return
         }
@@ -237,11 +244,7 @@ export default function Duplicates() {
             for (let k = 0; k < payloads.length; k += CHUNK) {
                 const chunk = payloads.slice(k, k + CHUNK)
                 setPhase(`Confirming ${Math.min(k + chunk.length, payloads.length)} of ${payloads.length} candidate pairs with Claude…`)
-                const resp = await fetch('/.netlify/functions/detect-duplicates', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pairs: chunk }),
-                })
+                const resp = await postFunction('detect-duplicates', { pairs: chunk })
                 const result = await resp.json()
                 if (!resp.ok) throw new Error(result.message || 'Scan failed')
                 confirmed.push(...(result.confirmed || []))
@@ -269,7 +272,7 @@ export default function Duplicates() {
             setLastScan(ts)
             saveCache({ ts, stats: statsObj, pairs: merged })
         } catch (err) {
-            setError(err.message)
+            setError(friendlyError(err, 'The scan could not finish.'))
         }
 
         setScanning(false)
@@ -277,12 +280,16 @@ export default function Duplicates() {
     }
 
     async function handleDelete(id, title) {
-        if (!window.confirm(
-            `Delete this testimonial?\n\n“${title}”\n\nThis permanently removes it from the database and cannot be undone.`
-        )) return
+        const ok = await confirm({
+            title: 'Delete this testimonial?',
+            body: `“${title}” is removed from the database for good. This cannot be undone.`,
+            confirmLabel: 'Delete',
+            tone: 'danger',
+        })
+        if (!ok) return
         const { error: delError } = await supabase.from('testimonials').delete().eq('id', id)
-        if (delError) { window.alert('Delete failed: ' + delError.message); return }
-        // Drop every pair that referenced the deleted testimonial — those dups are resolved
+        if (delError) { toast.error('The testimonial could not be deleted. Try again in a moment.'); console.error(delError); return }
+        // Drop every pair that referenced the deleted testimonial, those dups are resolved
         setPairs(prev => {
             const next = prev.filter(p => p.a.id !== id && p.b.id !== id)
             const cached = loadCache()
@@ -300,22 +307,23 @@ export default function Duplicates() {
 
     return (
         <div className="admin-page-content">
-            <h2>Duplicate Scanner</h2>
+            <h1>Duplicate Scanner</h1>
             <p className="page-sub">
                 Scans <strong>all</strong> testimonials for duplicates using shared images and TF-IDF text
-                similarity, then confirms suspects with Claude. Tuned to be sensitive — review before deleting.
+                similarity, then confirms suspects with Claude. Tuned to be sensitive, so review before deleting.
                 Nothing is changed automatically.
             </p>
 
-            <div className="dup-scan-bar">
-                <button className="btn-dup-scan" onClick={runScan} disabled={scanning}>
-                    <ScanSearch size={16} />
+            <div className="toolbar-card dup-scan-bar">
+                <div className="toolbar-card-tools">
+                <button type="button" className="btn-primary" onClick={runScan} disabled={scanning}>
+                    <ScanSearch size={16} aria-hidden="true" />
                     {scanning ? 'Scanning…' : (pairs !== null ? 'Re-scan' : 'Scan for Duplicates')}
                 </button>
 
                 {pairs !== null && !scanning && (
-                    <button className="btn-dup-clear" onClick={clearResults} title="Clear cached results">
-                        <RotateCcw size={14} /> Clear
+                    <button type="button" className="btn-ghost" onClick={clearResults} title="Clear cached results">
+                        <RotateCcw size={16} aria-hidden="true" /> Clear
                     </button>
                 )}
 
@@ -326,11 +334,12 @@ export default function Duplicates() {
                 {pairs !== null && !scanning && (
                     <span className={`dup-scan-summary ${pairs.length === 0 ? 'ok' : 'warn'}`}>
                         {pairs.length === 0
-                            ? <><CheckCircle size={14} /> No duplicates confirmed — {stats.scanned} scanned, {stats.candidates} candidate pairs reviewed</>
+                            ? <><CheckCircle size={14} /> No duplicates confirmed: {stats.scanned} scanned, {stats.candidates} candidate pairs reviewed</>
                             : <><AlertTriangle size={14} /> {pairs.length} likely duplicate{pairs.length > 1 ? 's' : ''} remaining across {stats.scanned} testimonials</>
                         }
                     </span>
                 )}
+                </div>
             </div>
 
             {stats.capped && pairs !== null && !scanning && (
@@ -341,9 +350,7 @@ export default function Duplicates() {
             )}
 
             {error && (
-                <div className="dup-error">
-                    <AlertTriangle size={15} /> {error}
-                </div>
+                <Alert type="error" onClose={() => setError(null)}>{error}</Alert>
             )}
 
             {scanning && (
@@ -351,6 +358,22 @@ export default function Duplicates() {
                     <span className="dup-spinner" />
                     {phase}
                 </div>
+            )}
+
+            {pairs === null && !scanning && !error && (
+                <EmptyState
+                    card
+                    icon={ScanSearch}
+                    title="No scan yet"
+                >
+                    Use Scan for Duplicates above to compare every testimonial for shared images and near-identical text. It takes a minute or two, and nothing is deleted without you.
+                </EmptyState>
+            )}
+
+            {pairs !== null && !scanning && pairs.length === 0 && (
+                <EmptyState card tone="success" icon={CheckCircle} title="No duplicates found">
+                    {stats.scanned} testimonials checked, {stats.candidates} close pairs reviewed. All of them are distinct testimonials.
+                </EmptyState>
             )}
 
             {pairs !== null && !scanning && pairs.length > 0 && (
@@ -371,6 +394,7 @@ export default function Duplicates() {
                             </div>
                             <div className="dup-pair-cols">
                                 <DupCard t={pair.a} onDelete={handleDelete} rec={pair.a.id === rec.keepId ? 'keep' : 'remove'} recReason={rec.reason} />
+                                <div className="dup-vs" aria-hidden="true">vs</div>
                                 <DupCard t={pair.b} onDelete={handleDelete} rec={pair.b.id === rec.keepId ? 'keep' : 'remove'} recReason={rec.reason} />
                             </div>
                         </div>
@@ -384,10 +408,10 @@ export default function Duplicates() {
 
 function sourceLabel(from) {
     const f = (from || '').toLowerCase()
-    if (f.startsWith('whatsapp')) return 'WhatsApp'
-    if (f.includes('telegram'))  return 'Telegram'
-    if (f.endsWith('.csv'))      return 'CSV'
-    if (f === 'manual_import')   return 'Manual'
+    if (f.startsWith('whatsapp')) return { label: 'WhatsApp', cls: 'whatsapp', Icon: MessageCircle }
+    if (f.includes('telegram'))  return { label: 'Telegram', cls: 'telegram', Icon: Send }
+    if (f.endsWith('.csv'))      return { label: 'CSV', cls: 'csv', Icon: FileIcon }
+    if (f === 'manual_import')   return { label: 'Manual', cls: 'manual', Icon: Plus }
     return null
 }
 
@@ -406,7 +430,11 @@ function DupCard({ t, onDelete, rec, recReason }) {
             )}
             <div className="dup-card-head">
                 <span className={`dup-card-status status-${t.status}`}>{t.status === 'approved' ? 'Published' : t.status}</span>
-                {src && <span className="dup-card-src">{src}</span>}
+                {src && (
+                    <span className={`badge-source badge-source--${src.cls}`}>
+                        <src.Icon size={12} aria-hidden="true" /> {src.label}
+                    </span>
+                )}
                 {(t.gallery_urls || []).length > 0 && (
                     <span className="dup-card-imgs"><ImageIcon size={11} /> {t.gallery_urls.length}</span>
                 )}
@@ -423,7 +451,7 @@ function DupCard({ t, onDelete, rec, recReason }) {
                 </div>
             )}
             <p className="dup-card-excerpt">
-                {(t.story_text || '').slice(0, 260)}{t.story_text?.length > 260 ? '…' : ''}
+                {storyExcerpt(t.story_text, 260)}
             </p>
             <div className="dup-card-actions">
                 <a

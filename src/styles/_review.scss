@@ -1,85 +1,86 @@
-// === REVIEW (submission step) ===
-.review-card {
-    background: var(--surface-inset);
+// === REVIEW (submission step 7): inset summary panel inside the form card ===
+.submit-review {
+    margin-bottom: var(--space-6);
+    padding: var(--space-5);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 24px;
-    margin-bottom: 24px;
 
-    h3 { margin-bottom: 12px; }
-    p  { margin-bottom: 8px; }
+    h3 { margin: 0 0 var(--space-4); color: var(--text-1); font-size: var(--text-h3); }
+    h4 { margin: var(--space-5) 0 var(--space-2); color: var(--text-3); font-size: var(--text-overline); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 
-    .review-story {
-        color: var(--text-secondary);
-        line-height: 1.7;
-        margin-top: 8px;
+    dl {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        gap: var(--space-2) var(--space-4);
+        margin: 0;
+        @media (max-width: 479.98px) { grid-template-columns: 1fr; gap: var(--space-1); dd { margin-bottom: var(--space-2); } }
     }
+    dt { color: var(--text-3); font-size: var(--text-caption); font-weight: 600; padding-top: 3px; }
+    dd { margin: 0; color: var(--text-1); }
 }
 
-// === SUCCESS ===
+.submit-review-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.submit-review-story {
+    margin: 0;
+    color: var(--text-2);
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+// === SUCCESS === (ui-guide .empty layout with a success icon)
 .submit-success {
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
-    padding: 80px 24px;
-    max-width: 520px;
+    gap: var(--space-3);
+    max-width: 560px;
     margin: 0 auto;
+    padding: var(--space-16, 64px) var(--space-6);
+    text-align: center;
 
     .success-icon {
-        width: 72px;
-        height: 72px;
-        background: #e6f9f6;
-        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #03B09F;
-        margin-bottom: 24px;
+        width: 72px;
+        height: 72px;
+        margin-bottom: var(--space-2);
+        border-radius: var(--radius-full);
+        background: var(--success-tint);
+        color: var(--success-ink);
     }
 
-    h2 {
-        font-size: 1.7rem;
-        color: #1a1a2e;
-        margin-bottom: 12px;
-        line-height: 1.3;
+    h1 {
+        margin: 0;
+        color: var(--text-1);
+        font-size: var(--text-h2);
+        line-height: 1.2;
+
+        &:focus { outline: none; }
     }
 
     p {
-        color: #666;
-        font-size: 1rem;
+        max-width: 44ch;
+        margin: 0;
+        color: var(--text-2);
         line-height: 1.6;
-        margin-bottom: 36px;
     }
 }
 
 .submit-success-actions {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
 
-    .btn-success-home {
-        display: inline-block;
-        background: #03B09F;
-        color: #ffffff !important;
-        padding: 13px 32px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.95rem;
-        text-decoration: none !important;
-        transition: background 0.2s;
-        &:hover { background: #029688; }
-    }
+    > * { min-height: 44px; }
 
-    .btn-success-another {
-        background: none;
-        border: none;
-        color: #999;
-        font-size: 0.88rem;
-        cursor: pointer;
-        text-decoration: underline;
-        padding: 0;
-        &:hover { color: #444; }
+    @media (max-width: 479.98px) {
+        flex-direction: column;
+        width: 100%;
+        > * { width: 100%; }
     }
 }

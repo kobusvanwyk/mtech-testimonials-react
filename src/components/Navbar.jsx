@@ -1,280 +1,304 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronDown, ChevronRight, X, Search } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { ChevronDown, ChevronRight, ChevronLeft, X, Search, Menu } from 'lucide-react'
 import { useProducts, useConditions } from '../lib/ProductsContext'
+import { useDialog } from '../lib/useDialog'
+import { useTagCounts } from '../lib/useTagCounts'
 
-// ── Hook: detect mobile ───────────────────────────────────────────────────────
+// Public navbar (ui-guide #shell-public, DESIGN.md "App shell"): white bar,
+// colour logo, teal-to-lime line. Desktop: two searchable browse menus (filter
+// field, A to Z groups with counts, highlighted matches, arrow keys, Escape).
+// Mobile (below 768px): a hamburger opens a right-hand drawer whose rows open
+// the full browse lists.
+
 function useIsMobile() {
     const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
     useEffect(() => {
         const mq = window.matchMedia('(max-width: 767px)')
         const handler = e => setIsMobile(e.matches)
+        handler(mq)
         mq.addEventListener('change', handler)
         return () => mq.removeEventListener('change', handler)
     }, [])
     return isMobile
 }
 
-// ── Shared live-filter search box ─────────────────────────────────────────────
-function NavSearch({ title, query, setQuery, autoFocus }) {
+// Name with the matched part wrapped in <mark>.
+function Highlight({ text, query }) {
+    const q = query.trim().toLowerCase()
+    const i = q ? text.toLowerCase().indexOf(q) : -1
+    if (i < 0) return text
+    return <>{text.slice(0, i)}<mark>{text.slice(i, i + q.length)}</mark>{text.slice(i + q.length)}</>
+}
+
+// Filter field + A to Z grouped option list + footer. Shared by the desktop
+// dropdown and the mobile drawer list.
+function BrowseList({ noun, items, counts, query, setQuery, activeFilter, onSelect, onEscape, autoFocus }) {
+    const listRef  = useRef(null)
+    const inputRef = useRef(null)
+
+    useEffect(() => { if (autoFocus) inputRef.current?.focus({ preventScroll: true }) }, [autoFocus])
+
+    const q = query.trim().toLowerCase()
+    const shown = useMemo(
+        () => [...items].filter(i => !q || i.toLowerCase().includes(q)).sort((a, b) => a.localeCompare(b)),
+        [items, q]
+    )
+    const groups = useMemo(() => {
+        const map = new Map()
+        shown.forEach(name => {
+            const ch = name[0]?.toUpperCase() || '#'
+            const letter = /[A-Z]/.test(ch) ? ch : '#'
+            if (!map.has(letter)) map.set(letter, [])
+            map.get(letter).push(name)
+        })
+        return [...map.entries()]
+    }, [shown])
+
+    function options() { return [...(listRef.current?.querySelectorAll('[role="option"]') || [])] }
+
+    function onKeyDown(e) {
+        const opts = options()
+        const i = opts.indexOf(document.activeElement)
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            ;(opts[i + 1] || opts[0])?.focus()
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            if (i <= 0) inputRef.current?.focus()
+            else opts[i - 1].focus()
+        } else if (e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            onEscape?.()
+        }
+    }
+
     return (
-        <div className="nav-search">
-            <Search size={16} className="nav-search-icon" />
-            <input
-                className="nav-search-input"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder={`Search ${title.replace(/^View by /i, '').toLowerCase()}…`}
-                autoComplete="off"
-                autoFocus={autoFocus}
-            />
-            {query && (
-                <button className="nav-search-clear" onClick={() => setQuery('')} aria-label="Clear search">
-                    <X size={15} />
-                </button>
+        <div className="browse" onKeyDown={onKeyDown}>
+            <div className="browse-q">
+                <Search size={16} aria-hidden="true" />
+                <input
+                    ref={inputRef}
+                    type="search"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder={`Filter ${items.length} ${noun}`}
+                    aria-label={`Filter ${noun}`}
+                    autoComplete="off"
+                />
+            </div>
+            <div className="browse-list" role="listbox" aria-label={noun} ref={listRef}>
+                {groups.map(([letter, names]) => (
+                    <div key={letter} className="browse-group">
+                        <div className="browse-letter" aria-hidden="true">{letter}</div>
+                        {names.map(name => (
+                            <button
+                                key={name}
+                                type="button"
+                                role="option"
+                                aria-selected={activeFilter === name}
+                                className="browse-opt"
+                                onClick={() => onSelect(name)}
+                            >
+                                <span className="browse-nm"><Highlight text={name} query={query} /></span>
+                                <span className="browse-ct">{counts[name] || 0}</span>
+                            </button>
+                        ))}
+                    </div>
+                ))}
+                {shown.length === 0 && (
+                    <p className="browse-empty">No {noun} match <q>{query.trim()}</q></p>
+                )}
+            </div>
+            <div className="browse-foot" aria-live="polite">
+                <span>{shown.length} shown</span>
+                <span>{items.length} in total</span>
+            </div>
+        </div>
+    )
+}
+
+// ── Desktop: searchable dropdown under its trigger ───────────────────────────
+function BrowseMenu({ label, noun, items, counts, activeFilter, onSelect }) {
+    const [open, setOpen]   = useState(false)
+    const [query, setQuery] = useState('')
+    const wrapRef = useRef(null)
+    const btnRef  = useRef(null)
+    const hasActive = items.includes(activeFilter)
+
+    const close = useCallback((returnFocus) => {
+        setOpen(false)
+        setQuery('')
+        if (returnFocus) btnRef.current?.focus({ preventScroll: true })
+    }, [])
+
+    useEffect(() => {
+        if (!open) return
+        function onDown(e) { if (!wrapRef.current?.contains(e.target)) close(false) }
+        document.addEventListener('mousedown', onDown)
+        return () => document.removeEventListener('mousedown', onDown)
+    }, [open, close])
+
+    return (
+        <div className="browse-wrap" ref={wrapRef}>
+            <button
+                ref={btnRef}
+                type="button"
+                className={`nav-dropdown-trigger ${hasActive ? 'has-active-filter' : ''}`}
+                aria-haspopup="dialog"
+                aria-expanded={open}
+                onClick={() => (open ? close(false) : setOpen(true))}
+            >
+                {label}
+                <ChevronDown size={16} className="nav-chevron" aria-hidden="true" />
+            </button>
+            {open && (
+                <div className="browse-dd" role="dialog" aria-label={`Browse by ${noun.replace(/s$/, '')}`}>
+                    <BrowseList
+                        noun={noun}
+                        items={items}
+                        counts={counts}
+                        query={query}
+                        setQuery={setQuery}
+                        activeFilter={activeFilter}
+                        onSelect={name => { close(false); onSelect(name) }}
+                        onEscape={() => close(true)}
+                        autoFocus
+                    />
+                </div>
             )}
         </div>
     )
 }
 
-function filterItems(items, query) {
-    const q = query.trim().toLowerCase()
-    return q ? items.filter(i => i.toLowerCase().includes(q)) : items
-}
-
-// ── Bottom sheet (mobile) ─────────────────────────────────────────────────────
-function BottomSheet({ title, items, counts = {}, open, onClose, onSelect, activeFilter }) {
+// ── Mobile: right-hand drawer; rows open the full browse lists ───────────────
+function MobileMenu({ conditions, products, counts, activeFilter, onSelect }) {
+    const [open, setOpen]   = useState(false)
+    const [view, setView]   = useState('menu') // 'menu' | 'conditions' | 'products'
     const [query, setQuery] = useState('')
+    const location = useLocation()
 
-    useEffect(() => {
-        if (open) document.body.style.overflow = 'hidden'
-        else       document.body.style.overflow = ''
-        return () => { document.body.style.overflow = '' }
-    }, [open])
+    const close = useCallback(() => { setOpen(false); setView('menu'); setQuery('') }, [])
+    const dialogRef = useDialog(open, () => (view === 'menu' ? close() : (setView('menu'), setQuery(''))))
 
-    useEffect(() => { if (!open) setQuery('') }, [open])
+    // Choosing a page closes the drawer (adjusted while rendering).
+    const here = location.pathname + location.search
+    const [openedAt, setOpenedAt] = useState(here)
+    if (openedAt !== here) {
+        setOpenedAt(here)
+        if (open) close()
+    }
 
-    if (!open) return null
-
-    const q = query.trim()
-    const filtered = filterItems(items, query)
+    const lists = {
+        conditions: { title: 'View by Condition', noun: 'conditions', items: conditions },
+        products:   { title: 'View by Product',   noun: 'products',   items: products },
+    }
+    const list = lists[view]
 
     return (
         <>
-            <div className="bs-backdrop" onClick={onClose} />
-            <div className="bs-sheet">
-                <div className="bs-handle" />
-                <div className="bs-header">
-                    <span className="bs-title">{title}</span>
-                    <button className="bs-close" onClick={onClose}><X size={20} /></button>
-                </div>
-                <NavSearch title={title} query={query} setQuery={setQuery} />
-                <div className="bs-list">
-                    {!q && (
-                        <button className={`bs-item bs-item-all ${!activeFilter ? 'bs-item-active' : ''}`} onClick={() => { onSelect(null); onClose() }}>
-                            <span>All testimonials</span>
-                        </button>
-                    )}
-                    {filtered.map(item => (
-                        <button
-                            key={item}
-                            className={`bs-item ${activeFilter === item ? 'bs-item-active' : ''}`}
-                            onClick={() => { onSelect(item); onClose() }}
-                        >
-                            <span>{item}</span>
-                            {counts[item] > 0 && (
-                                <span className="bs-count">{counts[item]}</span>
-                            )}
-                        </button>
-                    ))}
-                    {filtered.length === 0 && (
-                        <p className="nav-search-empty">No matches for “{q}”</p>
-                    )}
-                </div>
-            </div>
-        </>
-    )
-}
-
-// ── Desktop side drawer ───────────────────────────────────────────────────────
-function SideDrawer({ title, items, counts = {}, open, onClose, onSelect, activeFilter }) {
-    const [query, setQuery] = useState('')
-
-    useEffect(() => {
-        if (open) document.body.style.overflow = 'hidden'
-        else       document.body.style.overflow = ''
-        return () => { document.body.style.overflow = '' }
-    }, [open])
-
-    useEffect(() => {
-        if (!open) { setQuery(''); return }
-        function onKey(e) { if (e.key === 'Escape') onClose() }
-        document.addEventListener('keydown', onKey)
-        return () => document.removeEventListener('keydown', onKey)
-    }, [open, onClose])
-
-    if (!open) return null
-
-    const q = query.trim()
-    const filtered = filterItems(items, query)
-
-    return (
-        <>
-            <div className="drawer-backdrop" onClick={onClose} />
-            <div className="side-drawer" role="dialog" aria-label={title}>
-                <div className="drawer-header">
-                    <span className="drawer-title">{title}</span>
-                    <button className="drawer-close" onClick={onClose} aria-label="Close"><X size={20} /></button>
-                </div>
-                <NavSearch title={title} query={query} setQuery={setQuery} autoFocus />
-                <div className="drawer-list">
-                    {!q && (
-                        <button
-                            className={`drawer-item drawer-item-all ${!activeFilter ? 'drawer-item-active' : ''}`}
-                            onClick={() => { onSelect(null); onClose() }}
-                        >
-                            <span>All testimonials</span>
-                        </button>
-                    )}
-                    {filtered.map(item => (
-                        <button
-                            key={item}
-                            className={`drawer-item ${activeFilter === item ? 'drawer-item-active' : ''}`}
-                            onClick={() => { onSelect(item); onClose() }}
-                        >
-                            <span>{item}</span>
-                            {counts[item] > 0 && (
-                                <span className="drawer-count">{counts[item]}</span>
-                            )}
-                        </button>
-                    ))}
-                    {filtered.length === 0 && (
-                        <p className="nav-search-empty">No matches for “{q}”</p>
-                    )}
-                </div>
-            </div>
-        </>
-    )
-}
-
-// ── Smart menu ────────────────────────────────────────────────────────────────
-function NavMenu({ desktopLabel, mobileLabel, items, counts, onSelect, activeFilter }) {
-    const isMobile = useIsMobile()
-    const [open, setOpen] = useState(false)
-    const hasActive = items.includes(activeFilter)
-
-    const Panel = isMobile ? BottomSheet : SideDrawer
-
-    return (
-        <div className="nav-dropdown">
             <button
-                className={`nav-dropdown-trigger ${isMobile ? 'mobile' : ''} ${open ? 'active' : ''} ${hasActive ? 'has-active-filter' : ''}`}
+                type="button"
+                className="icon-btn nav-hamburger"
+                aria-label="Open menu"
+                aria-expanded={open}
                 onClick={() => setOpen(true)}
             >
-                {isMobile ? mobileLabel : desktopLabel}
-                {isMobile
-                    ? <ChevronDown size={13} className={`nav-chevron ${open ? 'flipped' : ''}`} />
-                    : <ChevronRight size={14} className="nav-chevron" />}
+                <Menu size={20} aria-hidden="true" />
             </button>
-            <Panel
-                title={desktopLabel}
-                items={items}
-                counts={counts}
-                open={open}
-                onClose={() => setOpen(false)}
-                onSelect={onSelect}
-                activeFilter={activeFilter}
-            />
-        </div>
+            {open && (
+                <>
+                    <div className="pub-backdrop" onClick={close} aria-hidden="true" />
+                    <div className="pub-drawer" role="dialog" aria-modal="true" aria-label="Site menu" ref={dialogRef}>
+                        <button type="button" className="pub-drawer-close" onClick={close} aria-label="Close menu">
+                            <X size={18} aria-hidden="true" />
+                        </button>
+                        {view === 'menu' ? (
+                            <div className="pub-drawer-body">
+                                <h2 className="pub-drawer-title">Browse testimonials</h2>
+                                <button type="button" className="pub-drow" onClick={() => setView('conditions')}>
+                                    View by Condition <span className="ct">{conditions.length}</span>
+                                    <ChevronRight size={18} aria-hidden="true" />
+                                </button>
+                                <button type="button" className="pub-drow" onClick={() => setView('products')}>
+                                    View by Product <span className="ct">{products.length}</span>
+                                    <ChevronRight size={18} aria-hidden="true" />
+                                </button>
+                                <a className="pub-drow" href="/how-to.html">
+                                    How to use this site <span className="ct" />
+                                    <ChevronRight size={18} aria-hidden="true" />
+                                </a>
+                                <Link to="/submit" className="btn-primary pub-drawer-cta" onClick={close}>
+                                    Submit your testimonial
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="pub-drawer-body pub-drawer-body--list">
+                                <button type="button" className="pub-drawer-back" onClick={() => { setView('menu'); setQuery('') }}>
+                                    <ChevronLeft size={18} aria-hidden="true" /> {list.title}
+                                </button>
+                                <BrowseList
+                                    noun={list.noun}
+                                    items={list.items}
+                                    counts={counts}
+                                    query={query}
+                                    setQuery={setQuery}
+                                    activeFilter={activeFilter}
+                                    onSelect={name => { close(); onSelect(name) }}
+                                    onEscape={() => { setView('menu'); setQuery('') }}
+                                    autoFocus
+                                />
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
+        </>
     )
 }
 
-// ── Active filter chip ────────────────────────────────────────────────────────
-function ActiveFilterChip() {
-    const [searchParams, setSearchParams] = useSearchParams()
-    const activeFilter = searchParams.get('filter')
-
-    if (!activeFilter) return null
-
-    return (
-        <div className="filter-chip-bar">
-            <span className="filter-chip-label">Filtered by:</span>
-            <span className="filter-chip">
-                {activeFilter}
-                <button
-                    className="filter-chip-clear"
-                    onClick={() => setSearchParams({})}
-                    aria-label="Clear filter"
-                >
-                    <X size={12} />
-                </button>
-            </span>
-        </div>
-    )
-}
-
-// ── Navbar ────────────────────────────────────────────────────────────────────
+// ── Navbar ───────────────────────────────────────────────────────────────────
 export default function Navbar() {
     const products   = useProducts()
     const conditions = useConditions()
     const navigate   = useNavigate()
+    const isMobile   = useIsMobile()
     const [searchParams] = useSearchParams()
     const activeFilter   = searchParams.get('filter') || null
-    const [counts, setCounts] = useState({})
-
-    useEffect(() => {
-        async function fetchCounts() {
-            const { data } = await supabase
-                .from('testimonials')
-                .select('conditions, products')
-                .eq('status', 'approved')
-            if (data) {
-                const countMap = {}
-                data.forEach(t => {
-                    ;(t.conditions || []).forEach(c => { countMap[c] = (countMap[c] || 0) + 1 })
-                    ;(t.products   || []).forEach(p => { countMap[p] = (countMap[p] || 0) + 1 })
-                })
-                setCounts(countMap)
-            }
-        }
-        fetchCounts()
-    }, [])
+    const { counts } = useTagCounts()
 
     function handleFilter(value) {
         if (value) navigate(`/?filter=${encodeURIComponent(value)}`)
         else       navigate('/')
     }
 
+    const condItems = conditions.filter(c => counts[c] > 0)
+    const prodItems = products.filter(p => counts[p] > 0)
+
     return (
         <>
-            {/* Main navbar */}
-            <nav className="navbar">
+            <nav className="navbar" aria-label="Main">
                 <Link to="/" className="navbar-brand">
-                    <img src="/mtech-testimonials-logo.svg" alt="MTech Testimonials" className="navbar-logo" />
+                    <img src="/mtech-testimonials-logo.svg" alt="Mtech Testimonials" className="navbar-logo" />
                 </Link>
                 <div className="navbar-links">
-                    <NavMenu
-                        desktopLabel="View by Condition"
-                        mobileLabel="Conditions"
-                        items={conditions.filter(c => counts[c] > 0)}
-                        counts={counts}
-                        onSelect={handleFilter}
-                        activeFilter={activeFilter}
-                    />
-                    <NavMenu
-                        desktopLabel="View by Product"
-                        mobileLabel="Products"
-                        items={products.filter(p => counts[p] > 0)}
-                        counts={counts}
-                        onSelect={handleFilter}
-                        activeFilter={activeFilter}
-                    />
+                    {isMobile ? (
+                        <MobileMenu
+                            conditions={condItems}
+                            products={prodItems}
+                            counts={counts}
+                            activeFilter={activeFilter}
+                            onSelect={handleFilter}
+                        />
+                    ) : (
+                        <>
+                            <BrowseMenu label="View by Condition" noun="conditions" items={condItems} counts={counts} activeFilter={activeFilter} onSelect={handleFilter} />
+                            <BrowseMenu label="View by Product" noun="products" items={prodItems} counts={counts} activeFilter={activeFilter} onSelect={handleFilter} />
+                        </>
+                    )}
                 </div>
             </nav>
-
-            {/* Active filter chip — shows on any page when ?filter= is in URL */}
-            <ActiveFilterChip />
         </>
     )
 }

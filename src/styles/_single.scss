@@ -1,258 +1,274 @@
 @use './breakpoints' as *;
 
-// === SINGLE PAGE ===
-.single-page {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 40px 16px;
-}
+// === TESTIMONIAL PAGE ===
+// Same 1200px width as the home page (.main-content). One guide card (#c-cards
+// .card) holds the story: title across the top, the story in a reading-width
+// column, and an "About this story" side column from 960px (author, date,
+// tags, photos, download and share). Below 960px it stacks: title, about,
+// story, then photos and share.
+.single-page { width: 100%; }
 
 .single-top-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
-    .back-link { margin-bottom: 0; }
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
 }
 
 .back-link {
-    color: var(--primary);
-    font-weight: 600;
-    display: inline-block;
-    margin-bottom: 24px;
-}
-
-// Allows a <button> to visually behave like a link
-.btn-link {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    font-size: inherit;
-    font-family: inherit;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-}
-
-.btn-edit-admin {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--dark-navy);
-    color: white;
-    padding: 7px 14px;
-    border-radius: var(--radius-md);
-    font-size: var(--text-sm);
+    gap: var(--space-2);
+    min-height: 44px;
+    color: var(--accent-ink);
     font-weight: 600;
     text-decoration: none;
-    transition: opacity 0.15s;
-    &:hover { opacity: 0.85; }
+    border-radius: var(--radius-sm);
+
+    &:hover { text-decoration: underline; }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 }
+
+.single-top-bar-actions { display: flex; align-items: center; gap: var(--space-2); }
 
 .single-article {
-    background: white;
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
-    padding: 20px 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "head" "about" "body" "extras";
+    gap: var(--space-6);
+    padding: var(--space-6) var(--space-5);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
 
-    @include md { padding: 40px; }
+    @include md { padding: var(--space-8); }
 
-    .single-image {
-        width: 100%;
-        max-height: 400px;
-        object-fit: cover;
-        border-radius: var(--radius-lg);
-        margin-bottom: 24px;
-    }
+    @include lg {
+        grid-template-columns: minmax(0, 1fr) 320px;
+        grid-template-rows: auto auto 1fr;
+        grid-template-areas:
+            "head head"
+            "body about"
+            "body extras";
+        column-gap: var(--space-10);
+        row-gap: 0;
+        padding: var(--space-10);
 
-    .single-title {
-        font-size: 1.4rem;
-        margin-bottom: 12px;
-
-        @include md { font-size: 2rem; }
-    }
-
-    .single-meta {
-        color: var(--muted-dark);
-        margin-bottom: 16px;
-    }
-
-    .single-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 24px;
-    }
-
-    .single-body {
-        p {
-            margin-bottom: 16px;
-            line-height: 1.8;
-            color: var(--text-body);
-        }
-        ul, ol {
-            margin: 0 0 16px 24px;
-            line-height: 1.8;
-            color: var(--text-body);
-        }
-        li { margin-bottom: 4px; }
-        strong { font-weight: 700; }
-        em { font-style: italic; }
-    }
-
-    .single-gallery {
-        margin-top: 24px;
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-        }
-
-        .gallery-image {
-            width: 100%;
-            aspect-ratio: 4/3;
-            object-fit: cover;
-            border-radius: var(--radius-md);
-            display: block;
-        }
-
-        .gallery-image-clickable {
-            cursor: zoom-in;
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
-            &:hover {
-                transform: scale(1.02);
-                box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            }
-        }
+        .single-head { margin-bottom: var(--space-6); }
     }
 }
 
-// === SHARE ===
-.single-share {
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border-light);
+.single-head { grid-area: head; }
+
+.single-title {
+    margin: 0;
+    max-width: 30ch;
+    color: var(--text-1);
+    font-size: var(--text-h1);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+// ── Story column ───────────────────────────────────────────────────────────
+.single-body {
+    grid-area: body;
+    max-width: var(--max-prose);
+    color: var(--text-2);
+    font-size: var(--text-body-lg, var(--text-body));
+    line-height: 1.7;
+
+    p { margin: 0 0 var(--space-4); }
+    ul, ol { margin: 0 0 var(--space-4) var(--space-6); }
+    li { margin-bottom: var(--space-1); }
+    strong { font-weight: 700; color: var(--text-1); }
+    em { font-style: italic; }
+    > :last-child { margin-bottom: 0; }
+}
+
+// ── Side column ────────────────────────────────────────────────────────────
+.single-about,
+.single-extras {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+    align-self: start;
+}
+
+.single-about  { grid-area: about; }
+.single-extras { grid-area: extras; }
+
+// From 960px the side column sits on a hairline, like a card aside.
+@include lg {
+    .single-about,
+    .single-extras {
+        padding-left: var(--space-6);
+        border-left: 1px solid var(--border);
+    }
+    // one unbroken hairline down the side column
+    .single-about  { padding-bottom: var(--space-6); }
+    .single-extras { padding-top: 0; align-self: stretch; }
+}
+
+// Below 960px the about block reads as a meta row under the title.
+@media (max-width: 959.98px) {
+    .single-extras {
+        padding-top: var(--space-6);
+        border-top: 1px solid var(--border);
+    }
+}
+
+.aside-label {
+    margin: 0 0 var(--space-2);
+    color: var(--text-3);
+    font-size: var(--text-overline);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    .ct { margin-left: 4px; font-weight: 600; letter-spacing: 0; }
+}
+
+.single-byline {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+
+    > div { display: flex; flex-direction: column; min-width: 0; }
+    strong { color: var(--text-1); }
+    span { color: var(--text-3); font-size: var(--text-caption); }
+}
+
+.single-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+// Photo gallery (ui-guide #p-gallery .gallery-strip): square thumbnails,
+// each a button that opens the PhotoSwipe lightbox (keyboard too).
+.gallery-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+
+    button {
+        width: 96px;
+        height: 96px;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface-2);
+        cursor: zoom-in;
+        transition: box-shadow var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+
+        &:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+        &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    }
+
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+}
+
+// === DOWNLOAD & SHARE === (ui-guide #p-share .sharebar)
+// In the side column the three buttons stack full width; below 960px they sit
+// in a wrapping row.
+.single-share {
+    display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-}
+    gap: var(--space-3);
 
-.btn-whatsapp {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: var(--radius-md);
-    background: #25D366;
-    color: white !important;
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-decoration: none !important;
-    transition: background 0.2s;
+    .aside-label { flex-basis: 100%; margin-bottom: 0; }
 
-    &:hover {
-        background: #1ebe5d;
+    @include lg {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+
+        .aside-label { flex-basis: auto; }
+        > a, > button { justify-content: center; }
+        .share-hint { flex-basis: auto; }
     }
 }
 
-.btn-share {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: var(--radius-md);
-    border: 2px solid var(--primary);
-    background: white;
-    color: var(--primary);
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-        background: var(--primary);
-        color: white;
-    }
-
-    &.copied {
-        border-color: var(--success);
-        color: var(--success);
-
-        &:hover {
-            background: var(--success-light);
-            color: var(--success);
-        }
-    }
-}
-
-.share-hint {
-    font-size: 0.82rem;
-    color: var(--muted-dark);
-}
-
-// === SHARE MODE (no navbar/footer) ===
-.single-page.share-mode {
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 40px 20px 60px;
-}
-
-// ─── Top bar actions group ───────────────────────────────────────────────────
-.single-top-bar-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-// ─── PDF Download button ─────────────────────────────────────────────────────
+.btn-whatsapp,
+.btn-share,
 .btn-pdf-download {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-    border: 2px solid var(--primary);
-    background: white;
-    color: var(--primary);
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.18s;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-5);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-pill);
+    font-family: inherit;
+    font-size: var(--text-caption);
+    font-weight: 700;
+    text-decoration: none;
     white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 
-    &:hover:not(:disabled) {
-        background: var(--primary);
-        color: white;
-    }
-
-    &:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-    }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    &:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; }
 }
 
-// ── Related testimonials ───────────────────────────────────────────────────────
-.related-section {
-    max-width: 900px;
+// WhatsApp brand green with dark green text (white on #25D366 is only 2:1).
+.btn-whatsapp {
+    background: #25D366;
+    color: #06351c;
+
+    &:hover { background: #1fb858; color: #06351c; }
+}
+
+// Copy link and Download PDF: the guide's secondary button.
+.btn-share,
+.btn-pdf-download {
+    background: var(--surface);
+    border-color: var(--border-strong);
+    color: var(--text-1);
+
+    &:hover:not(:disabled) { border-color: var(--accent-ink); color: var(--accent-ink); }
+}
+
+.btn-share.copied {
+    border-color: var(--success-ink);
+    color: var(--success-ink);
+    background: var(--success-tint);
+}
+
+.share-hint {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: var(--text-caption);
+    color: var(--text-3);
+}
+
+// === SHARE MODE (link opened from WhatsApp: no navbar or footer) ===
+.single-page.share-mode {
+    max-width: var(--max-wide);
     margin: 0 auto;
-    padding: 48px 0 64px;
-    border-top: 1px solid var(--border-light);
+    padding: var(--space-8) var(--space-4) var(--space-12);
+}
+
+// ── More testimonials like this (same grid width as home) ─────────────────
+.related-section {
+    margin-top: var(--space-12);
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--border);
 }
 
 .related-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin-bottom: 24px;
+    margin: 0 0 var(--space-5);
+    color: var(--text-1);
+    font-size: var(--text-h3);
 }
 
 .related-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: var(--space-5);
 }

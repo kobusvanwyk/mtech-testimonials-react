@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { DashboardSkeleton } from '../../components/Skeleton'
 import { ArrowRight } from 'lucide-react'
+import { StatusBadge } from '../../components/TestimonialTable'
 
 const TOP_N = 10
 
@@ -66,26 +68,14 @@ export default function Dashboard() {
         setTopProducts(sortedProd)
     }
 
-    const statusBadge = (status) => {
-        const map = {
-            pending: { label: 'Pending', cls: 'badge-pending' },
-            approved: { label: 'Published', cls: 'badge-approved' },
-            unpublished: { label: 'Unpublished', cls: 'badge-unpublished' },
-            needs_editing: { label: 'Needs Editing', cls: 'badge-needs-editing' },
-            rejected: { label: 'Rejected', cls: 'badge-rejected' },
-        }
-        const s = map[status] || { label: status, cls: '' }
-        return <span className={`status-badge ${s.cls}`}>{s.label}</span>
-    }
-
-    if (loading) return <div className="admin-page-content"><div className="loading">Loading...</div></div>
+    if (loading) return <DashboardSkeleton />
 
     const maxCond = topConditions[0]?.[1] || 1
     const maxProd = topProducts[0]?.[1] || 1
 
     return (
         <div className="admin-page-content">
-            <h2>Dashboard</h2>
+            <h1>Dashboard</h1>
 
             <div className="stats-grid">
                 <div className="stat-card stat-total">
@@ -125,34 +115,34 @@ export default function Dashboard() {
                 <div className="breakdown-grid">
                     {topConditions.length > 0 && (
                         <div className="breakdown-panel">
-                            <h3 className="breakdown-title">Top Conditions <span className="breakdown-sub">(published)</span></h3>
-                            <div className="breakdown-bars">
+                            <h2 className="breakdown-title" id="top-conditions">Top Conditions <span className="breakdown-sub">(published)</span></h2>
+                            <ol className="barchart" aria-labelledby="top-conditions">
                                 {topConditions.map(([name, count]) => (
-                                    <div key={name} className="breakdown-row">
-                                        <span className="breakdown-label" title={name}>{name}</span>
-                                        <div className="breakdown-bar-wrap">
-                                            <div className="breakdown-bar breakdown-bar-condition" style={{ width: `${(count / maxCond) * 100}%` }} />
-                                        </div>
-                                        <span className="breakdown-count">{count}</span>
-                                    </div>
+                                    <li key={name} className="bc-row">
+                                        <span className="bc-lbl" title={name}>{name}</span>
+                                        <span className="bc-track" aria-hidden="true">
+                                            <span className="bc-fill cond" style={{ width: `${(count / maxCond) * 100}%` }} />
+                                        </span>
+                                        <span className="bc-val">{count}<span className="sr-only"> testimonials</span></span>
+                                    </li>
                                 ))}
-                            </div>
+                            </ol>
                         </div>
                     )}
                     {topProducts.length > 0 && (
                         <div className="breakdown-panel">
-                            <h3 className="breakdown-title">Top Products <span className="breakdown-sub">(published)</span></h3>
-                            <div className="breakdown-bars">
+                            <h2 className="breakdown-title" id="top-products">Top Products <span className="breakdown-sub">(published)</span></h2>
+                            <ol className="barchart" aria-labelledby="top-products">
                                 {topProducts.map(([name, count]) => (
-                                    <div key={name} className="breakdown-row">
-                                        <span className="breakdown-label" title={name}>{name}</span>
-                                        <div className="breakdown-bar-wrap">
-                                            <div className="breakdown-bar breakdown-bar-product" style={{ width: `${(count / maxProd) * 100}%` }} />
-                                        </div>
-                                        <span className="breakdown-count">{count}</span>
-                                    </div>
+                                    <li key={name} className="bc-row">
+                                        <span className="bc-lbl" title={name}>{name}</span>
+                                        <span className="bc-track" aria-hidden="true">
+                                            <span className="bc-fill prod" style={{ width: `${(count / maxProd) * 100}%` }} />
+                                        </span>
+                                        <span className="bc-val">{count}<span className="sr-only"> testimonials</span></span>
+                                    </li>
                                 ))}
-                            </div>
+                            </ol>
                         </div>
                     )}
                 </div>
@@ -160,29 +150,29 @@ export default function Dashboard() {
 
             <div className="dashboard-section">
                 <div className="dashboard-section-header">
-                    <h3>Recent Submissions</h3>
+                    <h2 id="recent-title">Recent Submissions</h2>
                     <Link to="/admin/all" className="view-all-link">
-                        View all <ArrowRight size={13} />
+                        View all <ArrowRight size={14} aria-hidden="true" />
                     </Link>
                 </div>
-                <div className="recent-list">
+                <ul className="lrow-list" aria-labelledby="recent-title">
                     {recent.map(t => (
-                        <div key={t.id} className="recent-item">
-                            <div className="recent-item-info">
-                                <span className="recent-title">{t.title}</span>
-                                <span className="recent-author">
-                                    {t.anonymous ? 'Anonymous' : t.person_name}
+                        <li key={t.id} className="lrow">
+                            <div className="main">
+                                <span className="t" title={t.title}>{t.title}</span>
+                                <span className="m">
+                                    {t.anonymous ? 'Anonymous' : (t.person_name || 'Unknown')}
                                     {' · '}
-                                    {new Date(t.created_at).toLocaleDateString('en-ZA')}
+                                    {new Date(t.created_at).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </span>
                             </div>
-                            <div className="recent-item-actions">
-                                {statusBadge(t.status)}
-                                <Link to={`/admin/edit/${t.id}`} className="btn-edit-small">Edit</Link>
+                            <div className="end">
+                                <StatusBadge status={t.status} />
+                                <Link to={`/admin/edit/${t.id}`} className="btn-ghost btn-sm" aria-label={`Edit ${t.title}`}>Edit</Link>
                             </div>
-                        </div>
+                        </li>
                     ))}
-                </div>
+                </ul>
             </div>
         </div>
     )

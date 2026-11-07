@@ -10,83 +10,90 @@
 }
 
 .submit-container {
-    background: white;
-    border-radius: var(--radius-xl);
-    padding: 24px 16px;
-    box-shadow: var(--shadow-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6) var(--space-5);
+    box-shadow: var(--shadow-sm);
 
     @include md { padding: 40px; }
 }
 
+// Submit stepper (ui-guide "Submit stepper"): labelled nodes joined by
+// connectors. Completed = success green with a check; active = bright brand
+// teal (human override for white-on-teal fills); upcoming = neutral.
 .step-progress {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    margin-bottom: 20px;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    overflow-x: auto;
+
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-1);
+        flex-shrink: 0;
+        min-width: 64px;
+        text-align: center;
+    }
 
     .step-dot {
-        width: 36px;
-        height: 36px;
-        border-radius: var(--radius-round);
-        border: 2px solid var(--border-soft);
-        background: white;
-        color: var(--muted);
-        font-size: 0.85rem;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-full);
+        border: 2px solid var(--border);
+        background: var(--surface-2);
+        color: var(--text-2);
+        font-size: var(--text-caption);
         font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: default;
-        transition: all 0.2s;
-        flex-shrink: 0;
-        position: relative;
-        z-index: 1;
+        transition: background var(--duration-base) var(--ease-out),
+                    border-color var(--duration-base) var(--ease-out);
 
         &.active {
-            border-color: var(--primary);
-            background: var(--primary);
-            color: white;
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #fff;
         }
 
         &.completed {
-            border-color: var(--primary);
-            background: white;
-            color: var(--primary);
+            border-color: var(--success-ink);
+            background: var(--success-ink);
+            color: #fff;
             cursor: pointer;
 
             &:hover {
-                background: var(--primary-light);
+                background: color-mix(in srgb, var(--success-ink) 85%, #000);
+                border-color: color-mix(in srgb, var(--success-ink) 85%, #000);
             }
         }
     }
 
+    .step-label {
+        font-size: var(--text-caption);
+        color: var(--text-3);
+        max-width: 76px;
+        line-height: 1.3;
+    }
+
+    .step-item.active .step-label {
+        color: var(--text-1);
+        font-weight: 600;
+    }
+
     .step-connector {
+        flex: 1;
+        min-width: 12px;
         height: 2px;
-        width: 28px;
-        background: var(--border-soft);
-        flex-shrink: 0;
-        transition: background 0.2s;
+        margin-top: 15px; // centre on the 32px node
+        background: var(--border);
+        transition: background var(--duration-base) var(--ease-out);
 
-        &.completed { background: var(--primary); }
-    }
-}
-
-.step-counter {
-    text-align: center;
-    font-size: 0.88rem;
-    margin-bottom: 28px;
-
-    .step-counter-current {
-        font-weight: 700;
-        color: var(--primary, #03B09F);
-    }
-    .step-counter-sep,
-    .step-counter-fraction {
-        color: var(--muted-dark);
-    }
-    .step-counter-next {
-        color: var(--muted, #aaa);
+        &.completed { background: var(--success-ink); }
     }
 }
 
@@ -94,8 +101,7 @@
 .step-progress-mobile { display: none; }
 
 @media (max-width: 480px) {
-    .step-progress,
-    .step-counter { display: none; }
+    .step-progress { display: none; }
 
     .step-progress-mobile {
         display: block;
@@ -154,20 +160,20 @@
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        background: #f0faf8;
-        border: 1px solid #b2e0d8;
-        border-left: 4px solid var(--brand-teal);
+        background: var(--accent-tint);
+        border: 1px solid var(--accent-mid);
+        border-left: 3px solid var(--accent);
         border-radius: var(--radius-md);
         padding: 12px 14px;
         margin-bottom: 24px;
-        color: #2a6b62;
+        color: var(--text-2);
         font-size: 0.9rem;
         line-height: 1.6;
 
         .step-desc-icon {
             flex-shrink: 0;
             margin-top: 1px;
-            color: var(--brand-teal);
+            color: var(--accent-ink);
         }
     }
     .step-nav {
@@ -181,15 +187,17 @@
 .form-textarea {
     width: 100%;
     padding: 14px 16px;
-    border: 2px solid var(--border-soft);
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius-md);
     font-size: var(--text-base);
     margin-bottom: 16px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out);
     font-family: var(--base-font-family);
 
-    &:focus { border-color: var(--primary); }
+    &:hover  { border-color: var(--border-strong); }
+    &:focus  { border-color: var(--accent-ink); box-shadow: var(--focus-ring); }
 }
 
 .form-textarea {
@@ -219,7 +227,7 @@
     gap: 12px;
     margin-bottom: 20px;
     padding: 14px 16px;
-    border: 2px solid var(--border-soft);
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: border-color 0.2s;
@@ -276,177 +284,103 @@
 }
 
 // === TAG INPUT ===
-.tag-input-area {
-    border: 2px solid var(--border-soft);
-    border-radius: var(--radius-md);
-    padding: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
-
-    &:focus-within { border-color: var(--primary); }
-
-    .tag-pill {
-        background: var(--info-light);
-        color: var(--info-dark);
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 0.88rem;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-
-        button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--info-dark);
-            font-size: 0.9rem;
-        }
-    }
-
-    .tag-input {
-        border: none;
-        outline: none;
-        font-size: 0.95rem;
-        min-width: 200px;
-        flex: 1;
-    }
-}
-
 // === CONDITION AUTOCOMPLETE ===
-.condition-autocomplete-wrap {
-    position: relative;
-    flex: 1;
-    min-width: 200px;
-}
-
-.condition-suggestions {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1.5px solid var(--border-soft);
-    border-radius: var(--radius-md);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    z-index: 100;
-    overflow: hidden;
-}
-
-.condition-suggestion-item {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 10px 14px;
-    font-size: 0.9rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-main);
-    transition: background 0.1s;
-
-    &:hover, &.highlighted {
-        background: var(--bg-subtle);
-        color: var(--brand-teal);
-    }
-
-    & + & {
-        border-top: 1px solid var(--border-soft);
-    }
-}
-
-.condition-suggestion-new {
-    color: var(--brand-teal);
-    font-style: italic;
-    border-top: 1px solid var(--border-soft) !important;
-}
-
-// === PRODUCTS GRID ===
+// === MULTI-SELECT TAG GRID === (ui-guide #p-tagselect .tagselect)
+// Two columns of checkable options (one below 480px). The real checkbox stays
+// in the tab order, visually hidden; the tick shows when selected.
 .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+
+    @media (max-width: 479.98px) { grid-template-columns: 1fr; }
 }
 
 .product-option {
-    padding: 12px 14px;
-    border: 2px solid var(--border-soft);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-size: 0.9rem;
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
-    transition: all 0.15s;
-    color: var(--text-body);
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: var(--text-caption);
+    line-height: 1.35;
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 
-    input { display: none; }
+    input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .tick { flex-shrink: 0; opacity: 0; color: var(--accent-ink); }
+
+    &:hover { border-color: var(--border-strong); }
+    &:has(input:focus-visible) { box-shadow: var(--focus-ring); }
 
     &.selected {
-        border-color: var(--primary);
-        background: var(--primary-light);
-        color: var(--primary-darker);
-        font-weight: 600;
+        border-color: var(--accent-ink);
+        background: var(--accent-tint);
+        color: var(--accent-ink);
+        font-weight: 700;
+
+        .tick { opacity: 1; }
     }
 }
 
-// === DROPZONE ===
+// === DROPZONE === (ui-guide #c-upload .dropzone)
+// One upload field for the whole app: a label around a visually hidden file
+// input, so a click or Enter/Space opens the picker and the native "Choose
+// File" button never shows. Add .drag while a file is dragged over.
 .dropzone {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    border: 2px dashed var(--border-soft);
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+    padding: var(--space-12) var(--space-8);
+    border: 2px dashed var(--border-strong);
     border-radius: var(--radius-lg);
-    padding: 32px 16px;
-    cursor: pointer;
+    background: var(--surface);
     text-align: center;
-    transition: border-color 0.2s, background 0.2s;
-    margin-bottom: 16px;
-    position: relative;
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 
-    &:hover {
-        border-color: var(--primary);
-        background: var(--primary-light);
+    &:hover, &.drag { border-color: var(--accent-ink); background: var(--accent-tint); }
+    &:has(.dropzone-input:focus-visible) { border-color: var(--accent-ink); box-shadow: var(--focus-ring); }
 
-        .dropzone-icon { color: var(--primary); }
-    }
+    @media (max-width: 575.98px) { padding: var(--space-8) var(--space-5); }
 
     .dropzone-input {
         position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
     }
 
-    .dropzone-icon {
-        color: var(--muted);
-        margin-bottom: 8px;
-        transition: color 0.2s;
-    }
+    .dropzone-icon { color: var(--text-3); }
+    .dropzone-main { font-weight: 700; color: var(--text-1); }
+    .dropzone-sub  { font-size: var(--text-caption); color: var(--text-2); }
+    .dropzone-hint { font-size: var(--text-caption); color: var(--text-3); }
 
-    .dropzone-main {
-        font-weight: 600;
-        color: var(--text-body);
-        font-size: 0.95rem;
-    }
-
-    .dropzone-sub {
-        color: var(--muted-dark);
-        font-size: 0.85rem;
-    }
-
-    .dropzone-hint {
-        color: var(--muted);
-        font-size: 0.78rem;
-        margin-top: 4px;
-    }
+    // Compact size for side columns (Edit gallery)
+    &.dropzone--sm { gap: var(--space-2); margin-bottom: 0; padding: var(--space-6) var(--space-4); }
 }
 
 .upload-hint  { color: var(--muted-dark); font-size: var(--text-sm); margin-bottom: 10px; }
@@ -454,6 +388,11 @@
 
 // === TERMS CHECKBOXES ===
 .terms-list {
+    // fieldset reset (grouped for screen readers; looks unchanged)
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -465,7 +404,7 @@
     align-items: flex-start;
     gap: 12px;
     padding: 14px 16px;
-    border: 2px solid var(--border-soft);
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
@@ -477,7 +416,7 @@
         width: 20px;
         height: 20px;
         min-width: 20px;
-        border: 2px solid var(--border-soft);
+        border: 1px solid var(--border-soft);
         border-radius: var(--radius-sm);
         display: flex;
         align-items: center;

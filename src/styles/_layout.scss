@@ -1,7 +1,18 @@
 @use './breakpoints' as *;
 
 // === LAYOUT ===
+// The page fills the window, so the footer sits at the bottom on short pages
+// (thank-you, 404, private mode) instead of floating mid-screen.
+#root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
 .main-content {
+    flex: 1 0 auto;
+    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 24px 16px;  // mobile default
@@ -24,6 +35,3 @@
 
 // ── Site header wrapper ────────────────────────────────────────────────────────
 // Topbar scrolls away; only the navbar sticks
-.site-header {
-    // no sticky here — handled per-child
-}

@@ -1,7 +1,12 @@
+import { requireUser } from '../lib/requireUser.js'
 export const handler = async function (event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method not allowed' }
     }
+
+    // Signed-in admin users only (paid AI calls)
+    const auth = await requireUser(event)
+    if (auth.response) return auth.response
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
@@ -35,13 +40,13 @@ export const handler = async function (event) {
 
     const prompt = `You are reviewing suspected duplicate testimonials for a health-product testimonial database.
 
-A "duplicate" means the SAME person's story appearing more than once — even if it has been reworded, summarised, translated (e.g. Afrikaans vs English), told in first-person vs third-person, or is a different length. Two testimonials that share the same image are almost certainly duplicates. Distinct people who happen to have similar conditions or used the same products are NOT duplicates.
+A "duplicate" means the SAME person's story appearing more than once, even if it has been reworded, summarised, translated (e.g. Afrikaans vs English), told in first-person vs third-person, or is a different length. Two testimonials that share the same image are almost certainly duplicates. Distinct people who happen to have similar conditions or used the same products are NOT duplicates.
 
 For each pair, decide whether they are the same underlying testimonial:
 
 ${pairList}
 
-Lean towards flagging: if the people, specific facts (names, numbers, places, timelines) and overall story plausibly describe the same case, treat it as a duplicate. Return ONLY a JSON array; each entry {"index": <pair number minus 1>, "reason": "<one short sentence citing the shared specifics>"}. If none match, return []. No markdown, no explanation — only the raw JSON array.`
+Lean towards flagging: if the people, specific facts (names, numbers, places, timelines) and overall story plausibly describe the same case, treat it as a duplicate. Return ONLY a JSON array; each entry {"index": <pair number minus 1>, "reason": "<one short sentence citing the shared specifics>"}. If none match, return []. No markdown, no explanation, only the raw JSON array.`
 
     try {
         console.log(`Confirming ${pairs.length} candidate pair(s) with Haiku`)

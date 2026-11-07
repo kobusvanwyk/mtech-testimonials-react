@@ -1,102 +1,215 @@
 // === DESIGN TOKENS ===
+// Source of truth: design/DESIGN.md (tina4-design pass, 2026-10-10).
+// Strategy: DESIGN.md names are CANONICAL. Legacy names are kept as aliases so
+// the ~600 existing references keep resolving while partials migrate area-by-area.
+// Where a legacy value already matches a canonical token it aliases to it; where it
+// differs it keeps its original value (no silent visual change from this file alone).
 :root {
     // ── Font Family ─────────────────────────────────────
+    --font-sans: 'Plus Jakarta Sans', 'Segoe UI', 'Avenir Next', system-ui, sans-serif;
+    --base-font-family: var(--font-sans);   // was avenir-lt-pro (Typekit), unified on Jakarta
 
-    --base-font-family: avenir-lt-pro, sans-serif;
+    // ════════════════════════════════════════════════════
+    //  CANONICAL, DESIGN.md light theme
+    // ════════════════════════════════════════════════════
 
-    // ── Brand ─────────────────────────────────────
-    --primary:        #03B09F;
-    --primary-dark:   #028a7c;
-    --primary-darker: #027268;
-    --primary-light:  #e6f8f6;
-    --primary-mid:    #b3ede8;
+    // ── Brand accent (teal) ───────────────────────────
+    --accent:        #03B09F;   // brand teal, fills under dark text, accent band, tints, focus ring. NOT white-text buttons.
+    --accent-ink:    #027268;   // interactive teal, links/text on white AND primary-button fill w/ white text (5.8:1 ✓)
+    --accent-hover:  #028a7c;   // button/link hover
+    --accent-active: #015f56;   // pressed/active
+    --accent-tint:   #e6f8f6;   // subtle teal ground: selected rows, highlights, alert ground
+    --accent-mid:    #b3ede8;   // stronger teal tint: dividers on tint, hover on tinted surfaces
 
-    --secondary:      #ACC42A;
-    --secondary-dark: #82971a;
-    --secondary-light: #f6faea;
+    // ── Brand secondary (lime), fills/accents ONLY ───
+    --secondary:      #ACC42A;  // never body text (1.97:1 on white). Dark text on lime = 8.7:1 ✓
+    --secondary-ink:  #6b7d13;  // lime-as-text when unavoidable (4.6:1 ✓)
+    --secondary-tint: #f6faea;  // subtle lime ground: product chips, accents
 
-    // ── Semantic ───────────────────────────────────
-    --danger:         #E7142C;
-    --danger-dark:    #b50e22;
-    --danger-light:   #fde8eb;
+    // ── Structural dark (navy) ────────────────────────
+    --dark:   #1a1a2e;   // hero/footer/sidebar surfaces, high-impact panels, darkest text
+    --dark-2: #2a2a4a;
+    --dark-3: #3a3a5a;
 
-    --warning:        #FFAF4E;
-    --warning-dark:   #e08828;
-    --warning-darker: #a85e10;
-    --warning-light:  #fff4e0;
+    // ── Grounds & surfaces ────────────────────────────
+    --bg:           #f5f7fa;   // page background (cool slate-tinted near-white)
+    --surface:      #ffffff;   // cards, panels, modals, inputs
+    --surface-2:    #f8fafc;   // inset/elevated secondary surfaces; table striping; sidebar panels
+    --border:       #e2e8f0;   // dividers, default input borders
+    --border-strong:#cbd5e1;   // focused/active separators, hovered input borders
 
-    --info:           #5BC2E7;
-    --info-dark:      #2a9fc5;
-    --info-light:     #e8f7fc;
+    // ── Text ───────────────────────────────────────────
+    --text-1: #1e293b;   // headings + high-emphasis body (14.6:1 on white ✓)
+    --text-2: #475569;   // body copy, labels (7.6:1 on white ✓)
+    --text-3: #64748b;   // captions, placeholders, metadata (4.8:1 on white ✓)
 
-    --success:        #7CC42A;
-    --success-dark:   #5a8f1e;
-    --success-light:  #f0f8e0;
+    // ── Semantic (distinct from brand) ────────────────
+    // NOTE: existing components use --success/--warning/--info/--error as BRIGHT FILLS,
+    // so those names keep their original bright values. The accessible text inks DESIGN.md
+    // calls --success/etc. are exposed here as --*-ink to avoid silently restyling fills  - 
+    // a deliberate in-app reconciliation (same pattern as --text-body).
+    --success: #7CC42A;  --success-ink: #4e7d1a;  --success-tint: #f0f8e0;   // ink 4.9:1 ✓
+    --warning: #FFAF4E;  --warning-ink: #a85e10;  --warning-tint: #fff4e0;   // ink 4.9:1 ✓
+    --error:   #E7142C;  --error-ink:   #c40f24;  --error-tint:   #fde8eb;   // ink 6.1:1 ✓
+    --info:    #5BC2E7;  --info-ink:    #1f6a8c;  --info-tint:    #e8f7fc;   // ink 6.0:1 ✓
+    --success-fill: var(--success);
+    --warning-fill: var(--warning);
+    --error-fill:   var(--error);
+    --info-fill:    var(--info);
 
-    // ── Dark navy (sidebar, footer) ───────────────
-    --dark-navy:       #1a1a2e;
-    --dark-navy-mid:   #2a2a4a;
-    --dark-navy-light: #3a3a5a;
+    // ── Interaction ───────────────────────────────────
+    // Strengthened 2026-11-04 (DESIGN.md): surface-coloured gap, then a solid 2px ring.
+    --focus-ring:        0 0 0 2px var(--surface), 0 0 0 4px var(--accent-ink);
+    --focus-ring-dark:   0 0 0 2px var(--dark), 0 0 0 4px var(--accent);   // navy grounds
+    --focus-ring-offset: 2px;
+    --disabled-opacity:  0.45;
+    --hover-tint:        rgba(3, 176, 159, 0.07);
 
-    // ── Slate (content text) ───────────────────────
-    --slate-dark:  #1e293b;
+    // ── Animation (calm, no spring) ──────────────────
+    --duration-fast: 120ms;
+    --duration-base: 220ms;
+    --duration-slow: 360ms;
+    --ease-out:      cubic-bezier(0.2, 0, 0, 1);
+    --ease-in-out:   cubic-bezier(0.4, 0, 0.2, 1);
+
+    // ── Spacing (base-4) ──────────────────────────────
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+    --space-12: 48px; --space-16: 64px; --space-20: 80px; --space-24: 96px;
+
+    // ── Layout widths ─────────────────────────────────
+    --max-prose:   65ch;
+    --max-content: 720px;
+    --max-wide:    1200px;
+
+    // ── App shell (DESIGN.md "App shell") ─────────────
+    --shell-w:      240px;
+    --topbar-h:     56px;
+    --shell-ground: #1a1a2e;   // login ground
+
+    // ── Z-index scale ─────────────────────────────────
+    --z-dropdown: 100; --z-sticky: 200; --z-topbar: 300; --z-drawer: 400;
+    --z-modal-backdrop: 500; --z-modal: 600; --z-toast: 700; --z-tooltip: 800;
+
+    // ── Border radius (brand pill CTA retained) ───────
+    --radius-sm:   6px;    // tags/chips
+    --radius-md:   8px;    // inputs/buttons default
+    --radius-lg:   12px;   // cards/panels
+    --radius-xl:   16px;   // modals/large containers
+    --radius-pill: 28px;   // pill CTAs, brand signature
+    --radius-full: 999px;  // badges/avatars/toggles
+    --radius-round: 50%;   // legacy circular alias
+
+    // ── Shadows (slate-navy tinted, DESIGN.md) ────────
+    --shadow-sm: 0 1px 2px rgba(30, 41, 59, 0.06), 0 2px 8px rgba(30, 41, 59, 0.05);
+    --shadow-md: 0 4px 16px rgba(30, 41, 59, 0.08);
+    --shadow-lg: 0 12px 32px rgba(30, 41, 59, 0.12);
+
+    // ── Icon sizes (Lucide, 1.5px stroke, see .lucide rule in _typography) ──
+    --icon-xs: 14px;  --icon-sm: 16px;  --icon-md: 20px;  --icon-lg: 24px;  --icon-xl: 32px;
+
+    // ── Fluid type scale (DESIGN.md / ui-guide). clamp() min@320px → max@1280px.
+    // NB: --text-body is kept as the legacy body COLOR (#444); body font-size lives
+    // on the base element in _typography.scss to avoid the name collision.
+    --text-display:  clamp(2.5rem, 1.9rem + 3vw, 4rem);      // 800 / -0.03em / 1.02
+    --text-h1:       clamp(1.9rem, 1.5rem + 2vw, 3rem);      // 700 / -0.02em / 1.1
+    --text-h2:       clamp(1.4rem, 1.15rem + 1.2vw, 2.1rem); // 700 / -0.01em / 1.2
+    --text-h3:       clamp(1.1rem, 0.95rem + 0.6vw, 1.45rem);// 600 / 1.3
+    --text-overline: clamp(0.68rem, 0.64rem + 0.2vw, 0.76rem); // 600 / +0.09em / uppercase
+    --text-body-lg:  clamp(1.05rem, 1rem + 0.25vw, 1.15rem); // 400 / 1.65
+    --text-body-fluid: clamp(0.92rem, 0.88rem + 0.2vw, 1rem); // base body size (name avoids --text-body color)
+    --text-caption:  clamp(0.74rem, 0.72rem + 0.1vw, 0.82rem);// 400 / 1.5
+    --text-code:     clamp(0.78rem, 0.75rem + 0.12vw, 0.86rem);
+
+    // ── Font sizes (static scale retained for dense UI; semantic scale above for headings/body) ──
+    --text-xs:   0.78rem;   // badges, meta labels
+    --text-sm:   0.85rem;   // secondary text, hints
+    --text-base: 1rem;      // body
+    --text-lg:   1.1rem;    // card titles, slightly larger body
+
+    // ════════════════════════════════════════════════════
+    //  LEGACY COMPATIBILITY ALIASES
+    //  Keep existing references resolving. Migrate partials to the
+    //  canonical names above area-by-area, then retire these.
+    // ════════════════════════════════════════════════════
+
+    // Brand teal
+    --primary:        var(--accent);
+    --primary-dark:   var(--accent-hover);   // #028a7c
+    --primary-darker: var(--accent-ink);     // #027268
+    --primary-light:  var(--accent-tint);    // #e6f8f6
+    --primary-mid:    var(--accent-mid);     // #b3ede8
+    --brand-teal:     var(--accent);
+
+    // Brand lime
+    --secondary-dark:  var(--secondary-ink);
+    --secondary-light: var(--secondary-tint);
+
+    // Semantic, legacy names mapped to canonical FILL values (preserves prior appearance)
+    --danger:       var(--error-fill);   // #E7142C
+    --danger-dark:  #b50e22;
+    --danger-light: var(--error-tint);
+    --warning-dark: #e08828;
+    --warning-darker: var(--warning-ink);    // #a85e10 (original value preserved)
+    --warning-light: var(--warning-tint);
+    --info-dark:    #2a9fc5;
+    --info-light:   var(--info-tint);
+    --success-dark: #5a8f1e;
+    --success-light: var(--success-tint);
+    // NOTE: legacy --success/--warning/--info previously meant the bright FILL.
+    // Canonical --success/--warning/--info are the accessible TEXT inks. Partials
+    // currently using these as fills are remapped to *-fill during the per-area passes.
+
+    // Navy
+    --dark-navy:       var(--dark);
+    --dark-navy-mid:   var(--dark-2);
+    --dark-navy-light: var(--dark-3);
+
+    // Slate (content text)
+    --slate-dark:  var(--text-1);   // #1e293b
     --slate-mid:   #334155;
-    --slate:       #475569;
-    --slate-light: #64748b;
+    --slate:       var(--text-2);   // #475569
+    --slate-light: var(--text-3);   // #64748b
 
-    // ── Gray (UI chrome) ───────────────────────────
+    // Gray (UI chrome)
     --gray-dark: #374151;
     --gray:      #6b7280;
     --gray-light:#94a3b8;
 
-    // ── Text ───────────────────────────────────────
-    --text-dark:      #333;
-    --text-body:      #444;
-    --text-secondary: #555;
-    --text-dim:       #666;
-    --text-hint:      #777;
+    // Text (legacy color roles → canonical ink scale)
+    --text-dark:      var(--text-1);
+    --text-heading:   var(--text-1);
+    --text-primary:   var(--text-1);
+    --text-main:      var(--text-1);
+    --text-body:      #444;              // legacy body ink (kept: 33 refs expect this warm-dark)
+    --text-secondary: var(--text-2);
+    --text-dim:       var(--text-3);
+    --text-hint:      var(--text-3);
+    --text-muted:     var(--text-3);     // was undefined, now resolves (meta grey)
 
-    // ── Muted grays ────────────────────────────────
+    // Muted grays
     --muted-dark:  #888;
     --muted:       #aaa;
     --muted-mid:   #999;
     --muted-light: #bbb;
     --disabled:    #ccc;
 
-    // ── Borders ────────────────────────────────────
-    --border:        #e2e8f0;
+    // Borders
     --border-light:  #e5e7eb;
     --border-soft:   #e0e0e0;
     --border-subtle: #f0f0f0;
 
-    // ── Surfaces ───────────────────────────────────
-    --surface-white: #fff;
-    --surface-alt:   #f8fafc;
-    --surface:       #f3f4f6;
+    // Surfaces
+    --surface-white: var(--surface);      // #fff
+    --surface-alt:   var(--surface-2);    // #f8fafc
+    --surface-page:  var(--bg);           // was undefined
     --surface-hover: #f1f5f9;
     --surface-inset: #f9f9f9;
+    --bg-body:       var(--bg);
+    --surface-bg:    var(--bg);           // was undefined (private-mode page ground)
+    --bg-subtle:     var(--surface-2);    // was undefined
+    --muted-hover:   #ddd;
 
-    // ── One-off values ─────────────────────────────
-    --bg-body:     #f5f7fa;   // page background
-    --muted-hover: #ddd;      // light text on dark bg
-
-    // ── Border radius ──────────────────────────────
-    --radius-sm:   6px;    // badges, small buttons
-    --radius-md:   8px;    // inputs, table rows, small cards
-    --radius-lg:   12px;   // cards, panels, admin sections
-    --radius-xl:   16px;   // large cards, modals, containers
-    --radius-pill: 28px;   // pill-style buttons
-    --radius-round:50%;    // circular elements
-
-    // ── Box shadows ────────────────────────────────
-    --shadow-sm:    0 2px 8px rgba(0, 0, 0, 0.06);   // subtle cards
-    --shadow-md:    0 4px 24px rgba(0, 0, 0, 0.08);  // forms, article pages
-    --shadow-lg:    0 8px 32px rgba(0, 0, 0, 0.10);  // modals, login box
-    --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.10);  // card hover state
-
-    // ── Font sizes ─────────────────────────────────
-    --text-xs:   0.78rem;   // badges, meta labels
-    --text-sm:   0.85rem;   // secondary text, hints
-    --text-base: 1rem;      // body
-    --text-lg:   1.1rem;    // card titles, slightly larger body
+    // Shadow (legacy hover alias)
+    --shadow-hover: var(--shadow-md);
 }

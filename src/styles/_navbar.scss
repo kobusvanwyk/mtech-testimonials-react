@@ -2,70 +2,102 @@
 
 // ── Top bar ───────────────────────────────────────────────────────────────────
 .navbar-topbar {
+    // Announcement CTA bar (ui-guide #p-announce .announce). Dark text on the
+    // bright teal: white on #03B09F is only 2.5:1.
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 8px 16px;
-    background: var(--primary);
-    color: white;
-    font-size: var(--text-sm);
-    font-weight: 500;
-    text-align: center;
     flex-wrap: wrap;
-
-    span { opacity: 0.92; }
+    gap: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-4);
+    background: var(--accent);
+    color: #06241f;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    text-align: center;
 }
 
 .navbar-topbar-btn {
-    background: white;
-    color: var(--primary-dark);
-    padding: 5px 16px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 var(--space-4);
     border-radius: var(--radius-pill);
+    background: #fff;
+    color: var(--accent-ink);
+    font-size: var(--text-caption);
     font-weight: 700;
-    font-size: var(--text-sm);
     white-space: nowrap;
     text-decoration: none;
-    transition: background 0.15s, color 0.15s;
+    transition: background var(--duration-fast) var(--ease-out);
 
-    &:hover {
-        background: var(--primary-light);
-        color: var(--primary-darker);
+    &:hover { background: var(--accent-tint); }
+    &:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px #06241f; }
+}
+
+.navbar-topbar-short { display: none; }
+
+// Phones: one 40px line, the link inline and underlined instead of a pill
+@media (max-width: 575.98px) {
+    .navbar-topbar {
+        flex-wrap: nowrap;
+        min-height: 40px;
+        padding: 0 var(--space-4);
+        gap: var(--space-2);
+    }
+
+    .navbar-topbar-long { display: none; }
+    .navbar-topbar-short { display: inline; }
+
+    .navbar-topbar-btn {
+        min-height: 40px;
+        padding: 0 var(--space-1);
+        border-radius: var(--radius-sm);
+        background: none;
+        color: #06241f;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+
+        &:hover { background: none; text-decoration-thickness: 2px; }
     }
 }
 
-// ── Main navbar ───────────────────────────────────────────────────────────────
+// ── Main navbar (ui-guide #shell-public) ────────────────────────────────
 .navbar {
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: var(--z-sticky);
     display: flex;
     align-items: center;
-    padding: 10px 16px;
-    background: var(--surface-white);
-    border-bottom: 2px solid var(--primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-2) var(--space-4);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
 
-    // Mobile: stack logo + menu buttons vertically
-    flex-direction: column;
-    gap: 10px;
-
-    // Desktop: logo left, links right
-    @include md {
-        flex-direction: row;
-        justify-content: space-between;
-        padding: 16px 32px;
-        gap: 0;
+    // Teal-to-lime brand line
+    &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -2px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--secondary));
     }
+
+    @include md { padding: var(--space-3) var(--space-8); }
 
     &-brand {
         display: flex;
         align-items: center;
         text-decoration: none;
+        border-radius: var(--radius-sm);
+        &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
     }
 
     &-logo {
-        height: 32px;
+        height: 30px;
         width: auto;
         display: block;
         @include md { height: 40px; }
@@ -74,351 +106,50 @@
     &-links {
         display: flex;
         align-items: center;
-        gap: 8px;
-        width: 100%;
-
-        @include md {
-            width: auto;
-            gap: 16px;
-        }
+        gap: var(--space-2);
+        @include md { gap: var(--space-3); }
     }
 }
 
-// ── Dropdown trigger ──────────────────────────────────────────────────────────
+// ── Browse menu trigger (outline pill) ─────────────────────────────────────────
 .nav-dropdown-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    padding: 9px 14px;
-    background: none;
-    border: 1.5px solid var(--border-soft);
-    border-radius: var(--radius-pill);
-    color: var(--text-secondary);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-
-    // Mobile: each button takes half the width
-    &.mobile {
-        flex: 1;
-        font-size: 0.82rem;
-    }
-
-    @include md {
-        font-size: var(--text-base);
-        padding: 9px 18px;
-    }
-
-    &:hover, &.active {
-        border-color: var(--primary);
-        color: var(--primary);
-        background: var(--primary-light);
-    }
-
-    &.has-active-filter {
-        border-color: var(--primary);
-        color: var(--primary);
-        background: var(--primary-light);
-
-        &::after {
-            content: '';
-            display: inline-block;
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--primary);
-            margin-left: 2px;
-            flex-shrink: 0;
-        }
-    }
-}
-
-.nav-chevron {
-    transition: transform 0.2s;
-    flex-shrink: 0;
-    &.flipped { transform: rotate(180deg); }
-}
-
-// ── Desktop dropdown menu ─────────────────────────────────────────────────────
-.nav-dropdown {
-    position: relative;
-}
-
-.nav-dropdown-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    min-width: 220px;
-    background: white;
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-md);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    z-index: 200;
-    overflow: hidden;
-}
-
-.nav-dropdown-scroll {
-    max-height: 320px;
-    overflow-y: auto;
-    padding: 6px 0;
-
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-track { background: transparent; }
-    &::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
-}
-
-.nav-dropdown-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    padding: 9px 16px;
-    background: none;
-    border: none;
-    text-align: left;
-    font-size: var(--text-sm);
-    color: var(--text-body);
-    cursor: pointer;
-    transition: background 0.1s, color 0.1s;
-
-    &:hover {
-        background: var(--primary-light);
-        color: var(--primary-dark);
-    }
-
-    &.nav-dropdown-item-active {
-        background: var(--primary-light);
-        color: var(--primary);
-        font-weight: 700;
-
-        &::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: var(--primary);
-            margin-right: 6px;
-            flex-shrink: 0;
-        }
-    }
-}
-
-.nav-dropdown-count {
-    flex-shrink: 0;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--text-hint);
-    background: var(--surface);
-    padding: 1px 7px;
-    border-radius: 20px;
-    min-width: 22px;
-    text-align: center;
-
-    .nav-dropdown-item:hover & {
-        background: white;
-        color: var(--primary-dark);
-    }
-}
-
-// ── Bottom sheet (mobile) ─────────────────────────────────────────────────────
-.bs-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    z-index: 400;
-    animation: bs-fade-in 0.2s ease;
-}
-
-.bs-sheet {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 401;
-    background: white;
-    border-radius: 20px 20px 0 0;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    animation: bs-slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-
-    // Safe area for phones with home indicator
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.bs-handle {
-    width: 40px;
-    height: 4px;
-    background: var(--border-soft);
-    border-radius: 4px;
-    margin: 12px auto 0;
-    flex-shrink: 0;
-}
-
-.bs-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 20px 10px;
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--border-soft);
-}
-
-.bs-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-heading);
-}
-
-.bs-close {
-    background: var(--surface);
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: background 0.15s;
-    &:hover { background: var(--border-soft); }
-}
-
-.bs-list {
-    overflow-y: auto;
-    padding: 8px 0 16px;
-    flex: 1;
-
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
-}
-
-.bs-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    padding: 14px 20px;
-    background: none;
-    border: none;
-    border-bottom: 1px solid var(--surface);
-    text-align: left;
-    font-size: 0.95rem;
-    color: var(--text-body);
-    cursor: pointer;
-    transition: background 0.1s;
-
-    &:hover, &:active {
-        background: var(--primary-light);
-        color: var(--primary-dark);
-    }
-
-    &.bs-item-active {
-        background: var(--primary-light);
-        color: var(--primary);
-        font-weight: 700;
-        border-left: 3px solid var(--primary);
-        padding-left: 17px;
-    }
-
-    &:last-child { border-bottom: none; }
-}
-
-.bs-count {
-    flex-shrink: 0;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--text-hint);
-    background: var(--surface);
-    padding: 2px 8px;
-    border-radius: 20px;
-}
-
-// ── Animations ────────────────────────────────────────────────────────────────
-@keyframes bs-slide-up {
-    from { transform: translateY(100%); }
-    to   { transform: translateY(0); }
-}
-
-@keyframes bs-fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-
-// ── Active filter chip bar ────────────────────────────────────────────────────
-.filter-chip-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 16px;
-    background: var(--primary-light);
-    border-bottom: 1px solid var(--primary-mid);
-
-    @include md { padding: 7px 32px; }
-}
-
-.filter-chip-label {
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.filter-chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 3px 6px 3px 12px;
-    background: var(--primary);
-    color: white;
+    min-height: 44px;
+    padding: 0 var(--space-5);
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
     border-radius: var(--radius-pill);
-    font-size: var(--text-sm);
-    font-weight: 600;
-}
-
-.filter-chip-clear {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    background: rgba(255,255,255,0.25);
-    border: none;
-    border-radius: 50%;
-    color: white;
+    color: var(--text-1);
+    font-family: inherit;
+    font-size: var(--text-caption);
+    font-weight: 700;
+    white-space: nowrap;
     cursor: pointer;
-    transition: background 0.15s;
-    padding: 0;
+    transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 
-    &:hover { background: rgba(255,255,255,0.45); }
-}
+    &:hover,
+    &[aria-expanded="true"] { border-color: var(--accent-ink); color: var(--accent-ink); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-// ── View All entry in desktop dropdown ────────────────────────────────────────
-.nav-dropdown-item-all {
-    font-weight: 600;
-    color: var(--primary-dark) !important;
-    font-style: italic;
-}
+    .nav-chevron { transition: transform var(--duration-fast) var(--ease-out); }
+    &[aria-expanded="true"] .nav-chevron { transform: rotate(180deg); }
 
-.nav-dropdown-divider {
-    height: 1px;
-    background: var(--border-soft);
-    margin: 4px 0;
-}
+    // A filter from this menu is active
+    &.has-active-filter {
+        border-color: var(--accent-ink);
+        color: var(--accent-ink);
 
-// ── View All entry in bottom sheet ────────────────────────────────────────────
-.bs-item-all {
-    font-weight: 600;
-    color: var(--primary-dark) !important;
-    font-style: italic;
-    border-bottom: 1px solid var(--border-soft) !important;
-    margin-bottom: 4px;
+        &::after {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+    }
 }
 
 // ── Logo Only Header (private mode) ──────────────────────────────────────────

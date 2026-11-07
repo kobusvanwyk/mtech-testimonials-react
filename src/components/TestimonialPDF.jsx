@@ -12,7 +12,13 @@ import regularTtf  from '../assets/fonts/PlusJakartaSans-Regular.ttf'
 import mediumTtf   from '../assets/fonts/PlusJakartaSans-Medium.ttf'
 import semiBoldTtf from '../assets/fonts/PlusJakartaSans-SemiBold.ttf'
 import boldTtf     from '../assets/fonts/PlusJakartaSans-Bold.ttf'
+import { displayName, hidesAuthor, normaliseNameMode } from '../lib/displayName'
 import italicTtf   from '../assets/fonts/PlusJakartaSans-Italic.ttf'
+import { PDF_DISCLAIMER, PDF_COPYRIGHT, buildContactItems } from '../lib/pdfText'
+
+// Branded A4 export (ui-guide #p-pdf, DESIGN.md "PDF export preview"):
+// logo header over a teal rule, the story, then a footer on every page with
+// the associate's contact details and the legal disclaimer every public PDF carries.
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
 Font.register({
@@ -28,102 +34,85 @@ Font.register({
 
 Font.registerHyphenationCallback(word => [word])
 
-// ─── Colours ─────────────────────────────────────────────────────────────────
+// ─── Colours (design tokens; react-pdf cannot read CSS variables) ──────────
 const C = {
-    primary:      '#03B09F',
-    primaryDark:  '#028a7c',
-    primaryLight: '#e6f8f6',
-    secondary:    '#ACC42A',
-    secondaryLight: '#f3f8e0',
-    dark:         '#1e293b',
-    body:         '#334155',
-    muted:        '#64748b',
-    border:       '#e2e8f0',
-    white:        '#ffffff',
-    footerText:   '#d1faf6',
+    accent:        '#03B09F', // --accent: the header rule
+    accentInk:     '#027268', // --accent-ink: teal text
+    accentTint:    '#e6f8f6', // --accent-tint: condition chip ground
+    secondaryInk:  '#6b7d13', // --secondary-ink: product chip text
+    secondaryTint: '#f6faea', // --secondary-tint: product chip ground
+    navy:          '#1a1a2e', // --dark: title and contact name
+    body:          '#333333', // guide .pdf-preview body text
+    muted:         '#64748b', // --text-3: meta line, section labels
+    label:         '#9D9FA2', // guide .pdf-preview .db: header label
+    border:        '#e2e8f0', // --border
+    footRule:      '#e0e0e0', // guide .pdf-preview .pf rule
+    footText:      '#777777', // guide .pdf-preview .pf text
+    white:         '#ffffff',
 }
+
+const PAGE_X = 44
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
-
-    // Page
     page: {
         backgroundColor: C.white,
         fontFamily: 'PlusJakartaSans',
         fontSize: 11,
-        paddingBottom: 80,
+        paddingTop: 36,
+        paddingHorizontal: PAGE_X,
+        // paddingBottom is set per document to clear the fixed footer
     },
 
-    // ── Top accent bar ──────────────────────────────
-    accentBar: {
-        height: 5,
-        backgroundColor: C.primary,
-        width: '100%',
-    },
-
-    // ── Content area ────────────────────────────────
-    content: {
-        paddingHorizontal: 44,
-        paddingTop: 28,
-    },
-
-    // ── Header row (label + logo) ────────────────────
-    headerRow: {
+    // ── Header: logo left, label right, teal rule ─────────
+    header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
-    },
-    testimonialLabel: {
-        fontSize: 9,
-        fontFamily: 'PlusJakartaSans', fontWeight: 700,
-        color: C.primary,
-        textTransform: 'uppercase',
-        letterSpacing: 2,
+        paddingBottom: 12,
+        marginBottom: 24,
+        borderBottomWidth: 2,
+        borderBottomColor: C.accent,
     },
     logo: {
-        width: 130,
-        height: 36,
+        height: 34,
+        maxWidth: 200,
         objectFit: 'contain',
-        objectPositionX: 'right',
+        objectPositionX: 'left',
     },
     logoFallback: {
         fontSize: 15,
-        fontFamily: 'PlusJakartaSans', fontWeight: 700,
-        color: C.primary,
-        letterSpacing: 1.5,
+        fontWeight: 700,
+        color: C.navy,
+        letterSpacing: 0.5,
+    },
+    headerLabel: {
+        fontSize: 7.5,
+        fontWeight: 700,
+        color: C.label,
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
     },
 
-    // ── Title ────────────────────────────────────────
+    // ── Title + meta ─────────────────────────────────
     title: {
         fontSize: 24,
-        fontFamily: 'PlusJakartaSans', fontWeight: 700,
-        color: C.dark,
+        fontWeight: 700,
+        color: C.navy,
         lineHeight: 1.25,
-        marginBottom: 10,
+        marginBottom: 6,
     },
-
-    // ── Teal accent underline ────────────────────────
-    titleUnderline: {
-        height: 3,
-        width: 52,
-        backgroundColor: C.primary,
-        borderRadius: 2,
-        marginBottom: 14,
-    },
-
-    // ── Meta ─────────────────────────────────────────
     meta: {
         fontSize: 10,
         color: C.muted,
-        marginBottom: 16,
+        marginBottom: 14,
     },
 
-    // ── Tags ─────────────────────────────────────────
+    // ── Tags (filled tint, as .tag-condition / .tag-product) ─────
     tagsRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: 22,
+        marginBottom: 20,
     },
     chip: {
         borderRadius: 20,
@@ -132,28 +121,17 @@ const S = StyleSheet.create({
         marginRight: 5,
         marginBottom: 5,
     },
-    chipCondition: {
-        backgroundColor: C.primaryLight,
-    },
-    chipProduct: {
-        backgroundColor: C.secondaryLight,
-    },
-    chipTextCondition: {
-        fontSize: 8.5,
-        fontFamily: 'PlusJakartaSans', fontWeight: 700,
-        color: C.primaryDark,
-    },
-    chipTextProduct: {
-        fontSize: 8.5,
-        fontFamily: 'PlusJakartaSans', fontWeight: 700,
-        color: '#6d8000',
-    },
+    chipCondition: { backgroundColor: C.accentTint },
+    chipProduct:   { backgroundColor: C.secondaryTint },
+    chipText:          { fontSize: 8.5, fontWeight: 600 },
+    chipTextCondition: { color: C.accentInk },
+    chipTextProduct:   { color: C.secondaryInk },
 
-    // ── Body text ────────────────────────────────────
+    // ── Story ────────────────────────────────────────
     paragraph: {
         fontSize: 11,
         color: C.body,
-        lineHeight: 1.75,
+        lineHeight: 1.7,
         marginBottom: 10,
     },
     listItem: {
@@ -166,11 +144,14 @@ const S = StyleSheet.create({
 
     // ── Gallery ──────────────────────────────────────
     gallerySection: {
-        marginTop: 18,
+        marginTop: 14,
+        paddingTop: 14,
+        borderTopWidth: 1,
+        borderTopColor: C.border,
     },
-    gallerySectionLabel: {
-        fontSize: 9,
-        fontFamily: 'PlusJakartaSans', fontWeight: 700,
+    sectionLabel: {
+        fontSize: 7.5,
+        fontWeight: 700,
         color: C.muted,
         textTransform: 'uppercase',
         letterSpacing: 1.2,
@@ -180,58 +161,51 @@ const S = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
     },
-    // galleryImage is computed dynamically based on count — see render
 
-    // ── Divider ──────────────────────────────────────
-    divider: {
-        height: 1,
-        backgroundColor: C.border,
-        marginTop: 10,
-        marginBottom: 16,
-    },
-
-    // ── Footer (absolute, pinned to bottom) ──────────
+    // ── Footer (fixed: on every page, out of the content flow) ──
     footer: {
         position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: C.primary,
-        paddingHorizontal: 44,
-        paddingTop: 16,
-        paddingBottom: 18,
+        left: PAGE_X,
+        right: PAGE_X,
+        bottom: 26,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: C.footRule,
     },
-    footerContactLabel: {
-        fontSize: 8,
-        fontFamily: 'PlusJakartaSans', fontWeight: 700,
-        color: C.footerText,
+    contact: {
+        marginBottom: 8,
+    },
+    contactLabel: {
+        fontSize: 7,
+        fontWeight: 700,
+        color: C.accentInk,
         textTransform: 'uppercase',
-        letterSpacing: 1.5,
-        marginBottom: 6,
+        letterSpacing: 1.2,
+        marginBottom: 3,
     },
-    footerContactRow: {
+    contactRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: 6,
     },
-    footerSeparator: {
-        fontSize: 10,
-        color: C.primaryLight,
-        marginHorizontal: 8,
+    contactItem: {
+        fontSize: 9.5,
+        fontWeight: 600,
+        color: C.navy,
     },
-    footerContactItem: {
-        fontSize: 10,
-        color: C.white,
+    contactSep: {
+        fontSize: 9.5,
+        color: C.label,
+        marginHorizontal: 6,
     },
-    footerTagline: {
+    tagline: {
         fontSize: 8.5,
-        color: C.footerText,
+        color: C.muted,
         marginTop: 2,
     },
-    footerDivider: {
-        height: 1,
-        backgroundColor: C.primaryDark,
-        marginBottom: 10,
+    disclaimer: {
+        fontSize: 7.5,
+        color: C.footText,
+        lineHeight: 1.5,
     },
 })
 
@@ -243,14 +217,6 @@ function formatDate(iso) {
     })
 }
 
-function buildContactItems(settings) {
-    const items = []
-    if (settings.pdf_contact_name)     items.push(settings.pdf_contact_name)
-    if (settings.pdf_contact_phone)    items.push(`Tel: ${settings.pdf_contact_phone}`)
-    if (settings.pdf_contact_email)    items.push(settings.pdf_contact_email)
-    if (settings.pdf_contact_whatsapp) items.push(`WhatsApp: ${settings.pdf_contact_whatsapp}`)
-    return items
-}
 
 // Parse inline **bold** and _italic_ into styled runs (mirrors the web renderer
 // in src/pages/Single.jsx). This both renders emphasis and strips the raw markup
@@ -271,12 +237,12 @@ function inlineRuns(text) {
 }
 
 const runStyle = (r) =>
-    r.bold   ? { fontFamily: 'PlusJakartaSans', fontWeight: 700 } :
-    r.italic ? { fontFamily: 'PlusJakartaSans', fontStyle: 'italic' } :
+    r.bold   ? { fontWeight: 700 } :
+    r.italic ? { fontStyle: 'italic' } :
     undefined
 
 // Turn story text into PDF blocks, handling bullets (- ), numbered lists (1. )
-// and inline emphasis — matching how the public page renders the same text.
+// and inline emphasis, matching how the public page renders the same text.
 function renderStory(text, paraStyle, listItemStyle) {
     const lines = (text || '').split('\n')
     const blocks = []
@@ -301,135 +267,131 @@ function renderStory(text, paraStyle, listItemStyle) {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
+// settings.pdf_logo_url: the admin's logo (base64 by the time it gets here).
+// settings._brand_logo: the Mtech Testimonials logo as a PNG, used when no
+// custom logo is set (react-pdf cannot draw SVG files).
 export function TestimonialPDF({ testimonial: t, settings = {} }) {
-    const hasLogo      = !!settings.pdf_logo_url?.trim()
+    const logoSrc      = settings.pdf_logo_url?.trim() || settings._brand_logo || null
     const contactItems = buildContactItems(settings)
-    const hasFooter    = contactItems.length > 0 || !!settings.pdf_footer_tagline?.trim()
+    const tagline      = settings.pdf_footer_tagline?.trim()
     const gallery      = (t.gallery_urls || []).slice(0, 6)
 
-    // Meta line visibility — default to showing unless explicitly turned off
-    const showName = settings.pdf_show_name !== 'false'
-    const showDate = settings.pdf_show_date !== 'false'
-    const nameText = showName ? `By ${t.anonymous ? 'Anonymous' : (t.person_name || 'Unknown')}` : ''
+    // Meta line visibility, default to showing unless explicitly turned off
+    const nameMode = normaliseNameMode(settings.name_display)
+    const showName = settings.pdf_show_name !== 'false' && !hidesAuthor(nameMode)
+    const showDate = settings.pdf_show_date !== 'false' && settings.show_dates !== 'false'
+    const nameText = showName ? `By ${displayName(t, nameMode) || 'Anonymous'}` : ''
     const dateText = showDate ? formatDate(t.created_at) : ''
     const metaText = [nameText, dateText].filter(Boolean).join('   ·   ')
 
+    // Reserve room for the fixed footer so story text never runs under it.
+    const footerH = 26 + 10 + 24 + (contactItems.length ? 30 : 0) + (tagline ? 14 : 0)
+    const pageStyle = { ...S.page, paddingBottom: footerH + 16 }
+
     // ── Dynamic gallery grid ──────────────────────────────────────────────────
     // A4 content width = 595 - (44 * 2) = 507pt
-    const CONTENT_W = 507
+    const CONTENT_W = 595 - PAGE_X * 2
     const GAP       = 8
     const cols      = gallery.length === 1 ? 1 : gallery.length === 2 ? 2 : 3
-    const imgW      = (CONTENT_W - GAP * (cols - 1)) / cols
+    const imgW      = (CONTENT_W - GAP * (cols - 1)) / cols - 0.5
     const imgH      = cols === 1 ? Math.min(imgW * 0.6, 280) : imgW * 0.68
-    const galleryImageStyle = {
-        width:       imgW,
-        height:      imgH,
-        objectFit:   'cover',
+    const galleryImageStyle = (i) => ({
+        width:        imgW,
+        height:       imgH,
+        objectFit:    'cover',
         borderRadius: 6,
-        marginRight:  GAP,
+        marginRight:  (i + 1) % cols === 0 ? 0 : GAP,
         marginBottom: GAP,
-    }
+    })
 
     // ── Font scaling ──────────────────────────────────────────────────────────
-    const charCount   = (t.story_text || '').length
-    const threshold   = parseInt(settings.pdf_font_threshold, 10) || 1200
-    const isCompact   = charCount > threshold
+    const charCount  = (t.story_text || '').length
+    const threshold  = parseInt(settings.pdf_font_threshold, 10) || 1200
+    const isCompact  = charCount > threshold
     const bodySize   = isCompact ? 9.5 : 11
-    const titleSize  = isCompact ? 20  : 24
-    const metaSize   = isCompact ? 9   : 10
-    const paraStyle  = { ...S.paragraph,  fontSize: bodySize  }
-    const titleStyle = { ...S.title,      fontSize: titleSize }
-    const metaStyle  = { ...S.meta,       fontSize: metaSize  }
+    const titleStyle = { ...S.title, fontSize: isCompact ? 20 : 24 }
+    const metaStyle  = { ...S.meta,  fontSize: isCompact ? 9  : 10 }
+    const paraStyle  = { ...S.paragraph, fontSize: bodySize }
 
     return (
         <Document
             title={t.title || 'Testimonial'}
-            author="Mannatech"
-            subject="Customer Testimonial"
+            author="Mtech Testimonials"
+            subject="Testimonial"
         >
-            <Page size="A4" style={S.page}>
+            <Page size="A4" style={pageStyle}>
 
-                {/* ── Accent bar ── */}
-                <View style={S.accentBar} />
-
-                {/* ── Content ── */}
-                <View style={S.content}>
-
-                    {/* Header row */}
-                    <View style={S.headerRow}>
-                        <Text style={S.testimonialLabel}>Customer Testimonial</Text>
-                        {hasLogo
-                            ? <Image src={settings.pdf_logo_url} style={S.logo} />
-                            : <Text style={S.logoFallback}>MANNATECH</Text>
-                        }
-                    </View>
-
-                    {/* Title */}
-                    <Text style={titleStyle}>{t.title || 'Testimonial'}</Text>
-                    <View style={S.titleUnderline} />
-
-                    {/* Meta */}
-                    {metaText !== '' && (
-                        <Text style={metaStyle}>{metaText}</Text>
-                    )}
-
-                    {/* Condition + Product chips */}
-                    {((t.conditions?.length > 0) || (t.products?.length > 0)) && (
-                        <View style={S.tagsRow}>
-                            {(t.conditions || []).map((c, i) => (
-                                <View key={i} style={[S.chip, S.chipCondition]}>
-                                    <Text style={S.chipTextCondition}>{c}</Text>
-                                </View>
-                            ))}
-                            {(t.products || []).map((p, i) => (
-                                <View key={i} style={[S.chip, S.chipProduct]}>
-                                    <Text style={S.chipTextProduct}>{p}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    )}
-
-                    {/* Story body */}
-                    {renderStory(t.story_text, paraStyle, { ...S.listItem, fontSize: bodySize })}
-
-                    {/* Gallery */}
-                    {gallery.length > 0 && (
-                        <View style={S.gallerySection}>
-                            <View style={S.divider} />
-                            <Text style={S.gallerySectionLabel}>Photos</Text>
-                            <View style={S.galleryGrid}>
-                                {gallery.map((url, i) => (
-                                    <Image key={i} src={url} style={galleryImageStyle} />
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
+                {/* ── Header ── (the logos already read "Testimonials Database",
+                     so the label only shows beside the text fallback) */}
+                <View style={S.header}>
+                    {logoSrc
+                        ? <Image src={logoSrc} style={S.logo} />
+                        : <>
+                            <Text style={S.logoFallback}>Mtech Testimonials</Text>
+                            <Text style={S.headerLabel}>Testimonials Database</Text>
+                        </>
+                    }
                 </View>
 
-                {/* ── Footer ── (fixed: pinned to the bottom of every page and
-                     kept out of content flow, which prevents a trailing blank page) */}
-                {hasFooter && (
-                    <View fixed style={S.footer}>
-                        <View style={S.footerDivider} />
-                        {contactItems.length > 0 && (
-                            <>
-                                <Text style={S.footerContactLabel}>Contact me today</Text>
-                                <View style={S.footerContactRow}>
-                                    {contactItems.map((item, i) => (
-                                        <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            {i > 0 && <Text style={S.footerSeparator}>·</Text>}
-                                            <Text style={S.footerContactItem}>{item}</Text>
-                                        </View>
-                                    ))}
-                                </View>
-                            </>
-                        )}
-                        {settings.pdf_footer_tagline?.trim() && (
-                            <Text style={S.footerTagline}>{settings.pdf_footer_tagline}</Text>
-                        )}
+                {/* ── Title + meta ── */}
+                <Text style={titleStyle}>{t.title || 'Testimonial'}</Text>
+                {metaText !== '' && <Text style={metaStyle}>{metaText}</Text>}
+
+                {/* ── Condition + product chips ── */}
+                {((t.conditions?.length > 0) || (t.products?.length > 0)) && (
+                    <View style={S.tagsRow}>
+                        {(t.conditions || []).map((c, i) => (
+                            <View key={`c${i}`} style={[S.chip, S.chipCondition]}>
+                                <Text style={[S.chipText, S.chipTextCondition]}>{c}</Text>
+                            </View>
+                        ))}
+                        {(t.products || []).map((p, i) => (
+                            <View key={`p${i}`} style={[S.chip, S.chipProduct]}>
+                                <Text style={[S.chipText, S.chipTextProduct]}>{p}</Text>
+                            </View>
+                        ))}
                     </View>
                 )}
+
+                {/* ── Story ── */}
+                {renderStory(t.story_text, paraStyle, { ...S.listItem, fontSize: bodySize })}
+
+                {/* ── Gallery ── */}
+                {gallery.length > 0 && (
+                    <View style={S.gallerySection} wrap={false}>
+                        <Text style={S.sectionLabel}>Photos</Text>
+                        <View style={S.galleryGrid}>
+                            {gallery.map((url, i) => (
+                                <Image key={i} src={url} style={galleryImageStyle(i)} />
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+                {/* ── Footer: contact, then disclaimer, on every page ── */}
+                <View fixed style={S.footer}>
+                    {(contactItems.length > 0 || tagline) && (
+                        <View style={S.contact}>
+                            {contactItems.length > 0 && (
+                                <>
+                                    <Text style={S.contactLabel}>Contact me today</Text>
+                                    <View style={S.contactRow}>
+                                        {contactItems.map((item, i) => (
+                                            <View key={i} style={{ flexDirection: 'row' }}>
+                                                {i > 0 && <Text style={S.contactSep}>·</Text>}
+                                                <Text style={S.contactItem}>{item}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                </>
+                            )}
+                            {tagline && <Text style={S.tagline}>{tagline}</Text>}
+                        </View>
+                    )}
+                    <Text style={S.disclaimer}>
+                        {PDF_DISCLAIMER} © {new Date().getFullYear()} {PDF_COPYRIGHT}
+                    </Text>
+                </View>
 
             </Page>
         </Document>

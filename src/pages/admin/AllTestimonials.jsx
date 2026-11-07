@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import TestimonialTable from '../../components/TestimonialTable'
-import { List, Download, X, Calendar } from 'lucide-react'
+import { Download, X, Calendar } from 'lucide-react'
 import flatpickr from 'flatpickr'
 import 'flatpickr/dist/flatpickr.min.css'
 
@@ -117,45 +117,44 @@ export default function AllTestimonials() {
         setDateTo(null)
     }
 
+    const tabs = STATUS_FILTERS.map(f => ({
+        ...f,
+        count: f.value === 'all'
+            ? testimonials.length
+            : f.value === 'imported_pending'
+                ? testimonials.filter(t => t.is_imported && t.status === 'pending').length
+                : f.value === 'imported'
+                    ? testimonials.filter(t => t.is_imported).length
+                    : testimonials.filter(t => t.status === f.value).length,
+    }))
+
+    const dateTool = (
+        <div className="tt-date">
+            <Calendar size={16} className="tt-date-ic" aria-hidden="true" />
+            <input
+                ref={dateInputRef}
+                className="tt-date-input"
+                placeholder="Any date"
+                aria-label="Filter by date range"
+                readOnly
+            />
+            {hasDateFilter && (
+                <button type="button" className="tt-date-clear" onClick={clearDates} aria-label="Clear date filter">
+                    <X size={14} aria-hidden="true" />
+                </button>
+            )}
+        </div>
+    )
+
     return (
         <div className="admin-page-content">
-            <div className="page-header-row">
-                <h2><List size={20} /> All Testimonials</h2>
-                <button className="btn-export-csv" onClick={exportCSV}><Download size={15} /> Export CSV</button>
-            </div>
-            <div className="status-filter-bar">
-                {STATUS_FILTERS.map(f => (
-                    <button
-                        key={f.value}
-                        className={`filter-tab ${statusFilter === f.value ? 'active' : ''}`}
-                        onClick={() => setStatusFilter(f.value)}
-                    >
-                        {f.label}
-                        <span className="filter-count">
-                            {f.value === 'all'
-                                ? testimonials.length
-                                : f.value === 'imported_pending'
-                                    ? testimonials.filter(t => t.is_imported && t.status === 'pending').length
-                                    : f.value === 'imported'
-                                        ? testimonials.filter(t => t.is_imported).length
-                                        : testimonials.filter(t => t.status === f.value).length}
-                        </span>
+            <div className="edit-header">
+                <h1>All Testimonials</h1>
+                <div className="edit-header-actions">
+                    <button type="button" className="btn-secondary" onClick={exportCSV}>
+                        <Download size={16} aria-hidden="true" /> Export CSV
                     </button>
-                ))}
-            </div>
-            <div className="date-filter-bar">
-                <Calendar size={15} className="date-filter-icon" />
-                <input
-                    ref={dateInputRef}
-                    className="date-filter-input"
-                    placeholder="Filter by date &amp; time range…"
-                    readOnly
-                />
-                {hasDateFilter && (
-                    <button className="date-filter-clear" onClick={clearDates}>
-                        <X size={13} /> Clear
-                    </button>
-                )}
+                </div>
             </div>
             <TestimonialTable
                 testimonials={filtered}
@@ -163,6 +162,10 @@ export default function AllTestimonials() {
                 onDelete={handleDelete}
                 onQuickSave={handleQuickSave}
                 loading={loading}
+                tabs={tabs}
+                activeTab={statusFilter}
+                onTabChange={setStatusFilter}
+                extraTools={dateTool}
             />
         </div>
     )

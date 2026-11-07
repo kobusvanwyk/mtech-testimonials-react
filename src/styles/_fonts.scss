@@ -1,0 +1,54 @@
+// === WEBFONT: Plus Jakarta Sans ===
+// Self-hosted from src/assets/fonts (same files the react-pdf export uses, so web
+// and PDF render identically). Replaces the Adobe Typekit Avenir LT Pro dependency.
+// Weights match DESIGN.md: 400 / 500 / 600 / 700 / 800, plus 400 & 700 italics.
+
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    src: url('../assets/fonts/PlusJakartaSans-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+    src: url('../assets/fonts/PlusJakartaSans-Medium.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+    src: url('../assets/fonts/PlusJakartaSans-SemiBold.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+    src: url('../assets/fonts/PlusJakartaSans-Bold.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+    src: url('../assets/fonts/PlusJakartaSans-ExtraBold.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+    src: url('../assets/fonts/PlusJakartaSans-Italic.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+    src: url('../assets/fonts/PlusJakartaSans-BoldItalic.ttf') format('truetype');
+}

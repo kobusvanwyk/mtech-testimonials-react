@@ -1,61 +1,11 @@
 // === BUTTONS ===
-.btn-next,
-.btn-submit {
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-pill);
-    padding: 12px 28px;
-    font-size: var(--text-base);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-
-    &:hover:not(:disabled) { background: var(--primary-dark); }
-    &:disabled { background: var(--disabled); cursor: not-allowed; }
-}
-
-.btn-back {
-    background: none;
-    border: 2px solid var(--border-soft);
-    border-radius: var(--radius-pill);
-    padding: 12px 28px;
-    font-size: var(--text-base);
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: border-color 0.2s;
-
-    &:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-    }
-}
-
+// Primary button fills use the bright brand teal --accent (#03B09F) with white text.
+// Human brand decision (2026-10-11): the 2.7:1 white-on-teal contrast is accepted
+// deliberately to keep the signature brand teal, overriding the DESIGN.md AA
+// substitution. --accent-ink stays for teal TEXT on light grounds (links, labels).
 // Load More
 .load-more-wrap {
     display: flex;
     justify-content: center;
     margin: 2rem 0 1rem;
-}
-
-.btn-load-more {
-    background: var(--primary);
-    color: white;
-    border: 2px solid var(--primary);
-    border-radius: 6px;
-    padding: 0.65rem 2rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-
-    &:hover:not(:disabled) {
-        background: var(--color-primary-dark, #029a8a);
-        border-color: var(--color-primary-dark, #029a8a);
-    }
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
 }

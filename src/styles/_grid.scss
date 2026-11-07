@@ -5,7 +5,415 @@
     gap: 24px;
 }
 
+// Meta line above a grid (same as the admin .review-count): caption, muted, bold number
 .results-count {
-    color: var(--text-hint);
-    margin-bottom: 16px;
+    min-height: 1.5em;
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-caption);
+    color: var(--text-3);
+
+    strong { color: var(--text-1); font-weight: 600; font-variant-numeric: tabular-nums; }
+}
+
+// === HOME: intro and toolbar ===
+.home-intro {
+    h1 {
+        margin: 0 0 var(--space-2);
+        color: var(--text-1);
+        font-size: var(--text-h1);
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+    }
+}
+
+// Phones: smaller H1 on Home; on Search the field says it all, so the
+// heading and its line are kept for screen readers only.
+@media (max-width: 575.98px) {
+    .home-intro h1 { margin-bottom: var(--space-1); font-size: var(--text-h2); }
+    .home-intro-sub { font-size: var(--text-caption); }
+    .home-intro-more { display: none; }
+
+    // Tighter rhythm above the grid; the grid gap already separates blocks
+    .home-layout { gap: var(--space-4); }
+    .home-layout .search-wrapper { margin-bottom: 0; }
+
+    .search-intro {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
+}
+
+.home-intro-sub {
+    margin: 0;
+    color: var(--text-2);
+    font-size: var(--text-body);
+
+    strong { color: var(--text-1); font-weight: 700; font-variant-numeric: tabular-nums; }
+}
+
+// Toolbar above the grid: count on the left, sort (and its Reset) on the right
+.home-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border);
+
+    .results-count { margin: 0; }
+}
+
+// Active filter: a subheading band under the search, with one way out
+.home-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-6);
+    padding: var(--space-5) var(--space-6);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-ink);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+
+    h2 {
+        margin: 0;
+        color: var(--text-1);
+        font-size: var(--text-h3);
+        font-weight: 700;
+        line-height: 1.3;
+    }
+}
+
+.home-filter-kind {
+    margin: 0 0 var(--space-1);
+    color: var(--accent-ink);
+    font-size: var(--text-overline);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.home-filter-clear { flex-shrink: 0; .lucide { flex-shrink: 0; } }
+
+// Phones: one compact row. No card, the teal edge stays; "Condition · ADHD"
+// inline; the button shrinks to a 44px round x (its label stays for readers).
+@media (max-width: 575.98px) {
+    .home-filter {
+        flex-wrap: nowrap;
+        gap: var(--space-3);
+        padding: var(--space-1) 0 var(--space-1) var(--space-3);
+        background: none;
+        border: none;
+        border-left: 3px solid var(--accent-ink);
+        border-radius: 0;
+        box-shadow: none;
+
+        h2 { font-size: var(--text-body); }
+    }
+
+    .home-filter-text {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0 var(--space-2);
+        min-width: 0;
+    }
+
+    .home-filter-kind {
+        margin: 0;
+        color: var(--text-3);
+        font-size: var(--text-caption);
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
+
+        &::after { content: ' \00B7'; }
+    }
+
+    .home-filter-lead { display: none; }
+
+    .home-filter-count {
+        color: var(--text-3);
+        font-size: var(--text-caption);
+        &::before { content: '\00B7  '; }
+    }
+
+    // The count and sort button live in the band, so the toolbar row goes
+    .home-filter + .home-toolbar { display: none; }
+
+    // Sort button sits with the x on the right
+    .home-filter .band-sort { margin-left: auto; }
+    .home-filter .home-filter-clear { margin-left: 0; }
+
+    .home-filter-clear {
+        width: 44px;
+        min-width: 44px;
+        padding: 0;
+        justify-content: center;
+        margin-left: auto;
+    }
+
+    .home-filter-clear-txt { display: none; }
+}
+
+// Count shown in the band on phones only; the band's sort button likewise
+.home-filter-count { display: none; }
+.band-sort, .rc-mobile { display: none !important; }
+
+@media (max-width: 575.98px) {
+    .home-filter-count { display: inline; }
+    .band-sort, .rc-mobile { display: inline-flex !important; }
+    .home-toolbar {
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        .home-sort { display: none; }
+        .rc-mobile { margin-left: auto; }
+    }
+}
+
+// "Sort & filter" (phones): 44px pill, or a 44px circle inside the band.
+// A teal dot means something is changed from the default.
+.sort-sheet-btn {
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text-1);
+    font-family: inherit;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    .lucide { flex-shrink: 0; }
+    &:hover { border-color: var(--border-strong); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+    &.is-icon { width: 44px; padding: 0; }
+    &.is-set { border-color: var(--accent-ink); color: var(--accent-ink); }
+}
+
+.sort-sheet-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+// Bottom sheet (ui-guide filter panel as a mobile sheet)
+.sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal-backdrop);
+    display: flex;
+    align-items: flex-end;
+    background: rgba(15, 18, 34, 0.5);
+    animation: sheet-fade var(--duration-base) var(--ease-out);
+}
+
+.sheet {
+    width: 100%;
+    max-height: 85dvh;
+    overflow-y: auto;
+    padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: var(--shadow-lg);
+    animation: sheet-up var(--duration-base) var(--ease-out);
+}
+
+.sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+
+    h2 { margin: 0; color: var(--text-1); font-size: var(--text-h3); }
+}
+
+.sheet-x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-right: calc(-1 * var(--space-2));
+    border: none;
+    border-radius: var(--radius-full);
+    background: none;
+    color: var(--text-2);
+    cursor: pointer;
+
+    &:hover { background: var(--surface-2); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}
+
+.sheet-group {
+    padding: var(--space-3) 0;
+    & + & { border-top: 1px solid var(--border); }
+}
+
+.sheet-group-h {
+    margin-bottom: var(--space-2);
+    color: var(--text-3);
+    font-size: var(--text-overline);
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.sheet-opt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: var(--text-body);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { background: var(--surface-2); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    &[aria-checked="true"] { background: var(--accent-tint); color: var(--accent-ink); font-weight: 700; }
+}
+
+.sheet-toggle { margin-right: 0; }
+
+.sheet-ft {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+
+    .btn-primary { flex: 1; justify-content: center; }
+}
+
+@keyframes sheet-fade { from { opacity: 0; } }
+@keyframes sheet-up { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) {
+    .sheet-backdrop, .sheet { animation: none; }
+}
+
+// Label and menu never split across lines
+.home-sort-select {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+// "With photos only": an on/off toggle chip (aria-pressed) with a check box,
+// 44px tall like the select beside it. On = accent tint + ink.
+.photo-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-4) 0 var(--space-3);
+    margin-right: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text-1);
+    font-family: inherit;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+
+    &:hover { border-color: var(--border-strong); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+    &[aria-pressed="true"] {
+        background: var(--accent-tint);
+        border-color: var(--accent-ink);
+        color: var(--accent-ink);
+    }
+}
+
+.photo-toggle-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+
+    [aria-pressed="true"] > & {
+        border-color: var(--accent-ink);
+        background: var(--accent-ink);
+        color: var(--surface);
+        .lucide { stroke-width: 2.5px; }
+    }
+}
+
+// "Reset": ghost text button, only when the sort or photo switch is off its default
+.home-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: none;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover { background: var(--accent-tint); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}
+
+.home-sort {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    margin-left: auto;
+
+    label { color: var(--text-3); font-size: var(--text-caption); font-weight: 600; }
+
+    select {
+        appearance: none;
+        min-height: 44px;
+        padding: 0 var(--space-10) 0 var(--space-4);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right var(--space-3) center;
+        color: var(--text-1);
+        font-family: inherit;
+        font-size: var(--text-caption);
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover { border-color: var(--border-strong); }
+        &:focus { outline: none; border-color: var(--accent-ink); box-shadow: var(--focus-ring); }
+    }
 }

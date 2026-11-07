@@ -1,3 +1,4 @@
+import { requireUser } from '../lib/requireUser.js'
 // Netlify function: enriches parsed WhatsApp messages via Claude API
 // POST body: { messages: [{ id, sender, timestamp, text }] }
 // Returns: { results: [{ id, enriched, skipped, reason }] }
@@ -21,7 +22,7 @@ const MAX_PER_CALL = 2
 
 function buildPrompt(messages) {
   const productList = PRODUCTS.join(', ')
-  // Deliberately omit the WhatsApp sender — it's the forwarder, not the author,
+  // Deliberately omit the WhatsApp sender, it's the forwarder, not the author,
   // and including it tempts the model to misattribute the testimonial.
   const msgBlock = messages.map((m, i) =>
     `--- MESSAGE ${i + 1} (ID: ${m.id}) ---\nTimestamp: ${m.timestamp}\nText: ${m.text}`
@@ -32,7 +33,7 @@ function buildPrompt(messages) {
 Official Mannatech product list (match names exactly from this list only):
 ${productList}
 
-IMPORTANT — about authorship: These messages are collected and forwarded into a WhatsApp group by one administrator, so the author's name is usually NOT present. Use a name ONLY when it is clearly the storyteller's own signature — typically a sign-off at the very start or end of the message (e.g. "🌼Neelke- Pta", "Groete, Lauriza", "Dawie se getuienis"). Do NOT use a name that is merely mentioned inside the story, such as the person who introduced them to the products, a doctor, a friend, or a family member (e.g. "a friend Dalene introduced me" → Dalene is NOT the author). If there is no clear author signature, set person_name to null and anonymous to true. When uncertain, prefer null/anonymous.
+IMPORTANT (about authorship): These messages are collected and forwarded into a WhatsApp group by one administrator, so the author's name is usually NOT present. Use a name ONLY when it is clearly the storyteller's own signature, typically a sign-off at the very start or end of the message (e.g. "🌼Neelke- Pta", "Groete, Lauriza", "Dawie se getuienis"). Do NOT use a name that is merely mentioned inside the story, such as the person who introduced them to the products, a doctor, a friend, or a family member (e.g. "a friend Dalene introduced me" → Dalene is NOT the author). If there is no clear author signature, set person_name to null and anonymous to true. When uncertain, prefer null/anonymous.
 
 For each message, return a JSON object with these fields:
 - "id": the message ID provided (copy it exactly)
@@ -42,11 +43,11 @@ For each message, return a JSON object with these fields:
 - "anonymous": true if no author name appears in the text (or the person explicitly asks to remain anonymous); false only when a real author name is present in the text.
 - "title": a concise, descriptive title for the testimonial (max 10 words, no quotes)
 - "conditions": array of health conditions mentioned (e.g. ["Arthritis", "High Blood Pressure"]). Use proper names, not abbreviations. Empty array if none.
-- "products": array of Mannatech products mentioned — match ONLY to the official product list above. Empty array if none mentioned or none match.
+- "products": array of Mannatech products mentioned, match ONLY to the official product list above. Empty array if none mentioned or none match.
 - "story_text": the testimonial text cleaned up and formatted with proper paragraphs. Fix obvious typos. Keep the person's voice. Do not add information not in the original.
-- "review_notes": string with any flags for manual review (e.g. "Product name unclear — could be Ambrotose AO or Ambrotose Complex", "Name not mentioned — used sender name"). Omit if nothing to flag.
+- "review_notes": string with any flags for manual review (e.g. "Product name unclear, could be Ambrotose AO or Ambrotose Complex", "Name not mentioned, used sender name"). Omit if nothing to flag.
 
-Return a raw JSON array — no markdown, no explanation, just the array.
+Return a raw JSON array, no markdown, no explanation, just the array.
 
 Messages to process:
 
@@ -99,6 +100,10 @@ export const handler = async (event) => {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) }
   }
 
+  // Signed-in admin users only (paid AI calls)
+  const auth = await requireUser(event)
+  if (auth.response) return auth.response
+
   if (!ANTHROPIC_API_KEY) {
     return { statusCode: 500, body: JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }) }
   }
@@ -122,7 +127,7 @@ export const handler = async (event) => {
   }
 
   try {
-    // One Claude call per request — the client orchestrates chunking + progress.
+    // One Claude call per request, the client orchestrates chunking + progress.
     const results = await enrichBatch(messages)
 
     return {

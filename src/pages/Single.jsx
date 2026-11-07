@@ -4,6 +4,11 @@ import { supabase } from '../lib/supabase'
 import { ArrowLeft, Share2, Check, Pencil } from 'lucide-react'
 import { PDFDownloadButton } from '../components/PDFDownloadButton'
 import TestimonialCard from '../components/TestimonialCard'
+import Avatar from '../components/Avatar'
+import { displayName, hidesAuthor } from '../lib/displayName'
+import { useSiteSettings } from '../lib/SiteSettingsContext'
+import { fetchRole, isViewingAsFinder } from '../lib/roles'
+import { SingleSkeleton } from '../components/Skeleton'
 import { Gallery, Item } from 'react-photoswipe-gallery'
 import 'photoswipe/dist/photoswipe.css'
 
@@ -62,6 +67,7 @@ function inlineFormat(text) {
 export default function Single({ shareMode = false }) {
     const { slug } = useParams()
     const [testimonial, setTestimonial] = useState(null)
+    const { nameDisplay, showDates } = useSiteSettings()
     const [loading, setLoading] = useState(true)
     const [copied, setCopied] = useState(false)
     const [isAdmin, setIsAdmin] = useState(false)
@@ -70,7 +76,7 @@ export default function Single({ shareMode = false }) {
 
     useEffect(() => {
         async function fetchTestimonial() {
-            // If it looks like a UUID or numeric ID, look up by id — otherwise by slug
+            // If it looks like a UUID or numeric ID, look up by id, otherwise by slug
             const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
                       || /^\d+$/.test(slug)
             const query = supabase.from('testimonials').select('*')
@@ -80,7 +86,7 @@ export default function Single({ shareMode = false }) {
             setTestimonial(data)
             setLoading(false)
             if (data) {
-                document.title = `Mannatech Testimonial — ${data.title}`
+                document.title = `Mannatech Testimonial: ${data.title}`
                 fetchRelated(data)
             }
             // Pre-load image dimensions for PhotoSwipe
@@ -105,7 +111,7 @@ export default function Single({ shareMode = false }) {
             if (!data) return
             const conditions = current.conditions || []
             const products = current.products || []
-            // Score each by overlap — conditions weighted higher
+            // Score each by overlap, conditions weighted higher
             const scored = data.map(t => {
                 const conditionMatches = (t.conditions || []).filter(c => conditions.includes(c)).length
                 const productMatches = (t.products || []).filter(p => products.includes(p)).length
@@ -118,8 +124,9 @@ export default function Single({ shareMode = false }) {
             setRelated(results)
         }
         async function checkSession() {
+            // Only admins get the Edit link (a signed-in finder does not)
             const { data: { session } } = await supabase.auth.getSession()
-            setIsAdmin(!!session)
+            setIsAdmin(session && !isViewingAsFinder() ? (await fetchRole(session.user.id)) === 'admin' : false)
         }
         fetchTestimonial()
         checkSession()
@@ -134,89 +141,119 @@ export default function Single({ shareMode = false }) {
         })
     }
 
-    if (loading) return <div className="loading">Loading...</div>
+    if (loading) return <SingleSkeleton />
     if (!testimonial) return <div className="not-found">Testimonial not found.</div>
 
     const t = testimonial
+    const name = displayName(t, nameDisplay)
 
     return (
         <div className={`single-page ${shareMode ? 'share-mode' : ''}`}>
             {!shareMode && (
                 <div className="single-top-bar">
-                    <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to all testimonials</Link>
-                    <div className="single-top-bar-actions">
-                        <PDFDownloadButton testimonial={t} />
-                        {isAdmin && (
-                            <Link to={`/admin/edit/${t.id}`} className="btn-edit-admin">
-                                <Pencil size={14} /> Edit
+                    <Link to="/" className="back-link"><ArrowLeft size={16} aria-hidden="true" /> Back to all testimonials</Link>
+                    {isAdmin && (
+                        <div className="single-top-bar-actions">
+                            <Link to={`/admin/edit/${t.id}`} className="btn-ghost">
+                                <Pencil size={16} aria-hidden="true" /> Edit
                             </Link>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             )}
 
             <article className="single-article">
-                <h1 className="single-title">{t.title}</h1>
-                <p className="single-meta">
-                    By <strong>{t.anonymous ? 'Anonymous' : t.person_name}</strong>
-                    {' · '}
-                    {new Date(t.created_at).toLocaleDateString('en-ZA', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                    })}
-                </p>
-                <div className="single-tags">
-                    {t.conditions?.map(c => <span key={c} className="tag tag-condition">{c}</span>)}
-                    {t.products?.map(p => <span key={p} className="tag tag-product">{p}</span>)}
+                <header className="single-head">
+                    <h1 className="single-title">{t.title}</h1>
+                </header>
+
+                {/* About: author, date, tags (beside the story from 960px, above it on smaller screens) */}
+                <div className="single-about">
+                    {(!hidesAuthor(nameDisplay) || showDates) && (
+                        <div className="single-byline">
+                            {!hidesAuthor(nameDisplay) && <Avatar name={name} anonymous={!name} size="md" />}
+                            <div>
+                                {!hidesAuthor(nameDisplay) && <strong>{name || 'Anonymous'}</strong>}
+                                {showDates && (
+                                    <span>
+                                        {new Date(t.created_at).toLocaleDateString('en-ZA', {
+                                            year: 'numeric', month: 'long', day: 'numeric'
+                                        })}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    {t.conditions?.length > 0 && (
+                        <div className="single-tagset">
+                            <h2 className="aside-label">Conditions</h2>
+                            <div className="single-tags">
+                                {t.conditions.map(c => <span key={c} className="tag tag-condition">{c}</span>)}
+                            </div>
+                        </div>
+                    )}
+                    {t.products?.length > 0 && (
+                        <div className="single-tagset">
+                            <h2 className="aside-label">Products</h2>
+                            <div className="single-tags">
+                                {t.products.map(p => <span key={p} className="tag tag-product">{p}</span>)}
+                            </div>
+                        </div>
+                    )}
                 </div>
+
                 <div className="single-body">
                     {renderStory(t.story_text)}
                 </div>
-                {t.gallery_urls?.length > 0 && (
-                    <div className="single-gallery">
-                        <Gallery withDownloadButton>
-                            <div className="gallery-grid">
-                                {t.gallery_urls.map((url, i) => {
-                                    const dim = imageDimensions[url] || { w: 1200, h: 800 }
-                                    return (
-                                        <Item key={i} original={url} thumbnail={url} width={dim.w} height={dim.h} alt={`Photo ${i + 1}`}>
-                                            {({ ref, open }) => (
-                                                <img
-                                                    ref={ref}
-                                                    src={url}
-                                                    onClick={open}
-                                                    alt={`Photo ${i + 1}`}
-                                                    className="gallery-image gallery-image-clickable"
-                                                />
-                                            )}
-                                        </Item>
-                                    )
-                                })}
-                            </div>
-                        </Gallery>
-                    </div>
-                )}
 
-                <div className="single-share">
-                    <a
-                        className="btn-whatsapp"
-                        href={`https://wa.me/?text=${encodeURIComponent(`Check out this Mannatech testimonial: "${t.title}"\n${window.location.origin}/testimonial/${slug}?share=1`)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                        Share on WhatsApp
-                    </a>
-                    <button className={`btn-share ${copied ? 'copied' : ''}`} onClick={handleShare}>
-                        {copied
-                            ? <><Check size={15} /> Link copied!</>
-                            : <><Share2 size={15} /> Copy link</>
-                        }
-                    </button>
-                    {copied && (
-                        <p className="share-hint">
-                            Share this link — it opens the testimonial without the site header and footer.
-                        </p>
+                {/* Extras: photos, download and share */}
+                <div className="single-extras">
+                    {t.gallery_urls?.length > 0 && (
+                        <div className="single-gallery">
+                            <h2 className="aside-label">Photos <span className="ct">{t.gallery_urls.length}</span></h2>
+                            <Gallery withDownloadButton>
+                                <div className="gallery-strip">
+                                    {t.gallery_urls.map((url, i) => {
+                                        const dim = imageDimensions[url] || { w: 1200, h: 800 }
+                                        return (
+                                            <Item key={i} original={url} thumbnail={url} width={dim.w} height={dim.h} alt={`Photo ${i + 1}`}>
+                                                {({ ref, open }) => (
+                                                    <button type="button" onClick={open} aria-label={`Enlarge photo ${i + 1} of ${t.gallery_urls.length}`}>
+                                                        <img ref={ref} src={url} alt="" loading="lazy" />
+                                                    </button>
+                                                )}
+                                            </Item>
+                                        )
+                                    })}
+                                </div>
+                            </Gallery>
+                        </div>
                     )}
+
+                    <div className="single-share">
+                        <h2 className="aside-label">Download &amp; share</h2>
+                        <PDFDownloadButton testimonial={t} />
+                        <a
+                            className="btn-whatsapp"
+                            href={`https://wa.me/?text=${encodeURIComponent(`Check out this Mannatech testimonial: "${t.title}"\n${window.location.origin}/testimonial/${slug}?share=1`)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            Share on WhatsApp
+                        </a>
+                        <button type="button" className={`btn-share ${copied ? 'copied' : ''}`} onClick={handleShare}>
+                            {copied
+                                ? <><Check size={16} aria-hidden="true" /> Link copied</>
+                                : <><Share2 size={16} aria-hidden="true" /> Copy link</>
+                            }
+                        </button>
+                        {copied && (
+                            <p className="share-hint" role="status">
+                                Share this link: it opens the testimonial without the site header and footer.
+                            </p>
+                        )}
+                    </div>
                 </div>
             </article>
 

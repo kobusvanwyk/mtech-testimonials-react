@@ -1,7 +1,8 @@
+import { requireUser } from '../lib/requireUser.js'
 // Relevance confirmation pass for the admin "Ask AI" search.
 // The client gathers candidates generously (condition/product TAGS *or* story-text
 // keywords) for recall, then sends each chunk of candidates here with the original
-// question. Claude keeps only the genuinely-relevant ones (precision) — this is what
+// question. Claude keeps only the genuinely-relevant ones (precision), this is what
 // lets honest-empty beat the old AND→OR fallback that surfaced unrelated stories.
 // POST { query, interpretation, logic, candidates: [{ id, name, conditions, products, text }] }
 // → { relevant: [{ id, reason }] }
@@ -10,6 +11,10 @@ export const handler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method not allowed' }
     }
+
+    // Signed-in admins and finders only (paid AI calls)
+    const auth = await requireUser(event, { roles: ['admin', 'finder'] })
+    if (auth.response) return auth.response
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
@@ -42,21 +47,21 @@ export const handler = async (event) => {
     }).join('\n\n')
 
     const combo = (logic === 'AND')
-        ? `The question asks for a COMBINATION. Keep a testimonial ONLY if its story genuinely involves EVERY part of the question together (for "type 1 diabetes that talks about eye issues", the SAME person's story must involve both the diabetes and the eye issue — not a story about just one of them).`
+        ? `The question asks for a COMBINATION. Keep a testimonial ONLY if its story genuinely involves EVERY part of the question together (for "type 1 diabetes that talks about eye issues", the SAME person's story must involve both the diabetes and the eye issue, not a story about just one of them).`
         : `Keep a testimonial if its story genuinely relates to what the admin is looking for.`
 
     const prompt = `You are helping an admin find genuinely relevant stories in a Mannatech health-testimonial database.
 
 The admin searched for: "${query.trim()}"${interpretation ? `\nInterpreted as: ${interpretation}` : ''}
 
-Below are candidate testimonials. They matched on a tag or a keyword, but some are false matches — a keyword may appear incidentally (e.g. "stroke" meaning a stroke of luck, or a swimming stroke), or the story may relate to only part of the question.
+Below are candidate testimonials. They matched on a tag or a keyword, but some are false matches, a keyword may appear incidentally (e.g. "stroke" meaning a stroke of luck, or a swimming stroke), or the story may relate to only part of the question.
 
 ${combo}
 
 Candidates:
 ${list}
 
-Return ONLY a raw JSON array of the candidates that genuinely match, each entry {"index": <the [n] number>, "reason": "<one short sentence citing what in the story makes it relevant>"}. If none genuinely match, return []. No markdown, no commentary — only the JSON array.`
+Return ONLY a raw JSON array of the candidates that genuinely match, each entry {"index": <the [n] number>, "reason": "<one short sentence citing what in the story makes it relevant>"}. If none genuinely match, return []. No markdown, no commentary, only the JSON array.`
 
     try {
         console.log(`Confirming relevance of ${candidates.length} candidate(s) with Haiku`)
@@ -86,7 +91,7 @@ Return ONLY a raw JSON array of the candidates that genuinely match, each entry 
                 return { statusCode: 429, body: JSON.stringify({ error: 'rate_limit', message: 'Anthropic rate limit reached. Wait a moment and try again.' }) }
             }
             if (resp.status === 529 || errType === 'overloaded_error') {
-                return { statusCode: 529, body: JSON.stringify({ error: 'overloaded', message: 'The AI is busy right now — try again in a moment.' }) }
+                return { statusCode: 529, body: JSON.stringify({ error: 'overloaded', message: 'The AI is busy right now, try again in a moment.' }) }
             }
             if (errType === 'billing_error' || errBody?.error?.message?.toLowerCase().includes('credit')) {
                 return { statusCode: 402, body: JSON.stringify({ error: 'billing', message: 'Anthropic API credits exhausted.' }) }

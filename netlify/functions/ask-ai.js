@@ -1,3 +1,4 @@
+import { requireUser } from '../lib/requireUser.js'
 // Natural-language testimonial search (admin "Ask AI").
 // Takes a free-text question + the available condition/product taxonomy and
 // returns a structured search intent. The client does the actual filtering.
@@ -8,6 +9,10 @@ export const handler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method not allowed' }
     }
+
+    // Signed-in admins and finders only (paid AI calls)
+    const auth = await requireUser(event, { roles: ['admin', 'finder'] })
+    if (auth.response) return auth.response
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
@@ -39,7 +44,7 @@ Break the question into one or more concept GROUPS. For example "type 1 diabetes
 - "label": a short human label for the group
 - "conditions": condition names taken EXACTLY from the list above that are the SAME concept or a direct sub-type (not loosely related). Or [].
 - "products": product names taken EXACTLY from the list above ONLY IF the user's question explicitly names a product or product type. If the question is about conditions/symptoms and does not mention a product, this MUST be []. NEVER add a product just because it is commonly associated with the condition.
-- "keywords": 3-8 SPECIFIC lowercase terms that strongly and distinctively indicate THIS concept — prefer precise nouns (for feet: "foot","feet","toe","toes","heel","ankle","sole"). Do NOT include generic medical words that appear across many unrelated stories (avoid: "wound","injury","pain","infection","condition","problem","recovery","healing","swelling","inflammation").
+- "keywords": 3-8 SPECIFIC lowercase terms that strongly and distinctively indicate THIS concept, prefer precise nouns (for feet: "foot","feet","toe","toes","heel","ankle","sole"). Do NOT include generic medical words that appear across many unrelated stories (avoid: "wound","injury","pain","infection","condition","problem","recovery","healing","swelling","inflammation").
 
 Also return:
 - "logic": "AND" if a matching testimonial must relate to ALL groups (phrases like "X relating to Y", "X with Y"), otherwise "OR"
@@ -67,10 +72,10 @@ Return ONLY raw JSON in this exact shape, no markdown:
             const errBody = await resp.json().catch(() => ({}))
             const errType = errBody?.error?.type || ''
             if (resp.status === 429 || errType === 'rate_limit_error') {
-                return { statusCode: 429, body: JSON.stringify({ error: 'rate_limit', message: 'Rate limit reached — wait a moment and try again.' }) }
+                return { statusCode: 429, body: JSON.stringify({ error: 'rate_limit', message: 'Rate limit reached, wait a moment and try again.' }) }
             }
             if (resp.status === 529 || errType === 'overloaded_error') {
-                return { statusCode: 529, body: JSON.stringify({ error: 'overloaded', message: 'The AI is busy right now — try again in a moment.' }) }
+                return { statusCode: 529, body: JSON.stringify({ error: 'overloaded', message: 'The AI is busy right now, try again in a moment.' }) }
             }
             if (errType === 'billing_error' || errBody?.error?.message?.toLowerCase().includes('credit')) {
                 return { statusCode: 402, body: JSON.stringify({ error: 'billing', message: 'Anthropic API credits exhausted.' }) }
