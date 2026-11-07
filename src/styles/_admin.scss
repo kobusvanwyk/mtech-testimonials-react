@@ -1914,6 +1914,7 @@ select.settings-input {
 
 .dup-pair-reason {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 7px;
     background: var(--warning-tint);
@@ -1936,14 +1937,40 @@ select.settings-input {
     font-variant-numeric: tabular-nums;
 }
 
+// "Not a duplicate": small secondary pill (guide button family, 44px target)
+.dup-pair-dismiss {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-left: auto;
+    min-height: 32px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+
+    &::after { content: ''; position: absolute; inset: -6px 0; }
+    &:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}
+
+// Info note (guide alert-info, compact)
 .dup-note {
-    background: var(--primary-light);
-    border: 1px solid var(--primary-mid);
-    color: var(--primary-darker);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-left: 3px solid var(--info-ink);
     border-radius: var(--radius-md);
-    padding: 10px 14px;
-    font-size: var(--text-sm);
-    margin-bottom: 16px;
+    background: var(--info-tint);
+    color: var(--text-1);
+    font-size: var(--text-caption);
 }
 
 .dup-card-head {
