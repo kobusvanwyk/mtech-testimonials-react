@@ -2,13 +2,21 @@
 
 .ask-ai-form {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin: 20px 0 16px;
     max-width: 720px;
+
+    // Phones: field on its own row, Ask (and Clear) below it
+    @media (max-width: 575.98px) {
+        .ask-ai-input { flex-basis: 100%; }
+        .ask-ai-btn { flex: 1; justify-content: center; }
+    }
 }
 
 .ask-ai-input {
-    flex: 1;
+    flex: 1 1 240px;
+    min-width: 0;   // lets the field shrink instead of pushing the button off screen
     min-height: 52px;
     padding: 0 20px;
     border: 1px solid var(--border);
