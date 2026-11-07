@@ -1,0 +1,587 @@
+@use './breakpoints' as *;
+
+// === SHARED ADMIN UI === (ui-guide .btn, .icon-btn, .segmented, .dropdown-menu)
+// One button family for page headers, toolbars and modals, so pages stop
+// mixing ad-hoc button styles. Human overrides kept: bright-teal primary with
+// white text, every standalone button a pill, outline borders 1.5px.
+
+.btn-primary,
+.btn-secondary,
+.btn-ghost,
+.btn-danger,
+.btn-outline-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 40px;
+    min-width: 44px;
+    padding: 0 var(--space-5);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-pill);
+    font-family: inherit;
+    font-size: var(--text-body);   // ui-guide .btn: body size, weight 600 (decided 2026-11-06)
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    &:disabled, &[aria-disabled="true"] { opacity: var(--disabled-opacity); cursor: not-allowed; }
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+    &:hover:not(:disabled) { background: var(--primary-dark); }
+}
+
+.btn-secondary {
+    background: var(--surface);
+    border-color: var(--border-strong);
+    color: var(--text-1);
+    &:hover:not(:disabled) { border-color: var(--accent-ink); color: var(--accent-ink); }
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-2);
+    &:hover:not(:disabled) { background: var(--hover-tint); color: var(--accent-ink); }
+}
+
+.btn-danger {
+    background: var(--error-ink);
+    color: #fff;
+    &:hover:not(:disabled) { background: color-mix(in srgb, var(--error-ink) 85%, #000); }
+}
+
+.btn-outline-danger {
+    background: var(--surface);
+    border-color: var(--border-strong);
+    color: var(--error-ink);
+    &:hover:not(:disabled) { border-color: var(--error-ink); background: var(--error-tint); }
+}
+
+// Small size for buttons inside rows and lists (ui-guide .btn-sm).
+.btn-primary, .btn-secondary, .btn-ghost, .btn-danger, .btn-outline-danger {
+    // ui-guide .btn-sm: smaller text, same 44px touch target (decided 2026-11-06)
+    &.btn-sm { min-height: 44px; padding: 0 var(--space-4); font-size: var(--text-caption); }
+}
+
+// Round icon-only button (ui-guide .icon-btn). Always carries an aria-label.
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    color: var(--text-2);
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+
+    &:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    &[aria-expanded="true"] { border-color: var(--accent-ink); color: var(--accent-ink); }
+}
+
+// Segmented view switch (ui-guide .segmented): grid / list.
+.segmented {
+    display: inline-flex;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--surface);
+
+    button {
+        min-width: 44px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 0 var(--space-3);
+        border: none;
+        background: none;
+        color: var(--text-2);
+        font-family: inherit;
+        font-size: var(--text-caption);
+        cursor: pointer;
+
+        & + button { border-left: 1px solid var(--border); }
+        &:hover:not([aria-pressed="true"]) { background: var(--hover-tint); color: var(--accent-ink); }
+        &[aria-pressed="true"] { background: var(--accent-ink); color: #fff; }
+        &:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-ink); }
+        &[aria-pressed="true"]:focus-visible { box-shadow: inset 0 0 0 2px var(--surface); }
+    }
+}
+
+// === PAGE HEADER === (title block left, actions right; wraps on small screens)
+.edit-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-6);
+
+    h1 { margin: 0; }
+
+    &-title {
+        flex: 1 1 260px;
+        min-width: 0;
+    }
+
+    // When the h1 is a direct child (pages without a meta line)
+    > h1 { flex: 1 1 260px; min-width: 0; }
+
+    &-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+        margin-top: var(--space-2);
+        font-size: var(--text-caption);
+        color: var(--text-3);
+    }
+
+    &-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+    }
+}
+
+// === MORE MENU === (ui-guide .dropdown-menu; Delete last, red, after a divider)
+.more-menu {
+    position: relative;
+    display: inline-flex;
+}
+
+.more-menu-list {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    min-width: 200px;
+    padding: var(--space-1) 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-dropdown);
+
+    [role="menuitem"] {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        width: 100%;
+        min-height: 40px;
+        padding: var(--space-2) var(--space-4);
+        border: none;
+        border-radius: 0;
+        background: none;
+        color: var(--text-1);
+        font-family: inherit;
+        font-size: var(--text-caption);
+        font-weight: 500;
+        text-align: left;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+
+        &:hover:not(:disabled) { background: var(--hover-tint); }
+        &:focus-visible { outline: none; background: var(--hover-tint); box-shadow: inset 0 0 0 2px var(--accent-ink); }
+        &:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; }
+        &.danger { color: var(--error-ink); }
+    }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: var(--space-1) 0; }
+}
+
+// === UNSAVED-CHANGES SAVE BAR === (pinned to the bottom while the form is dirty)
+.save-bar {
+    position: sticky;
+    bottom: var(--space-4);
+    z-index: var(--z-sticky);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+    background: var(--dark);
+    color: #e8ecf3;
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-lg);
+    animation: save-bar-in var(--duration-base) var(--ease-out);
+
+    @media (prefers-reduced-motion: reduce) { animation: none; }
+
+    &-msg {
+        flex: 1;
+        min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--text-caption);
+        font-weight: 600;
+
+        &::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--warning-fill);
+            flex-shrink: 0;
+        }
+    }
+
+    .btn-ghost { color: #e8ecf3; &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); color: #fff; } }
+    :focus-visible { box-shadow: var(--focus-ring-dark); }
+
+    @media (max-width: 575.98px) {
+        border-radius: var(--radius-lg);
+        .btn-primary, .btn-ghost { flex: 1; }
+    }
+}
+
+@keyframes save-bar-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+// === TABS === (ui-guide .tabs: underline tabs with count badges). Used inside
+// cards: the table's tabs row and toolbar cards.
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-3) var(--space-3);
+    border: none;
+    background: none;
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    cursor: pointer;
+
+    .count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 18px;
+        padding: 0 6px;
+        border-radius: var(--radius-full);
+        background: var(--surface-2);
+        color: var(--text-3);
+        font-size: 0.64rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &:hover { color: var(--accent-ink); }
+    &:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-ink); border-radius: var(--radius-sm); }
+
+    &.active {
+        color: var(--accent-ink);
+
+        &::after {
+            content: '';
+            position: absolute;
+            left: var(--space-3);
+            right: var(--space-3);
+            bottom: -1px;
+            height: 2px;
+            border-radius: 2px;
+            background: var(--accent-ink);
+        }
+
+        .count { background: var(--accent-tint); color: var(--accent-ink); }
+    }
+}
+
+
+// === TOOLBAR CARD === (rule agreed 2026-11-04: controls sit with the content
+// they control). For grids of cards, where wrapping the data in a card would be
+// heavy, the filters and view controls get their own card directly above it.
+.toolbar-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-5);
+
+    &-tabs {
+        padding: 0 var(--space-5);
+        border-bottom: 1px solid var(--border);
+    }
+
+    &-tools {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4) var(--space-5);
+    }
+
+    &-count {
+        font-size: var(--text-caption);
+        font-weight: 600;
+        color: var(--text-2);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &-spacer { margin-left: auto; }
+}
+
+// Search panel card (Ask AI): one card holding the input, the action and suggestions.
+.search-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-6);
+
+    @include md { padding: var(--space-6); }
+
+    > :first-child { margin-top: 0; }
+    > :last-child { margin-bottom: 0; }
+}
+
+// ── PDF preview dialog (ui-guide dialog.modal, widened for an A4 page) ──────────────
+.pdf-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal-backdrop);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: rgba(15, 18, 34, 0.5);
+    backdrop-filter: blur(3px);
+    animation: pdf-modal-fade var(--duration-base) var(--ease-out);
+}
+
+.pdf-modal {
+    z-index: var(--z-modal);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 880px;
+    height: min(92vh, 1100px);
+    padding: var(--space-6);
+    background: var(--surface);
+    color: var(--text-2);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    animation: pdf-modal-rise var(--duration-base) var(--ease-out);
+}
+
+.pdf-modal-hd {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+
+    h2 { margin: 0; color: var(--text-1); font-size: var(--text-h3); font-weight: 700; }
+    p { margin: 2px 0 0; color: var(--text-3); font-size: var(--text-caption); }
+}
+
+.pdf-modal-heading { min-width: 0; }
+.pdf-modal-heading p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pdf-modal-bd {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+}
+
+.pdf-modal-frame { display: block; width: 100%; height: 100%; border: 0; }
+
+.pdf-modal-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    height: 100%;
+    padding: var(--space-6);
+    color: var(--text-3);
+    font-size: var(--text-caption);
+    text-align: center;
+
+    p { margin: 0; }
+    .lucide { color: var(--error-ink); }
+}
+
+.pdf-modal-sheet {
+    width: min(100%, 300px);
+    aspect-ratio: 210 / 297;
+    max-height: 70%;
+    border-radius: var(--radius-sm);
+}
+
+.pdf-modal-ft {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+@keyframes pdf-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pdf-modal-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .pdf-modal-backdrop, .pdf-modal { animation: none; }
+}
+
+// === MODAL === (ui-guide #modal dialog.modal) ─────────────────────────────────
+// Used by the shared confirm dialog (components/FeedbackProvider.jsx) and the
+// page dialogs (Edit: delete / leave; Categories: bulk add / duplicate review).
+// Full screen below 576px, as the guide specifies.
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal-backdrop);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: rgba(15, 18, 34, 0.5);
+    backdrop-filter: blur(3px);
+    animation: modal-fade var(--duration-base) var(--ease-out);
+
+    @media (max-width: 575.98px) { padding: 0; }
+}
+
+.modal {
+    position: relative;
+    z-index: var(--z-modal);
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: var(--space-6);
+    background: var(--surface);
+    color: var(--text-2);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    animation: modal-rise var(--duration-base) var(--ease-out);
+
+    > h3, .modal-title { margin: 0 0 var(--space-2); color: var(--text-1); font-size: var(--text-h3); font-weight: 600; line-height: 1.3; }
+    > p { margin: 0 0 var(--space-4); color: var(--text-2); line-height: 1.6; }
+
+    @media (max-width: 575.98px) {
+        max-width: none;
+        height: 100%;
+        max-height: none;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+        .modal-ft { margin-top: auto; padding-top: var(--space-6); }
+    }
+}
+
+.modal-ft {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+
+    @media (max-width: 575.98px) { > * { flex: 1 1 100%; } }
+}
+
+@keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .modal-backdrop, .modal { animation: none; } }
+
+// === ALERT === (ui-guide #alerts .alert) ──────────────────────────────────────
+// Inline messages: tinted ground, 3px edge, icon, title, body. Text uses the
+// *-ink tokens (the app's --success / --warning / --error are bright fills).
+.alert {
+    --a: var(--info-ink);
+    --at: var(--info-tint);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    border-left: 3px solid var(--a);
+    border-radius: var(--radius-md);
+    background: var(--at);
+
+    &.alert-success { --a: var(--success-ink); --at: var(--success-tint); }
+    &.alert-warning { --a: var(--warning-ink); --at: var(--warning-tint); }
+    &.alert-error   { --a: var(--error-ink);   --at: var(--error-tint); }
+    &.alert-info    { --a: var(--info-ink);    --at: var(--info-tint); }
+
+    > .btn-secondary, > .btn-ghost, > a { align-self: center; flex-shrink: 0; }
+}
+
+.alert-ic { flex-shrink: 0; margin-top: 2px; color: var(--a); }
+.alert-text { flex: 1; min-width: 0; }
+.alert-ttl { font-weight: 700; color: var(--text-1); }
+.alert-bd { margin-top: 2px; color: var(--text-2); font-size: var(--text-caption); line-height: 1.55; }
+.alert-text > .alert-bd:first-child { margin-top: 0; color: var(--text-1); font-size: var(--text-body); }
+
+.alert-x {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    margin: -4px -8px -4px 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-3);
+    cursor: pointer;
+
+    &:hover { background: rgba(0, 0, 0, 0.05); color: var(--text-1); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}
+
+// Long values inside an alert (the uploaded image link) wrap instead of overflowing
+.alert code { font-size: var(--text-caption); overflow-wrap: anywhere; color: var(--text-1); }
+
+// Change password dialog: stacked fields, eye toggle inside the first field
+.pw-field { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+.pw-wrap { position: relative; .edit-input { padding-right: 52px; } }
+.pw-eye {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--text-3);
+    cursor: pointer;
+
+    &:hover { color: var(--text-1); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}

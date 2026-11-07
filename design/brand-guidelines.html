@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mtech Testimonials Brand Guidelines</title>
+<meta name="description" content="Brand guidelines for Mtech Testimonials: the testimonials platform for Mannatech South Africa.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS: LIGHT ============ */
+:root{
+  --accent:#03B09F; --accent-ink:#027268; --accent-hover:#028a7c; --accent-active:#015f56;
+  --accent-tint:#e6f8f6; --accent-mid:#b3ede8;
+  --secondary:#ACC42A; --secondary-ink:#6b7d13; --secondary-tint:#f6faea;
+  --dark:#1a1a2e; --dark-2:#2a2a4a; --dark-3:#3a3a5a;
+  --bg:#f5f7fa; --surface:#ffffff; --surface-2:#f8fafc;
+  --border:#e2e8f0; --border-strong:#cbd5e1;
+  --text-1:#1e293b; --text-2:#475569; --text-3:#64748b;
+  --success:#4e7d1a; --success-fill:#7CC42A; --success-tint:#f0f8e0;
+  --warning:#a85e10; --warning-fill:#FFAF4E; --warning-tint:#fff4e0;
+  --error:#c40f24;  --error-fill:#E7142C;  --error-tint:#fde8eb;
+  --info:#1f6a8c;   --info-fill:#5BC2E7;   --info-tint:#e8f7fc;
+  --shadow-sm:0 1px 2px rgba(30,41,59,.06),0 2px 8px rgba(30,41,59,.05);
+  --shadow-md:0 4px 16px rgba(30,41,59,.08);
+  --shadow-lg:0 12px 32px rgba(30,41,59,.12);
+  --radius-sm:6px; --radius-md:8px; --radius-lg:12px; --radius-xl:16px; --radius-pill:28px; --radius-full:999px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+  --space-8:32px; --space-10:40px; --space-12:48px; --space-16:64px; --space-20:80px; --space-24:96px;
+  --max-prose:65ch; --max-content:720px; --max-wide:1200px;
+  --duration-fast:120ms; --duration-base:220ms; --duration-slow:360ms;
+  --ease-out:cubic-bezier(.2,0,0,1); --ease-in-out:cubic-bezier(.4,0,.2,1);
+  --focus-ring:0 0 0 2px var(--surface),0 0 0 4px var(--accent-ink);
+  --z-topbar:300;
+  --font:'Plus Jakarta Sans','Segoe UI','Avenir Next',system-ui,sans-serif;
+  --text-display:clamp(2.5rem,1.9rem + 3vw,4rem);
+  --text-h1:clamp(1.9rem,1.5rem + 2vw,3rem);
+  --text-h2:clamp(1.4rem,1.15rem + 1.2vw,2.1rem);
+  --text-h3:clamp(1.1rem,.95rem + .6vw,1.45rem);
+  --text-overline:clamp(.68rem,.64rem + .2vw,.76rem);
+  --text-body-lg:clamp(1.05rem,1rem + .25vw,1.15rem);
+  --text-body:clamp(.92rem,.88rem + .2vw,1rem);
+  --text-caption:clamp(.74rem,.72rem + .1vw,.82rem);
+}
+/* ============ TOKENS: DARK (independently tuned) ============ */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --accent:#2ec9b8; --accent-ink:#2ec9b8; --accent-hover:#49d6c6; --accent-active:#7fe3d7;
+  --accent-tint:#113b38; --accent-mid:#1b5650;
+  --secondary:#c3dd3f; --secondary-ink:#c3dd3f; --secondary-tint:#2a3310;
+  --bg:#0f1222; --surface:#1a1a2e; --surface-2:#23233f;
+  --border:#30304d; --border-strong:#44446b;
+  --text-1:#e8ecf3; --text-2:#b4bdd0; --text-3:#8591ab;
+  --success:#8fd14f; --success-tint:#1f3310; --warning:#f0a84e; --warning-tint:#3a2608;
+  --error:#f06a78; --error-tint:#3a1016; --info:#5bc2e7; --info-tint:#10303d;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3); --shadow-md:0 4px 16px rgba(0,0,0,.35); --shadow-lg:0 12px 32px rgba(0,0,0,.45);
+  --focus-ring:0 0 0 2px var(--surface),0 0 0 4px var(--accent-ink);
+}}
+:root[data-theme="dark"]{
+  --accent:#2ec9b8; --accent-ink:#2ec9b8; --accent-hover:#49d6c6; --accent-active:#7fe3d7;
+  --accent-tint:#113b38; --accent-mid:#1b5650;
+  --secondary:#c3dd3f; --secondary-ink:#c3dd3f; --secondary-tint:#2a3310;
+  --bg:#0f1222; --surface:#1a1a2e; --surface-2:#23233f;
+  --border:#30304d; --border-strong:#44446b;
+  --text-1:#e8ecf3; --text-2:#b4bdd0; --text-3:#8591ab;
+  --success:#8fd14f; --success-tint:#1f3310; --warning:#f0a84e; --warning-tint:#3a2608;
+  --error:#f06a78; --error-tint:#3a1016; --info:#5bc2e7; --info-tint:#10303d;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3); --shadow-md:0 4px 16px rgba(0,0,0,.35); --shadow-lg:0 12px 32px rgba(0,0,0,.45);
+  --focus-ring:0 0 0 2px var(--surface),0 0 0 4px var(--accent-ink);
+}
+/* ============ RESET ============ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+@media (prefers-reduced-motion:reduce){:root{--duration-fast:0ms;--duration-base:0ms;--duration-slow:0ms}}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{font-family:var(--font);font-size:var(--text-body);line-height:1.6;color:var(--text-2);
+  background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4{color:var(--text-1);text-wrap:balance;line-height:1.15}
+h1{font-size:var(--text-h1);font-weight:700;letter-spacing:-.02em}
+h2{font-size:var(--text-h2);font-weight:700;letter-spacing:-.01em}
+h3{font-size:var(--text-h3);font-weight:600}
+p{max-width:var(--max-prose)}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+img{max-width:100%;display:block}
+:focus-visible{outline:none;box-shadow:var(--focus-ring);border-radius:var(--radius-sm)}
+.eyebrow{font-size:var(--text-overline);font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink)}
+/* ============ NAV ============ */
+.nav{position:sticky;top:0;z-index:var(--z-topbar);display:flex;align-items:center;gap:var(--space-4);
+  padding:var(--space-3) var(--space-6);background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--secondary))}
+.nav img{height:30px}
+.nav-links{display:flex;gap:var(--space-2);margin-left:auto;flex-wrap:wrap}
+.nav-links a{font-size:var(--text-caption);font-weight:600;color:var(--text-2);text-decoration:none;
+  padding:var(--space-2) var(--space-3);border-radius:var(--radius-pill);transition:background var(--duration-fast) var(--ease-out)}
+.nav-links a:hover{background:var(--hover-tint,var(--accent-tint));color:var(--accent-ink)}
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;
+  border:1px solid var(--border);background:var(--surface);border-radius:var(--radius-full);cursor:pointer;color:var(--text-2)}
+.theme-toggle:hover{border-color:var(--accent-ink);color:var(--accent-ink)}
+@media(max-width:720px){.nav-links{display:none}}
+/* ============ LAYOUT ============ */
+main{max-width:var(--max-wide);margin:0 auto;padding:0 var(--space-6)}
+section{padding:var(--space-20) 0;border-top:1px solid var(--border)}
+section:first-of-type{border-top:none}
+.lede{font-size:var(--text-body-lg);color:var(--text-2);max-width:var(--max-content)}
+.grid{display:grid;gap:var(--space-5)}
+/* ============ COVER ============ */
+.cover{display:grid;gap:var(--space-6);padding:var(--space-24) 0 var(--space-16);text-align:left}
+.cover-logo{height:56px;width:auto;max-width:300px}
+.cover h1{font-size:var(--text-display);font-weight:800;letter-spacing:-.03em;line-height:1.02}
+.cover .tag{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-1) var(--space-3);
+  background:var(--accent-tint);color:var(--accent-ink);border-radius:var(--radius-pill);
+  font-size:var(--text-caption);font-weight:600;width:max-content}
+.cover .meta{color:var(--text-3);font-size:var(--text-caption)}
+.hero-band{height:6px;border-radius:var(--radius-full);background:linear-gradient(90deg,var(--secondary),var(--accent) 55%,var(--dark));max-width:360px}
+/* ============ STORY ============ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-5);margin-top:var(--space-8)}
+.stat{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);
+  border-radius:var(--radius-lg);padding:var(--space-6);box-shadow:var(--shadow-sm)}
+.stat .n{font-size:var(--text-h1);font-weight:800;color:var(--text-1);letter-spacing:-.02em}
+.stat .l{font-size:var(--text-caption);color:var(--text-3)}
+.pullquote{margin-top:var(--space-10);font-size:var(--text-h2);font-weight:700;color:var(--text-1);
+  max-width:20ch;letter-spacing:-.01em;line-height:1.25;border-left:3px solid var(--secondary);padding-left:var(--space-5)}
+/* ============ LOGO SECTION ============ */
+.logo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--space-5);margin-top:var(--space-6)}
+.logo-panel{border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-10) var(--space-6);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);min-height:160px}
+.logo-panel img{height:40px}
+.logo-panel .cap{font-size:var(--text-caption);color:var(--text-3)}
+.on-light{background:#fff}
+.on-grey{background:var(--bg)}
+.on-dark{background:var(--dark)}.on-dark .cap{color:#b4bdd0}
+.on-accent{background:var(--accent)}
+.logo-missing{border:1px dashed var(--border-strong);color:var(--text-3);text-align:center;font-size:var(--text-caption)}
+.clearspace{position:relative;display:inline-block;padding:40px;border:1px dashed var(--border-strong);border-radius:var(--radius-md);margin-top:var(--space-4)}
+.clearspace img{height:40px}
+.misuse{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-4);margin-top:var(--space-6)}
+.misuse .m{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+.misuse .box{height:96px;display:flex;align-items:center;justify-content:center;background:var(--surface-2)}
+.misuse .box img{height:28px}
+.misuse .rule{padding:var(--space-3);font-size:var(--text-caption);color:var(--text-2);display:flex;gap:var(--space-2);align-items:flex-start}
+.x{color:var(--error);font-weight:700;flex-shrink:0}
+/* ============ COLOUR ============ */
+.swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--space-4);margin-top:var(--space-6)}
+.swatch{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);background:var(--surface)}
+.swatch .block{height:92px}
+.swatch .info{padding:var(--space-3) var(--space-4)}
+.swatch .name{font-weight:700;color:var(--text-1);font-size:var(--text-caption)}
+.swatch .hex{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:var(--text-caption);color:var(--text-3)}
+.swatch .role{font-size:var(--text-caption);color:var(--text-2);margin-top:var(--space-1)}
+.rules-table{width:100%;border-collapse:collapse;margin-top:var(--space-6);font-size:var(--text-caption)}
+.rules-table th,.rules-table td{text-align:left;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border);vertical-align:top}
+.rules-table th{color:var(--text-1);font-weight:700;background:var(--surface-2)}
+.rules-table td{color:var(--text-2)}
+.dot{display:inline-block;width:12px;height:12px;border-radius:var(--radius-full);vertical-align:middle;margin-right:6px;border:1px solid rgba(0,0,0,.08)}
+/* ============ TYPE ============ */
+.specimen{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-8);margin-top:var(--space-6);box-shadow:var(--shadow-sm)}
+.specimen .big{font-size:var(--text-display);font-weight:800;letter-spacing:-.03em;color:var(--text-1);line-height:1.02}
+.type-row{display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:baseline;padding:var(--space-4) 0;border-bottom:1px solid var(--border)}
+.type-row:last-child{border-bottom:none}
+.type-row .m{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:var(--text-caption);color:var(--text-3);min-width:220px}
+.len-demo{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-top:var(--space-6)}
+@media(max-width:640px){.len-demo{grid-template-columns:1fr}}
+.len-demo .good{max-width:65ch}
+.len-demo .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-5)}
+/* ============ VOICE ============ */
+.tone-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-4);margin-top:var(--space-6)}
+.tone{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-6)}
+.tone h4{color:var(--text-1);margin-bottom:var(--space-2)}
+.dd{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-top:var(--space-6)}
+@media(max-width:640px){.dd{grid-template-columns:1fr}}
+.dd .cell{border-radius:var(--radius-md);padding:var(--space-5);border:1px solid var(--border)}
+.dd .do{background:var(--success-tint);border-color:color-mix(in srgb,var(--success) 30%,transparent)}
+.dd .dont{background:var(--error-tint);border-color:color-mix(in srgb,var(--error) 30%,transparent)}
+.dd .lbl{font-size:var(--text-overline);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-2)}
+.dd .do .lbl{color:var(--success)} .dd .dont .lbl{color:var(--error)}
+.dd p{color:var(--text-1)}
+/* ============ APPLICATIONS ============ */
+.apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--space-6);margin-top:var(--space-6)}
+.mock{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md);background:var(--surface)}
+.mock .cap{padding:var(--space-3) var(--space-4);font-size:var(--text-caption);color:var(--text-3);border-top:1px solid var(--border)}
+/* testimonial card mock */
+.tc{padding:var(--space-5)}
+.tc .q{font-size:var(--text-body);color:var(--text-1);font-style:italic;line-height:1.5}
+.tc .by{display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4)}
+.tc .av{width:40px;height:40px;border-radius:var(--radius-full);background:linear-gradient(135deg,var(--accent),var(--secondary));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:var(--text-caption)}
+.tc .who{font-weight:700;color:var(--text-1);font-size:var(--text-caption)}
+.tc .loc{color:var(--text-3);font-size:var(--text-caption)}
+.tc .tags{display:flex;gap:var(--space-2);margin-top:var(--space-4);flex-wrap:wrap}
+.chip{font-size:var(--text-caption);font-weight:600;padding:3px 10px;border-radius:var(--radius-full)}
+.chip.cond{background:var(--accent-tint);color:var(--accent-ink)}
+.chip.prod{background:var(--secondary-tint);color:var(--secondary-ink)}
+/* pdf mock */
+.pdf{padding:var(--space-5);background:#fff}
+.pdf .hd{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--accent);padding-bottom:var(--space-3)}
+.pdf .hd img{height:24px}
+.pdf .hd .db{font-size:9px;color:#9D9FA2;font-weight:700;letter-spacing:.08em}
+.pdf .body{color:#333;font-size:var(--text-caption);margin-top:var(--space-4);line-height:1.6}
+.pdf .ft{margin-top:var(--space-5);padding-top:var(--space-3);border-top:1px solid #e0e0e0;font-size:10px;color:#777}
+/* email footer mock */
+.ef{padding:var(--space-5);background:var(--dark);color:#cdd3e0}
+.ef img{height:26px;margin-bottom:var(--space-3);filter:brightness(0) invert(1);opacity:.92}
+.ef .links{font-size:var(--text-caption);color:#8591ab;margin-top:var(--space-2)}
+.ef .band{height:4px;border-radius:var(--radius-full);background:linear-gradient(90deg,var(--accent),var(--secondary));margin-bottom:var(--space-4)}
+/* social card mock */
+.social{aspect-ratio:1200/630;background:linear-gradient(135deg,var(--dark),var(--dark-2));color:#fff;
+  padding:var(--space-6);display:flex;flex-direction:column;justify-content:space-between}
+.social .top{display:flex;align-items:center;gap:var(--space-2)}
+.social .top img{height:22px;filter:brightness(0) invert(1)}
+.social .big{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;line-height:1.1;max-width:18ch}
+.social .big em{color:var(--secondary);font-style:normal}
+.social .pill{align-self:flex-start;background:var(--accent);color:#06241f;font-weight:700;font-size:.7rem;padding:4px 12px;border-radius:var(--radius-pill)}
+/* ============ FOOTER ============ */
+footer{border-top:1px solid var(--border);padding:var(--space-10) var(--space-6);text-align:center;color:var(--text-3);font-size:var(--text-caption)}
+footer .band{height:4px;border-radius:var(--radius-full);background:linear-gradient(90deg,var(--accent),var(--secondary));max-width:200px;margin:0 auto var(--space-5)}
+.back-to-top{display:inline-block;margin-top:var(--space-3);color:var(--accent-ink);font-weight:600;text-decoration:none}
+/* ============ PRINT ============ */
+@media print{
+  .nav,.theme-toggle,.back-to-top{display:none!important}
+  body{background:#fff!important;color:#000!important;font-size:11pt;line-height:1.5}
+  .swatch,.swatch .block,.social,.ef,.on-dark,.on-accent,.tc .av{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  a[href]::after{content:" (" attr(href) ")";font-size:.75em;color:#555}
+  a[href^="#"]::after{content:none}
+  section{break-before:page} section:first-of-type{break-before:auto}
+  h1,h2,h3{break-after:avoid} figure,table,.swatch,.mock{break-inside:avoid}
+  .cover-logo{max-width:180pt}
+}
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Section navigation">
+  <img src="mtech-testimonials-logo.svg" alt="Mtech Testimonials">
+  <div class="nav-links">
+    <a href="#story">Story</a>
+    <a href="#logo">Logo</a>
+    <a href="#colour">Colour</a>
+    <a href="#type">Type</a>
+    <a href="#voice">Voice</a>
+    <a href="#applications">Applications</a>
+  </div>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</nav>
+<main>
+  <section class="cover" id="top">
+    <img class="cover-logo" src="mtech-testimonials-logo.svg" alt="Mtech Testimonials">
+    <span class="tag">Brand Guidelines · v1.0</span>
+    <h1>Real stories,<br>credibly told.</h1>
+    <p class="lede">The brand system for Mtech Testimonials: the testimonials platform built for Mannatech South Africa. Teal for trust, lime for energy, navy for weight, and one clear voice that keeps every story honest.</p>
+    <div class="hero-band"></div>
+    <p class="meta">Mtech Testimonials · Mannatech South Africa · Updated 10 October 2026 · mtechtestimonials.co.za</p>
+  </section>
+  <section id="story">
+    <p class="eyebrow">Our story</p>
+    <h2>Proof that respects the people in it.</h2>
+    <p class="lede" style="margin-top:var(--space-4)">Mannatech South Africa's associates have always had the same tool for sharing results: a screenshot and a hope. Mtech Testimonials replaces that with a proper home for real stories: submitted, reviewed, categorised, and shared with the care that health claims demand.</p>
+    <p style="margin-top:var(--space-4);color:var(--text-2)">It is two products in one. A public site where associates and their prospects browse, filter, download and share testimonials. And an admin workspace where every submission is reviewed against Mannatech's "Golden Rule" before it goes live: with AI helping catch duplicates and imports flowing in from CSV, Telegram and WhatsApp. The brand's job is to make all of it feel credible and warm, never clinical and never salesy.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">2</div><div class="l">audiences: associates who share, prospects who read</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">steps in the guided submission flow</div></div>
+      <div class="stat"><div class="n">EN / AF</div><div class="l">English &amp; Afrikaans, side by side</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">Golden Rule, no story implies a cure</div></div>
+    </div>
+    <blockquote class="pullquote">Credible, warm, clean: the proof should feel as trustworthy as the people telling it.</blockquote>
+  </section>
+
+  <section id="logo">
+    <p class="eyebrow">Logo</p>
+    <h2>The mark</h2>
+    <p class="lede" style="margin-top:var(--space-4)">The logo pairs a teal-to-lime leaf (growth, wellness, nature) with a calm humanist wordmark and a "Testimonials Database" pill. Always place it as a supplied file; never redraw it, and never paste its SVG paths into a page.</p>
+
+    <div class="logo-grid">
+      <div class="logo-panel on-light"><img src="mtech-testimonials-logo.svg" alt="Mtech Testimonials on white"><span class="cap">On white, primary</span></div>
+      <div class="logo-panel on-grey"><img src="mtech-testimonials-logo.svg" alt="Mtech Testimonials on light grey"><span class="cap">On page grey #f5f7fa, approved</span></div>
+      <div class="logo-panel on-dark"><img src="mtech-testimonials-logo-white.svg" alt="Mtech Testimonials, white on navy"><span class="cap">On navy, white variant</span></div>
+      <div class="logo-panel on-accent"><img src="mtech-testimonials-logo-white.svg" alt="Mtech Testimonials, white on teal"><span class="cap" style="color:#06241f">On brand teal, white variant</span></div>
+    </div>
+
+    <h3 style="margin-top:var(--space-10)">Clear space &amp; minimum size</h3>
+    <p style="margin-top:var(--space-2);color:var(--text-2)">Keep clear space on all sides equal to the height of the leaf mark. Minimum: 140px wide for the full lockup on screen; the leaf mark alone stays legible down to 24px (favicon / avatar).</p>
+    <div class="clearspace"><img src="mtech-testimonials-logo.svg" alt="Logo with clear-space exclusion zone"></div>
+
+    <h3 style="margin-top:var(--space-10)">Misuse</h3>
+    <div class="misuse">
+      <div class="m"><div class="box" style="background:linear-gradient(135deg,#8e44ad,#e74c3c)"><img src="mtech-testimonials-logo.svg" alt=""></div><div class="rule"><span class="x">✕</span><span>Never place the colour master on a busy or unapproved background.</span></div></div>
+      <div class="m"><div class="box"><img src="mtech-testimonials-logo.svg" alt="" style="opacity:.4"></div><div class="rule"><span class="x">✕</span><span>Never reduce opacity or screen the mark back.</span></div></div>
+      <div class="m"><div class="box"><img src="mtech-testimonials-logo.svg" alt="" style="transform:rotate(-8deg) scaleY(1.3)"></div><div class="rule"><span class="x">✕</span><span>Never rotate, stretch or distort the proportions.</span></div></div>
+      <div class="m"><div class="box"><img src="mtech-testimonials-logo.svg" alt="" style="filter:drop-shadow(2px 3px 2px rgba(0,0,0,.5))"></div><div class="rule"><span class="x">✕</span><span>Never add shadows, glows or outlines.</span></div></div>
+    </div>
+  </section>
+  <section id="colour">
+    <p class="eyebrow">Colour</p>
+    <h2>Teal leads, lime accents, navy anchors</h2>
+    <p class="lede" style="margin-top:var(--space-4)">Teal is the trust colour and does the heavy lifting. Lime is energy, used for fills and accents only, never body text. Navy gives weight to dark surfaces. Grounds stay light and airy so the whole thing reads clean and credible.</p>
+
+    <h3 style="margin-top:var(--space-8)">Brand</h3>
+    <div class="swatches">
+      <div class="swatch"><div class="block" style="background:#03B09F"></div><div class="info"><div class="name">Teal / Primary</div><div class="hex">#03B09F</div><div class="role">Brand hue · fills, accent band, tints, focus ring</div></div></div>
+      <div class="swatch"><div class="block" style="background:#027268"></div><div class="info"><div class="name">Teal Ink</div><div class="hex">#027268</div><div class="role">Interactive teal: links and teal text on white (5.8:1 ✓)</div></div></div>
+      <div class="swatch"><div class="block" style="background:#e6f8f6"></div><div class="info"><div class="name">Teal Tint</div><div class="hex">#e6f8f6</div><div class="role">Selected rows, highlights, alert grounds</div></div></div>
+      <div class="swatch"><div class="block" style="background:#ACC42A"></div><div class="info"><div class="name">Lime / Secondary</div><div class="hex">#ACC42A</div><div class="role">Fills &amp; accents ONLY, never text on white</div></div></div>
+      <div class="swatch"><div class="block" style="background:#6b7d13"></div><div class="info"><div class="name">Lime Ink</div><div class="hex">#6b7d13</div><div class="role">The rare lime-as-text case (4.6:1 ✓)</div></div></div>
+      <div class="swatch"><div class="block" style="background:#1a1a2e"></div><div class="info"><div class="name">Navy / Dark</div><div class="hex">#1a1a2e</div><div class="role">Hero, footer, sidebar, high-impact surfaces</div></div></div>
+    </div>
+
+    <h3 style="margin-top:var(--space-8)">Neutrals &amp; text</h3>
+    <div class="swatches">
+      <div class="swatch"><div class="block" style="background:#f5f7fa"></div><div class="info"><div class="name">Page BG</div><div class="hex">#f5f7fa</div><div class="role">Default page ground</div></div></div>
+      <div class="swatch"><div class="block" style="background:#ffffff;border-bottom:1px solid var(--border)"></div><div class="info"><div class="name">Surface</div><div class="hex">#ffffff</div><div class="role">Cards, panels, inputs</div></div></div>
+      <div class="swatch"><div class="block" style="background:#1e293b"></div><div class="info"><div class="name">Text 1</div><div class="hex">#1e293b</div><div class="role">Headings (14.6:1 ✓)</div></div></div>
+      <div class="swatch"><div class="block" style="background:#475569"></div><div class="info"><div class="name">Text 2</div><div class="hex">#475569</div><div class="role">Body (7.6:1 ✓)</div></div></div>
+      <div class="swatch"><div class="block" style="background:#64748b"></div><div class="info"><div class="name">Text 3</div><div class="hex">#64748b</div><div class="role">Meta / placeholders (4.8:1 ✓)</div></div></div>
+      <div class="swatch"><div class="block" style="background:#e2e8f0"></div><div class="info"><div class="name">Border</div><div class="hex">#e2e8f0</div><div class="role">Dividers, input borders</div></div></div>
+    </div>
+
+    <h3 style="margin-top:var(--space-8)">Semantic</h3>
+    <div class="swatches">
+      <div class="swatch"><div class="block" style="background:#4e7d1a"></div><div class="info"><div class="name">Success</div><div class="hex">#4e7d1a</div><div class="role">Approved · fill #7CC42A</div></div></div>
+      <div class="swatch"><div class="block" style="background:#a85e10"></div><div class="info"><div class="name">Warning</div><div class="hex">#a85e10</div><div class="role">Needs attention · fill #FFAF4E</div></div></div>
+      <div class="swatch"><div class="block" style="background:#c40f24"></div><div class="info"><div class="name">Error</div><div class="hex">#c40f24</div><div class="role">Rejected / destructive · fill #E7142C</div></div></div>
+      <div class="swatch"><div class="block" style="background:#1f6a8c"></div><div class="info"><div class="name">Info</div><div class="hex">#1f6a8c</div><div class="role">Neutral info · fill #5BC2E7</div></div></div>
+    </div>
+
+    <h3 style="margin-top:var(--space-10)">Usage rules</h3>
+    <table class="rules-table">
+      <thead><tr><th>Colour</th><th>Use it for</th><th>Never</th></tr></thead>
+      <tbody>
+        <tr><td><span class="dot" style="background:#03B09F"></span>Teal</td><td>The brand signal: primary buttons (white text, a deliberate brand call), accent band under the nav, icon accents, tints, chart fills, the logo echo.</td><td>Small white text on bright teal outside buttons (2.7:1). Use Teal Ink #027268 for teal text.</td></tr>
+        <tr><td><span class="dot" style="background:#027268"></span>Teal Ink</td><td>Links, labels and teal text on white; outline-button text; focus rings.</td><td>Primary-button fills or large decorative fills, those stay bright teal.</td></tr>
+        <tr><td><span class="dot" style="background:#ACC42A"></span>Lime</td><td>Fills and accents: product tag chips, highlights, the gradient with teal, small energetic flourishes.</td><td>Body text, labels, or any text on a white/light ground. Reserve for fills; put dark text on it.</td></tr>
+        <tr><td><span class="dot" style="background:#1a1a2e"></span>Navy</td><td>Dark surfaces (hero, footer, sidebar) and the highest-emphasis text.</td><td>As a "brand colour" in logos or chips: navy is structural, not a logo hue.</td></tr>
+        <tr><td><span class="dot" style="background:#4e7d1a"></span>Semantics</td><td>State only: success/warning/error/info: always with a text label or icon beside the colour.</td><td>Decoration, or standing in for the brand accent.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:var(--space-5);color:var(--text-2);font-size:var(--text-caption)"><strong>Accessibility note:</strong> Lime #ACC42A on white is ~2.0:1, well below readable. It is a fill colour. Teal #03B09F cannot carry white text (2.7:1); interactive teal is #027268. Both decisions are deliberate and preserve the brand hues where they pass.</p>
+  </section>
+  <section id="type">
+    <p class="eyebrow">Typography</p>
+    <h2>One voice: Plus Jakarta Sans</h2>
+    <p class="lede" style="margin-top:var(--space-4)">The web app and the PDF export now share a single typeface: <strong>Plus Jakarta Sans</strong>. It replaces the old split (Avenir LT Pro on web, Plus Jakarta Sans in PDF), so a testimonial reads identically on screen and in the downloadable A4. Hierarchy comes from weight and size, not a second font.</p>
+    <p style="margin-top:var(--space-3);color:var(--text-2);font-size:var(--text-caption)"><strong>Why the change:</strong> Avenir LT Pro needs Adobe Typekit at runtime and isn't available to the react-pdf renderer, which is exactly why the PDF already used Jakarta. Standardising on the font that works in both places removes the Typekit dependency and the visual mismatch in one move. Fallback: <code>'Plus Jakarta Sans', 'Segoe UI', 'Avenir Next', system-ui, sans-serif</code>.</p>
+
+    <div class="specimen">
+      <div class="big">Aa</div>
+      <p style="margin-top:var(--space-3);color:var(--text-3);font-size:var(--text-caption)">Plus Jakarta Sans · 400 / 500 / 600 / 700 / 800 · humanist geometric sans</p>
+      <div style="margin-top:var(--space-6)">
+        <div class="type-row"><span class="m">display · 800 · −0.03em</span><span style="font-size:var(--text-h1);font-weight:800;letter-spacing:-.03em;color:var(--text-1)">Six months, real change</span></div>
+        <div class="type-row"><span class="m">h2 · 700</span><span style="font-size:var(--text-h2);font-weight:700;color:var(--text-1)">Energy I hadn't felt in years</span></div>
+        <div class="type-row"><span class="m">h3 · 600</span><span style="font-size:var(--text-h3);font-weight:600;color:var(--text-1)">Shared by Thandiwe, Durban</span></div>
+        <div class="type-row"><span class="m">body-lg · 400</span><span style="font-size:var(--text-body-lg);color:var(--text-2)">After starting the programme my mornings changed completely.</span></div>
+        <div class="type-row"><span class="m">body · 400</span><span style="font-size:var(--text-body);color:var(--text-2)">I was sceptical at first, but three months in the difference was hard to ignore.</span></div>
+        <div class="type-row"><span class="m">caption · 400</span><span style="font-size:var(--text-caption);color:var(--text-3)">Submitted 12 Aug 2026 · reviewed &amp; approved</span></div>
+        <div class="type-row"><span class="m">overline · 600 · uppercase</span><span class="eyebrow">Wellness · Energy</span></div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:var(--space-10)">Line length</h3>
+    <p style="margin-top:var(--space-2);color:var(--text-2)">Keep body text near <strong>65 characters</strong> per line. Testimonials are read for meaning, not skimmed, comfortable measure matters.</p>
+    <div class="len-demo">
+      <div class="card"><div class="eyebrow" style="color:var(--success)">✓ 65ch measure</div><p class="good" style="margin-top:var(--space-2);color:var(--text-1)">I kept waiting for the usual afternoon slump and it just didn't come. Small thing, but after years of it, impossible not to notice. My family noticed before I said anything.</p></div>
+      <div class="card"><div class="eyebrow" style="color:var(--error)">✕ full width</div><p style="margin-top:var(--space-2);color:var(--text-1);max-width:none">I kept waiting for the usual afternoon slump and it just didn't come. Small thing, but after years of it, impossible not to notice. My family noticed before I said anything.</p></div>
+    </div>
+  </section>
+
+  <section id="voice">
+    <p class="eyebrow">Tone of voice</p>
+    <h2>Credible, warm, clean, careful</h2>
+    <div class="tone-grid">
+      <div class="tone"><h4>Credible</h4><p style="color:var(--text-2)">Let the stories carry the weight. Plain language, specific details, named people. No hype, no exclamation marks stacked three deep.</p></div>
+      <div class="tone"><h4>Warm</h4><p style="color:var(--text-2)">These are real people sharing something personal. Speak like a trusted friend who's been there, human, never corporate boilerplate.</p></div>
+      <div class="tone"><h4>Clean</h4><p style="color:var(--text-2)">Clear over clever. Short sentences. One idea at a time. The reader should never have to re-read to understand.</p></div>
+      <div class="tone"><h4>Careful</h4><p style="color:var(--text-2)">The Golden Rule is non-negotiable: describe experiences, never promise outcomes or imply a cure. "Helped me feel", not "cures".</p></div>
+    </div>
+    <div class="dd">
+      <div class="cell do"><div class="lbl">Write this</div><p>"Since starting, Maria says her energy through the afternoon has improved, she shares her routine below."</p></div>
+      <div class="cell dont"><div class="lbl">Not this</div><p>"This PRODUCT CURED Maria's fatigue in WEEKS!! You have to try it 🔥🔥"</p></div>
+      <div class="cell do"><div class="lbl">Write this</div><p>"Browse real testimonials from Mannatech SA associates. Every story is reviewed before it's published."</p></div>
+      <div class="cell dont"><div class="lbl">Not this</div><p>"Thousands of miracle transformations, guaranteed results or your money back!"</p></div>
+    </div>
+  </section>
+  <section id="applications">
+    <p class="eyebrow">Applications</p>
+    <h2>The brand in the wild</h2>
+    <p class="lede" style="margin-top:var(--space-4)">How the system shows up across the real surfaces of the product: a public testimonial card, the branded PDF download, an email footer, and a social share card.</p>
+    <div class="apps">
+      <div class="mock">
+        <div class="tc">
+          <div class="q">"I kept waiting for the usual afternoon slump and it just didn't come. My family noticed before I said anything."</div>
+          <div class="by"><div class="av">TM</div><div><div class="who">Thandiwe M.</div><div class="loc">Durban · KZN</div></div></div>
+          <div class="tags"><span class="chip cond">Energy</span><span class="chip prod">Advanced Ambrotose</span></div>
+        </div>
+        <div class="cap">Public testimonial card: condition tag teal, product tag lime</div>
+      </div>
+      <div class="mock">
+        <div class="pdf">
+          <div class="hd"><img src="mtech-testimonials-logo.svg" alt="Mtech Testimonials"><span class="db">TESTIMONIALS DATABASE</span></div>
+          <div class="body"><strong style="color:#1a1a2e">Thandiwe M., Durban</strong><br>"I kept waiting for the usual afternoon slump and it just didn't come…"</div>
+          <div class="ft">This testimonial describes an individual's personal experience. It is not a claim that any product treats, cures or prevents any disease. © Mtech Testimonials · Mannatech SA</div>
+        </div>
+        <div class="cap">Branded A4 PDF export: teal rule, legal disclaimer footer</div>
+      </div>
+      <div class="mock">
+        <div class="ef">
+          <div class="band"></div>
+          <img src="mtech-testimonials-logo.svg" alt="Mtech Testimonials">
+          <div>Real stories from Mannatech South Africa associates.</div>
+          <div class="links">mtechtestimonials.co.za · Privacy · Terms · Unsubscribe</div>
+        </div>
+        <div class="cap">Email footer: white logo variant on navy</div>
+      </div>
+      <div class="mock">
+        <div class="social">
+          <div class="top"><img src="mtech-testimonials-logo.svg" alt="Mtech Testimonials"></div>
+          <div class="big">Real people. <em>Real stories.</em> Reviewed before they're shared.</div>
+          <span class="pill">mtechtestimonials.co.za</span>
+        </div>
+        <div class="cap">Social / OpenGraph card: 1200×630 template</div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="band"></div>
+  <p><strong>Mtech Testimonials</strong> Brand Guidelines v1.0 · Source of truth: <code>design/DESIGN.md</code></p>
+  <p>Teal #03B09F · Lime #ACC42A · Navy #1a1a2e · Plus Jakarta Sans</p>
+  <a class="back-to-top" href="#top">↑ Back to top</a>
+</footer>
+<script>
+(function(){
+  var t=document.getElementById('themeToggle');
+  t.addEventListener('click',function(){
+    var cur=document.documentElement.getAttribute('data-theme');
+    var next=cur==='dark'?'light':(cur==='light'?'dark':(matchMedia('(prefers-color-scheme: dark)').matches?'light':'dark'));
+    document.documentElement.setAttribute('data-theme',next);
+  });
+})();
+</script>
+</body>
+</html>

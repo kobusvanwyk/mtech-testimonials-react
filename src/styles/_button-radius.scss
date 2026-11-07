@@ -1,0 +1,15 @@
+// === BUTTON RADIUS NORMALIZATION ===
+// Single source of truth for the button-shape convention from design/ui-guide.html:
+// every standalone button is a PILL; icon-only buttons are CIRCLES.
+// Imported LAST (see index.scss) so it overrides per-component radii without
+// touching ~40 scattered blocks. Segmented controls and already-circular icon
+// buttons are intentionally excluded.
+
+// ── Pill buttons outside the shared family (testimonial page, Ask AI, PDF icon) ──
+.btn-share, .btn-pdf-download, .btn-whatsapp,
+.ask-ai-btn, .row-action-btn {
+    border-radius: var(--radius-pill);
+}
+
+// NOTE: the shared .btn-primary family, .icon-btn (circle) and .segmented
+// (view switch, small radius by design) live in _admin-ui.scss. `.gallery-overlay-btn` is already a circle at source.

@@ -1,6 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Tag, Plus, Pencil, Trash2, Check, X, GitMerge } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, GitMerge, AlertTriangle, Search, X, ChevronRight } from 'lucide-react'
+import { ListPageSkeleton } from '../../components/Skeleton'
+import { useDialog } from '../../lib/useDialog'
+import { useConfirm, useToast } from '../../lib/feedback'
+
+// Categories (ui-guide #p-manage, #p-merge, DESIGN.md "Toolbar card" rule):
+// one card with Conditions / Products tabs, a tools row (search, sort, unused
+// filter, Add, Bulk add), compact management rows, and a sticky bar while rows
+// are selected. Possible duplicates sit behind one amber bar that opens a
+// review dialog, one group at a time.
 
 // ── Fuzzy similarity (Levenshtein) ────────────────────────────────────────────
 function similarity(a, b) {
@@ -20,73 +29,90 @@ function similarity(a, b) {
 }
 const SIMILARITY_THRESHOLD = 0.62
 
-// ── Merge warning banner ──────────────────────────────────────────────────────
+// ── Duplicate review (dismissals are remembered in this browser) ────────────
 function getDismissedKey(group) {
     return 'dismissed_merge_' + [...group].map(i => i.name).sort().join('|')
 }
 
-function MergeWarning({ duplicateGroups, onMerge }) {
-    const [dismissed, setDismissed] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('dismissed_merges') || '[]') } catch { return [] }
-    })
+function readDismissed() {
+    try { return JSON.parse(localStorage.getItem('dismissed_merges') || '[]') } catch { return [] }
+}
 
-    function dismiss(group) {
-        const key = getDismissedKey(group)
-        const next = [...dismissed, key]
-        setDismissed(next)
-        localStorage.setItem('dismissed_merges', JSON.stringify(next))
+function MergeReview({ groups, noun, chip, onMerge, onDismiss, onClose }) {
+    const [index, setIndex] = useState(0)
+    const ref = useDialog(true, onClose)
+    const i = Math.min(index, groups.length - 1)
+    const group = groups[i]
+
+    const sorted = useMemo(
+        () => (group ? [...group].sort((a, b) => (b._count - a._count) || a.name.localeCompare(b.name)) : []),
+        [group]
+    )
+    const [winner, setWinner] = useState(sorted[0]?.name)
+    const [forGroup, setForGroup] = useState(group)
+    if (forGroup !== group) {
+        setForGroup(group)
+        setWinner(sorted[0]?.name)
     }
 
-    const visible = duplicateGroups.filter(g => !dismissed.includes(getDismissedKey(g)))
-    if (!visible.length) return null
+    if (!group) return null
 
     return (
-        <div className="merge-warning">
-            <strong>⚠ Possible duplicates detected</strong>
-            <p>The following conditions look similar and may be the same (different capitalisation or typos). Use Merge to combine them, or Dismiss if they are intentionally different.</p>
-            {visible.map(group => (
-                <MergeGroup key={group[0].name} group={group} onMerge={onMerge} onDismiss={() => dismiss(group)} />
-            ))}
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+            <div className="modal merge-dialog" ref={ref} role="dialog" aria-modal="true" aria-labelledby="merge-dialog-title">
+                <div className="merge-dialog-hd">
+                    <div>
+                        <h3 id="merge-dialog-title">Possible duplicate</h3>
+                        <p className="merge-dialog-n">{i + 1} of {groups.length}</p>
+                    </div>
+                    <button type="button" className="icon-btn" onClick={onClose} aria-label="Close review">
+                        <X size={20} aria-hidden="true" />
+                    </button>
+                </div>
+                <p>These {noun} look similar. Choose the name to keep: testimonials using the others move to it.</p>
+                <fieldset className="merge-group">
+                    <legend className="sr-only">Which name should stay?</legend>
+                    <div className="pair">
+                        {group.map(item => (
+                            <label key={item.name} className={`pick ${winner === item.name ? 'on' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="merge-winner"
+                                    value={item.name}
+                                    checked={winner === item.name}
+                                    onChange={() => setWinner(item.name)}
+                                    data-autofocus={winner === item.name ? true : undefined}
+                                />
+                                <span className={`tag tag-outline tag-${chip}`}>{item.name}</span>
+                                <span className="cnt">{item._count} testimonial{item._count !== 1 ? 's' : ''}</span>
+                            </label>
+                        ))}
+                    </div>
+                </fieldset>
+                <div className="merge-dialog-ft">
+                    <button type="button" className="btn-ghost" onClick={() => setIndex((i + 1) % groups.length)} disabled={groups.length < 2}>
+                        Skip <ChevronRight size={16} aria-hidden="true" />
+                    </button>
+                    <span className="merge-dialog-sp" />
+                    <button type="button" className="btn-secondary" onClick={() => onDismiss(group)}>Not a duplicate</button>
+                    <button type="button" className="btn-primary" onClick={() => onMerge(group, winner)}>
+                        <GitMerge size={16} aria-hidden="true" /> Keep &ldquo;{winner}&rdquo;
+                    </button>
+                </div>
+            </div>
         </div>
     )
 }
 
-function MergeGroup({ group, onMerge, onDismiss }) {
-    // Default winner = whichever has the most testimonials; tie = first alphabetically
-    const sorted = [...group].sort((a, b) => (b._count - a._count) || a.name.localeCompare(b.name))
-    const [winner, setWinner] = useState(sorted[0].name)
-
-    return (
-        <div className="merge-group">
-            <div className="merge-variants">
-                {group.map(item => (
-                    <label key={item.name} className={`merge-option ${winner === item.name ? 'selected' : ''}`}>
-                        <input
-                            type="radio"
-                            name={`merge-${group[0].name}`}
-                            value={item.name}
-                            checked={winner === item.name}
-                            onChange={() => setWinner(item.name)}
-                        />
-                        <span className="tag tag-condition">{item.name}</span>
-                        <span className="merge-count">{item._count} testimonial{item._count !== 1 ? 's' : ''}</span>
-                    </label>
-                ))}
-            </div>
-            <div className="merge-group-actions">
-                <button className="merge-btn" onClick={() => onMerge(group, winner)}>
-                    <GitMerge size={13} /> Keep "{winner}"
-                </button>
-                <button className="merge-dismiss-btn" onClick={onDismiss}>
-                    Not a duplicate
-                </button>
-            </div>
-        </div>
-    )
+// ── One list (conditions or products) ───────────────────────────────────────
+const SORTS = {
+    az:     { label: 'A to Z',            fn: (a, b) => a.name.localeCompare(b.name) },
+    most:   { label: 'Most used',         fn: (a, b) => (b._count - a._count) || a.name.localeCompare(b.name) },
+    least:  { label: 'Least used',        fn: (a, b) => (a._count - b._count) || a.name.localeCompare(b.name) },
 }
 
-// ── Reusable section ──────────────────────────────────────────────────────────
-function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
+function CategorySection({ title, table, color, fuzzy = true, onDataChange, hidden }) {
+    const noun = table === 'products' ? 'product' : 'condition'
     const [items, setItems]         = useState([])
     const [loading, setLoading]     = useState(true)
     const [editingId, setEditingId] = useState(null)
@@ -97,8 +123,15 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
     const [bulkValue, setBulkValue]   = useState('')
     const [selectedIds, setSelectedIds] = useState(new Set())
     const [saving, setSaving]       = useState(false)
-    const [message, setMessage]     = useState(null)
+    const [query, setQuery]         = useState('')
+    const [sort, setSort]           = useState('az')
+    const [unusedOnly, setUnusedOnly] = useState(false)
+    const [reviewing, setReviewing] = useState(false)
+    const [dismissed, setDismissed] = useState(readDismissed)
     const addInputRef = useRef()
+    const confirm = useConfirm()
+    const toast = useToast()
+    const bulkDialogRef = useDialog(bulkAdding, () => { setBulkAdding(false); setBulkValue('') })
 
     useEffect(() => { fetchItems() }, [])
 
@@ -126,8 +159,8 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
     }
 
     function flash(text, type = 'success') {
-        setMessage({ text, type })
-        setTimeout(() => setMessage(null), 5000)
+        if (type === 'error') toast.error(text)
+        else toast.success(text)
     }
 
     async function handleAdd() {
@@ -179,10 +212,16 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
     async function handleBulkDelete() {
         const toDelete = items.filter(i => selectedIds.has(i.id))
         const withTestimonials = toDelete.filter(i => i._count > 0)
-        const msg = withTestimonials.length
-            ? `Delete ${toDelete.length} item${toDelete.length !== 1 ? 's' : ''}? ${withTestimonials.length} of them are used in testimonials and will be removed from those too. This cannot be undone.`
-            : `Delete ${toDelete.length} item${toDelete.length !== 1 ? 's' : ''}? This cannot be undone.`
-        if (!window.confirm(msg)) return
+        const n = toDelete.length
+        const ok = await confirm({
+            title: `Delete ${n} ${n !== 1 ? table : noun}?`,
+            body: withTestimonials.length
+                ? `${withTestimonials.length} of them ${withTestimonials.length !== 1 ? 'are' : 'is'} used in testimonials and will be removed from those too. This cannot be undone.`
+                : 'This cannot be undone.',
+            confirmLabel: `Delete ${n}`,
+            tone: 'danger',
+        })
+        if (!ok) return
 
         setSaving(true)
         const field = table === 'products' ? 'products' : 'conditions'
@@ -213,11 +252,6 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
         })
     }
 
-    function toggleSelectAll() {
-        setSelectedIds(prev =>
-            prev.size === items.length ? new Set() : new Set(items.map(i => i.id))
-        )
-    }
 
     async function handleRename(item) {
         const name = editValue.trim()
@@ -252,11 +286,15 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
     }
 
     async function handleDelete(item) {
-        if (!window.confirm(
-            item._count > 0
-                ? `Remove "${item.name}" from ${item._count} testimonial(s) and delete it? This cannot be undone.`
-                : `Delete "${item.name}"? This cannot be undone.`
-        )) return
+        const ok = await confirm({
+            title: `Delete “${item.name}”?`,
+            body: item._count > 0
+                ? `It is removed from ${item._count} testimonial${item._count !== 1 ? 's' : ''} as well. This cannot be undone.`
+                : 'This cannot be undone.',
+            confirmLabel: 'Delete',
+            tone: 'danger',
+        })
+        if (!ok) return
 
         setSaving(true)
         if (item._count > 0) {
@@ -279,7 +317,7 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
 
     // Merge: update all testimonials using any losing name → winner, then delete losers
     async function handleMerge(group, winnerName) {
-        if (!window.confirm(`Merge all variants into "${winnerName}"? This will update all affected testimonials.`)) return
+        // The review dialog's "Keep" button is the confirmation.
         setSaving(true)
 
         const field = table === 'products' ? 'products' : 'conditions'
@@ -343,162 +381,289 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange }) {
         setTimeout(() => addInputRef.current?.focus(), 50)
     }
 
-    if (loading) return <div className="loading">Loading…</div>
+    function dismissGroup(group) {
+        const next = [...dismissed, getDismissedKey(group)]
+        setDismissed(next)
+        try { localStorage.setItem('dismissed_merges', JSON.stringify(next)) } catch { /* private mode */ }
+    }
+
+    const reviewGroups = duplicateGroups.filter(g => !dismissed.includes(getDismissedKey(g)))
+    const unusedCount = items.filter(i => i._count === 0).length
+
+    const q = query.trim().toLowerCase()
+    const shown = items
+        .filter(i => (!q || i.name.toLowerCase().includes(q)) && (!unusedOnly || i._count === 0))
+        .sort(SORTS[sort].fn)
+    const allShownSelected = shown.length > 0 && shown.every(i => selectedIds.has(i.id))
+
+    function toggleSelectShown() {
+        setSelectedIds(prev => {
+            const next = new Set(prev)
+            if (allShownSelected) shown.forEach(i => next.delete(i.id))
+            else shown.forEach(i => next.add(i.id))
+            return next
+        })
+    }
+
+    if (hidden) return null
+    if (loading) return <div className="cat-loading"><ListPageSkeleton rows={8} /></div>
 
     return (
-        <div className="edit-section">
-            <div className="cat-section-header">
+        <div className="cat-panel" role="tabpanel" id={`cat-panel-${table}`} aria-labelledby={`cat-tab-${table}`}>
+            {/* Possible duplicates: one quiet bar, reviewed in a dialog */}
+            {reviewGroups.length > 0 && (
+                <div className="cat-dupbar">
+                    <AlertTriangle size={16} aria-hidden="true" />
+                    <span><strong>{reviewGroups.length} possible duplicate{reviewGroups.length !== 1 ? 's' : ''}</strong> found by similar names</span>
+                    <button type="button" className="btn-secondary btn-sm" onClick={() => setReviewing(true)}>Review</button>
+                </div>
+            )}
+
+            {/* Tools row: controls sit with the list they control */}
+            <div className="tt-tools cat-tools">
                 <input
                     type="checkbox"
                     className="cat-select-all"
-                    checked={items.length > 0 && selectedIds.size === items.length}
-                    onChange={toggleSelectAll}
-                    title="Select all"
+                    checked={allShownSelected}
+                    onChange={toggleSelectShown}
+                    aria-label={`Select all ${shown.length} ${title.toLowerCase()} shown`}
                 />
-                <h3 className="cat-section-title">
-                    {title} <span className="cat-total">({items.length})</span>
-                </h3>
-                {selectedIds.size > 0 && (
-                    <button className="cat-add-btn delete-selected" onClick={handleBulkDelete} disabled={saving}>
-                        <Trash2 size={14} /> Delete {selectedIds.size}
-                    </button>
-                )}
-                <button className="cat-add-btn" onClick={startAdd}>
-                    <Plus size={14} /> Add
+                <div className="tt-search">
+                    <label className="sr-only" htmlFor={`cat-search-${table}`}>Search {title.toLowerCase()}</label>
+                    <Search size={16} className="tt-search-ic" aria-hidden="true" />
+                    <input
+                        id={`cat-search-${table}`}
+                        type="search"
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                        placeholder={`Search ${items.length} ${title.toLowerCase()}`}
+                        autoComplete="off"
+                    />
+                </div>
+                <select className="tt-select" aria-label="Sort" value={sort} onChange={e => setSort(e.target.value)}>
+                    {Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+                <button
+                    type="button"
+                    className={`cat-filter ${unusedOnly ? 'on' : ''}`}
+                    aria-pressed={unusedOnly}
+                    onClick={() => setUnusedOnly(v => !v)}
+                >
+                    Unused <span className="count">{unusedCount}</span>
                 </button>
-                <button className="cat-add-btn bulk" onClick={() => { setBulkAdding(v => !v); setAdding(false) }}>
-                    <Plus size={14} /> Bulk Add
+                <span className="cat-tools-sp" />
+                <button type="button" className="btn-secondary" onClick={() => { setBulkAdding(true); setAdding(false) }}>
+                    Bulk add
+                </button>
+                <button type="button" className="btn-primary" onClick={startAdd}>
+                    <Plus size={16} aria-hidden="true" /> Add {noun}
                 </button>
             </div>
 
-            {/* Merge warnings */}
-            <MergeWarning duplicateGroups={duplicateGroups} onMerge={handleMerge} />
-
-            {/* Bulk add */}
-            {bulkAdding && (
-                <div className="bulk-add-box">
-                    <p className="bulk-add-label">One {table === 'products' ? 'product' : 'condition'} per line:</p>
-                    <textarea
-                        className="bulk-add-textarea"
-                        value={bulkValue}
-                        onChange={e => setBulkValue(e.target.value)}
-                        placeholder={`e.g.\nDiabetes\nHigh Blood Pressure\nArthritis`}
-                        rows={6}
-                        autoFocus
-                    />
-                    <div className="bulk-add-actions">
-                        <button className="cat-btn save" onClick={handleBulkAdd} disabled={saving || !bulkValue.trim()}>
-                            <Check size={13} /> Add All
-                        </button>
-                        <button className="cat-btn cancel" onClick={() => { setBulkAdding(false); setBulkValue('') }}>
-                            <X size={13} /> Cancel
-                        </button>
-                    </div>
+            {selectedIds.size > 0 && (
+                <div className="tt-bulk cat-bulk" role="region" aria-label="Bulk actions">
+                    <span className="tt-bulk-n">{selectedIds.size} selected</span>
+                    <button type="button" className="btn-danger" onClick={handleBulkDelete} disabled={saving}>
+                        <Trash2 size={16} aria-hidden="true" /> Delete {selectedIds.size}
+                    </button>
+                    <button type="button" className="btn-ghost tt-bulk-clear" onClick={() => setSelectedIds(new Set())}>
+                        <X size={16} aria-hidden="true" /> Clear
+                    </button>
                 </div>
             )}
 
-            {message && (
-                <div className={`cat-message ${message.type}`}>{message.text}</div>
-            )}
-
-            {/* Add new row */}
-            {adding && (
-                <div className="category-row adding">
-                    <input
-                        ref={addInputRef}
-                        className="category-rename-input"
-                        value={addValue}
-                        placeholder={`New ${table === 'products' ? 'product' : 'condition'} name…`}
-                        onChange={e => setAddValue(e.target.value)}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter') handleAdd()
-                            if (e.key === 'Escape') setAdding(false)
-                        }}
-                    />
-                    <div className="category-actions">
-                        <button className="cat-btn save" onClick={handleAdd} disabled={saving || !addValue.trim()}>
-                            <Check size={13} /> Add
-                        </button>
-                        <button className="cat-btn cancel" onClick={() => setAdding(false)}>
-                            <X size={13} /> Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {items.length === 0 && !adding && (
-                <p className="table-empty">No {table} yet. Add one above.</p>
-            )}
-
-            {items.map(item => (
-                <div key={item.id} className={`category-row ${selectedIds.has(item.id) ? 'selected' : ''}`}>
-                    <input
-                        type="checkbox"
-                        className="cat-row-checkbox"
-                        checked={selectedIds.has(item.id)}
-                        onChange={() => toggleSelect(item.id)}
-                    />
-                    {editingId === item.id ? (
+            <ul className="cat-list" aria-label={title}>
+                {adding && (
+                    <li className="manage-row adding">
                         <input
+                            ref={addInputRef}
                             className="category-rename-input"
-                            value={editValue}
-                            autoFocus
-                            onChange={e => setEditValue(e.target.value)}
+                            aria-label={`New ${noun} name`}
+                            value={addValue}
+                            placeholder={`New ${noun} name`}
+                            onChange={e => setAddValue(e.target.value)}
                             onKeyDown={e => {
-                                if (e.key === 'Enter') handleRename(item)
-                                if (e.key === 'Escape') setEditingId(null)
+                                if (e.key === 'Enter') handleAdd()
+                                if (e.key === 'Escape') setAdding(false)
                             }}
                         />
-                    ) : (
-                        <span className={`category-name tag tag-${color}`}>{item.name}</span>
-                    )}
+                        <div className="end">
+                            <button type="button" className="btn-primary btn-sm" onClick={handleAdd} disabled={saving || !addValue.trim()}>
+                                <Check size={16} aria-hidden="true" /> Add
+                            </button>
+                            <button type="button" className="btn-ghost btn-sm" onClick={() => setAdding(false)}>
+                                Cancel
+                            </button>
+                        </div>
+                    </li>
+                )}
 
-                    <span className="category-count">
-                        {item._count > 0
-                            ? `${item._count} testimonial${item._count !== 1 ? 's' : ''}`
-                            : <em className="cat-unused">unused</em>
-                        }
-                    </span>
-
-                    <div className="category-actions">
+                {shown.map(item => (
+                    <li key={item.id} className={`manage-row ${selectedIds.has(item.id) ? 'selected' : ''}`}>
+                        <input
+                            type="checkbox"
+                            className="cat-row-checkbox"
+                            checked={selectedIds.has(item.id)}
+                            onChange={() => toggleSelect(item.id)}
+                            aria-label={`Select ${item.name}`}
+                        />
                         {editingId === item.id ? (
-                            <>
-                                <button className="cat-btn save" onClick={() => handleRename(item)} disabled={saving}>
-                                    <Check size={13} /> Save
-                                </button>
-                                <button className="cat-btn cancel" onClick={() => setEditingId(null)}>
-                                    <X size={13} /> Cancel
-                                </button>
-                            </>
+                            <input
+                                className="category-rename-input"
+                                aria-label={`Rename ${item.name}`}
+                                placeholder={item.name}
+                                value={editValue}
+                                autoFocus
+                                onChange={e => setEditValue(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') handleRename(item)
+                                    if (e.key === 'Escape') setEditingId(null)
+                                }}
+                            />
                         ) : (
-                            <>
-                                <button className="cat-btn edit" onClick={() => startEdit(item)}>
-                                    <Pencil size={13} /> Rename
-                                </button>
-                                <button className="cat-btn delete" onClick={() => handleDelete(item)}>
-                                    <Trash2 size={13} /> Delete
-                                </button>
-                            </>
+                            <span className={`tag tag-outline tag-${color}`} title={item.name}>{item.name}</span>
                         )}
+
+                        {editingId !== item.id && (
+                            <span className="cnt">
+                                {item._count > 0
+                                    ? `${item._count} testimonial${item._count !== 1 ? 's' : ''}`
+                                    : <em className="cat-unused">Unused</em>
+                                }
+                            </span>
+                        )}
+
+                        <div className="end">
+                            {editingId === item.id ? (
+                                <>
+                                    <button type="button" className="btn-primary btn-sm" onClick={() => handleRename(item)} disabled={saving}>
+                                        <Check size={16} aria-hidden="true" /> Save
+                                    </button>
+                                    <button type="button" className="btn-ghost btn-sm" onClick={() => setEditingId(null)}>
+                                        Cancel
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button type="button" className="btn-ghost btn-sm" onClick={() => startEdit(item)} aria-label={`Rename ${item.name}`}>
+                                        <Pencil size={16} aria-hidden="true" /> <span className="cat-act-txt">Rename</span>
+                                    </button>
+                                    <button type="button" className="btn-ghost btn-sm btn-ghost--danger" onClick={() => handleDelete(item)} aria-label={`Delete ${item.name}`}>
+                                        <Trash2 size={16} aria-hidden="true" /> <span className="cat-act-txt">Delete</span>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </li>
+                ))}
+            </ul>
+
+            {items.length === 0 && !adding && (
+                <p className="cat-empty">No {table} yet. Use &ldquo;Add {noun}&rdquo; to create the first one.</p>
+            )}
+            {items.length > 0 && shown.length === 0 && (
+                <p className="cat-empty">
+                    No {table} match{q ? <> &ldquo;{query.trim()}&rdquo;</> : ''}{unusedOnly ? ' among unused ones' : ''}.
+                </p>
+            )}
+            <p className="cat-foot" aria-live="polite">{shown.length} shown · {items.length} in total</p>
+
+            {/* Bulk add dialog */}
+            {bulkAdding && (
+                <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && (setBulkAdding(false), setBulkValue(''))}>
+                    <div className="modal" ref={bulkDialogRef} role="dialog" aria-modal="true" aria-labelledby={`bulk-title-${table}`}>
+                        <h3 id={`bulk-title-${table}`}>Bulk add {table}</h3>
+                        <label className="bulk-add-label" htmlFor={`bulk-${table}`}>One {noun} per line. Names that already exist are skipped.</label>
+                        <textarea
+                            id={`bulk-${table}`}
+                            className="bulk-add-textarea"
+                            value={bulkValue}
+                            onChange={e => setBulkValue(e.target.value)}
+                            placeholder={table === 'products' ? 'e.g.\nAmbrotose Complex\nPLUS\nCatalyst' : 'e.g.\nDiabetes\nHigh Blood Pressure\nArthritis'}
+                            rows={8}
+                            data-autofocus
+                        />
+                        <div className="modal-ft">
+                            <button type="button" className="btn-secondary" onClick={() => { setBulkAdding(false); setBulkValue('') }}>Cancel</button>
+                            <button type="button" className="btn-primary" onClick={handleBulkAdd} disabled={saving || !bulkValue.trim()}>
+                                <Check size={16} aria-hidden="true" /> Add all
+                            </button>
+                        </div>
                     </div>
                 </div>
-            ))}
+            )}
+
+            {reviewing && reviewGroups.length > 0 && (
+                <MergeReview
+                    groups={reviewGroups}
+                    noun={table}
+                    chip={color}
+                    onMerge={handleMerge}
+                    onDismiss={dismissGroup}
+                    onClose={() => setReviewing(false)}
+                />
+            )}
         </div>
     )
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+const TABS = [
+    { table: 'conditions', title: 'Health Conditions', label: 'Conditions', color: 'condition', fuzzy: true },
+    { table: 'products',   title: 'Products',          label: 'Products',   color: 'product',   fuzzy: false },
+]
+
 export default function Categories() {
+    const [tab, setTab] = useState('conditions')
+    const [counts, setCounts] = useState({})
+
+    function onTabKey(e) {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+        e.preventDefault()
+        const next = TABS[(TABS.findIndex(t => t.table === tab) + 1) % TABS.length].table
+        setTab(next)
+        document.getElementById(`cat-tab-${next}`)?.focus()
+    }
+
     return (
         <div className="admin-page-content">
-            <h2><Tag size={20} /> Categories</h2>
+            <h1>Categories</h1>
             <p className="page-sub">
-                Manage health conditions and products used across all testimonials,
-                the submission form, and the navigation menu. Changes apply everywhere instantly.
+                Health conditions and products used across testimonials, the submission form and the
+                public menus. Renames and merges update every testimonial that uses them.
             </p>
-            <div className="categories-grid">
-                <CategorySection title="Health Conditions" table="conditions" color="condition" />
-                <CategorySection title="Products"          table="products"   color="product" fuzzy={false} />
+
+            <div className="tt cat-card">
+                <div className="tt-tabsrow">
+                    <div className="tabs" role="tablist" aria-label="Category type" onKeyDown={onTabKey}>
+                        {TABS.map(t => (
+                            <button
+                                key={t.table}
+                                id={`cat-tab-${t.table}`}
+                                type="button"
+                                role="tab"
+                                aria-selected={tab === t.table}
+                                aria-controls={`cat-panel-${t.table}`}
+                                tabIndex={tab === t.table ? 0 : -1}
+                                className={`tab ${tab === t.table ? 'active' : ''}`}
+                                onClick={() => setTab(t.table)}
+                            >
+                                {t.label} {counts[t.table] != null && <span className="count">{counts[t.table]}</span>}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                {TABS.map(t => (
+                    <CategorySection
+                        key={t.table}
+                        title={t.title}
+                        table={t.table}
+                        color={t.color}
+                        fuzzy={t.fuzzy}
+                        hidden={tab !== t.table}
+                        onDataChange={rows => setCounts(c => ({ ...c, [t.table]: rows.length }))}
+                    />
+                ))}
             </div>
         </div>
     )

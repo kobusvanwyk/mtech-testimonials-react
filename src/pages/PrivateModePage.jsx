@@ -1,12 +1,15 @@
 export default function PrivateModePage() {
     return (
-        <div className="private-mode-page">
+        <main className="private-mode-page">
             <img
                 src="/mtech-testimonials-logo.svg"
-                alt="MTech Testimonials"
+                alt="Mtech Testimonials"
                 className="private-mode-logo"
             />
-            <p className="private-mode-msg">This site is not yet publicly available.</p>
-        </div>
+            <div className="empty empty-card private-mode-card">
+                <h1 className="empty-title">Coming soon</h1>
+                <p className="empty-text">This site is not open to the public yet. Please check back soon.</p>
+            </div>
+        </main>
     )
 }

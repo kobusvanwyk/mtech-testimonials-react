@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, Fragment } from 'react'
+import Alert from '../../components/Alert'
 import { supabase } from '../../lib/supabase'
 import { generateUniqueSlug } from '../../lib/slugify'
 import {
     Upload, FileText, Check, X, AlertTriangle,
-    ChevronDown, ChevronUp, Images, Loader, ImagePlus
+    ChevronDown, Images, Loader, ImagePlus
 } from 'lucide-react'
 
 const REQUIRED_COLUMNS = ['title', 'story_text']
@@ -16,6 +17,28 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gi
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 // ── Per-row image uploader ────────────────────────────────────────────────────
+
+// Soft checks for the import preview ("to check" rows, tinted amber). These
+// rows still import as Pending; the messages tell the reviewer what to look at.
+const SHORT_STORY_WORDS = 40
+
+function normTitle(t) {
+    return (t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function rowWarnings(row, rows, existingTitles) {
+    const out = []
+    const list = v => (v || '').split(/[,|]/).map(x => x.trim()).filter(Boolean)
+    if (!list(row.conditions).length) out.push('No conditions listed, so it will not show under any condition.')
+    if (!list(row.products).length) out.push('No products listed.')
+    const words = (row.story_text || '').trim().split(/\s+/).filter(Boolean).length
+    if (words < SHORT_STORY_WORDS) out.push(`Very short testimonial (${words} words).`)
+    const t = normTitle(row.title)
+    if (t && existingTitles.has(t)) out.push('A testimonial with this title already exists.')
+    const twin = rows.find(r => r !== row && normTitle(r.title) === t)
+    if (t && twin) out.push(`Same title as line ${twin._line} in this file.`)
+    return out
+}
 
 function RowImageUploader({ rowIndex, images, onImagesChange }) {
     const [dragging, setDragging] = useState(false)
@@ -198,8 +221,8 @@ function parseCSV(text) {
 function validateRow(row) {
     const errors = []
     if (!row.title?.trim()) errors.push('Title is required')
-    if (!row.story_text?.trim()) errors.push('Story text is required')
-    if (row.story_text?.trim().length < 20) errors.push('Story text too short (min 20 characters)')
+    if (!row.story_text?.trim()) errors.push('Testimonial text is required')
+    if (row.story_text?.trim().length < 20) errors.push('Testimonial text too short (min 20 characters)')
     if (row.date && isNaN(Date.parse(row.date))) errors.push(`Invalid date: "${row.date}" (use YYYY-MM-DD)`)
     return errors
 }
@@ -209,7 +232,7 @@ function buildRecord(row, filename, uploadedUrls = []) {
     const conditions = row.conditions ? row.conditions.split('|').map(s => s.trim()).filter(Boolean) : []
     const products = row.products ? row.products.split('|').map(s => s.trim()).filter(Boolean) : []
     const csvUrls = row.gallery_urls ? row.gallery_urls.split('|').map(s => convertGoogleDriveUrl(s.trim())).filter(Boolean) : []
-    // Merge CSV urls with any images uploaded inline — deduplicated
+    // Merge CSV urls with any images uploaded inline, deduplicated
     const gallery_urls = [...new Set([...csvUrls, ...uploadedUrls])]
     const created_at = row.date?.trim() ? new Date(row.date.trim()).toISOString() : new Date().toISOString()
 
@@ -240,6 +263,7 @@ export default function ImportTestimonials() {
     // rowImages: { [rowIndex]: uploadItem[] }
     const [rowImages, setRowImages] = useState({})
     const fileRef = useRef()
+    const [csvDrag, setCsvDrag] = useState(false)
 
     const handleRowImagesChange = useCallback((rowIndex, updater) => {
         setRowImages(prev => ({
@@ -259,7 +283,7 @@ export default function ImportTestimonials() {
         setRowImages({})
 
         const reader = new FileReader()
-        reader.onload = (evt) => {
+        reader.onload = async (evt) => {
             try {
                 const rows = parseCSV(evt.target.result)
                 const valid = [], invalid = []
@@ -267,6 +291,13 @@ export default function ImportTestimonials() {
                     const errors = validateRow(row)
                     errors.length ? invalid.push({ ...row, _errors: errors }) : valid.push(row)
                 })
+                // Existing titles, for the duplicate-title check (read only).
+                let existing = new Set()
+                try {
+                    const { data } = await supabase.from('testimonials').select('title')
+                    existing = new Set((data || []).map(t => normTitle(t.title)).filter(Boolean))
+                } catch { /* check skipped if the lookup fails */ }
+                valid.forEach(row => { row._warnings = rowWarnings(row, valid, existing) })
                 setPreview({ valid, invalid, filename: f.name })
             } catch (err) {
                 setParseError(err.message)
@@ -317,9 +348,9 @@ export default function ImportTestimonials() {
     return (
         <div className="admin-page-content">
             <div className="edit-header">
-                <h2>Bulk Import Testimonials</h2>
-                <a href="/sample-import.csv" download className="btn-preview">
-                    <FileText size={14} /> Download Sample CSV
+                <h1>Import CSV</h1>
+                <a href="/sample-import.csv" download className="btn-secondary">
+                    <FileText size={16} aria-hidden="true" /> Download sample CSV
                 </a>
             </div>
 
@@ -337,7 +368,7 @@ export default function ImportTestimonials() {
                     <li><strong>*</strong> title and story_text are required</li>
                     <li>Use <code>|</code> to separate multiple values: <code>Arthritis|Fatigue</code></li>
                     <li>Set <code>anonymous</code> to <code>true</code> or <code>false</code></li>
-                    <li>Use <code>YYYY-MM-DD</code> for dates — leave blank to use today</li>
+                    <li>Use <code>YYYY-MM-DD</code> for dates, or leave blank to use today</li>
                     <li>Images can be added per testimonial in the preview, or included as URLs in the <code>gallery_urls</code> column</li>
                     <li>All imports are saved as <strong>Pending</strong> for your review</li>
                 </ul>
@@ -346,160 +377,182 @@ export default function ImportTestimonials() {
             {/* ── CSV drop zone ── */}
             {!preview && !importResult && (
                 <label
-                    className="import-dropzone"
-                    onDragOver={e => e.preventDefault()}
+                    className={`dropzone ${csvDrag ? 'drag' : ''}`}
+                    onDragOver={e => { e.preventDefault(); setCsvDrag(true) }}
+                    onDragLeave={() => setCsvDrag(false)}
                     onDrop={e => {
                         e.preventDefault()
+                        setCsvDrag(false)
                         const f = e.dataTransfer.files[0]
                         if (f) { if (fileRef.current) fileRef.current.value = ''; handleFileChange({ target: { files: [f] } }) }
                     }}
                 >
-                    <input ref={fileRef} type="file" accept=".csv" onChange={handleFileChange} className="dropzone-input" />
-                    <Upload size={36} className="dropzone-icon" />
-                    <span className="dropzone-main">Click to select a CSV file</span>
-                    <span className="dropzone-sub">or drag and drop</span>
-                    <span className="dropzone-hint">.csv files only</span>
+                    <Upload size={32} className="dropzone-icon" aria-hidden="true" />
+                    <span className="dropzone-main">Drag a CSV file here or click to browse</span>
+                    <span className="dropzone-sub">.csv files only</span>
+                    <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={handleFileChange} className="dropzone-input" />
                 </label>
             )}
 
             {parseError && (
-                <div className="import-error">
-                    <AlertTriangle size={16} /> {parseError}
-                    <button onClick={reset} className="import-reset">Try again</button>
-                </div>
+                <Alert
+                    type="error"
+                    title="This file could not be read"
+                    action={<button type="button" onClick={reset} className="btn-secondary btn-sm">Choose another file</button>}
+                >
+                    {parseError}
+                </Alert>
             )}
 
-            {/* ── Preview ── */}
-            {preview && (
-                <div className="import-preview">
-                    <div className="import-preview-header">
-                        <h3>Preview — <strong>{preview.filename}</strong></h3>
-                        <button onClick={reset} className="import-reset"><X size={14} /> Cancel</button>
-                    </div>
-
-                    <div className="import-summary">
-                        <div className="import-summary-item valid">
-                            <Check size={15} /> <strong>{preview.valid.length}</strong> ready to import
-                        </div>
-                        {preview.invalid.length > 0 && (
-                            <div className="import-summary-item invalid">
-                                <AlertTriangle size={15} /> <strong>{preview.invalid.length}</strong> row(s) with errors (will be skipped)
+            {/* Preview (ui-guide #tbl-import): one card with a summary bar and a
+                table that becomes cards below 820px. Error rows stay in the list,
+                tinted red with their messages, so nothing silently disappears. */}
+            {preview && (() => {
+                const rows = [
+                    ...preview.valid.map((row, vi) => ({ row, vi, ok: true })),
+                    ...preview.invalid.map(row => ({ row, vi: null, ok: false })),
+                ].sort((x, y) => (x.row._line || 0) - (y.row._line || 0))
+                const split = v => (v || '').split(/[,|]/).map(x => x.trim()).filter(Boolean)
+                return (
+                    <div className="ip">
+                        <div className="ip-sum">
+                            <div className="ip-counts">
+                                <span className="ip-file"><FileText size={16} aria-hidden="true" /> {preview.filename}</span>
+                                <span className="ip-lead">{rows.length} row{rows.length !== 1 ? 's' : ''} checked</span>
+                                <span className="status-badge badge-approved">{preview.valid.filter(r => !r._warnings?.length).length} ready</span>
+                                {preview.valid.some(r => r._warnings?.length) && <span className="status-badge badge-pending">{preview.valid.filter(r => r._warnings?.length).length} to check</span>}
+                                {preview.invalid.length > 0 && <span className="status-badge badge-rejected">{preview.invalid.length} will be skipped</span>}
+                                {uploadingCount > 0 && (
+                                    <span className="ip-uploading"><Loader size={14} className="spin" aria-hidden="true" /> {uploadingCount} image{uploadingCount !== 1 ? 's' : ''} still uploading…</span>
+                                )}
                             </div>
-                        )}
-                        {uploadingCount > 0 && (
-                            <div className="import-summary-item uploading">
-                                <Loader size={15} className="spin" /> <strong>{uploadingCount}</strong> image{uploadingCount !== 1 ? 's' : ''} still uploading…
+                            <div className="ip-sum-acts">
+                                <button type="button" onClick={reset} className="btn-ghost"><X size={16} aria-hidden="true" /> Cancel</button>
+                                {preview.valid.length > 0 && (
+                                    <button
+                                        type="button"
+                                        className="btn-primary"
+                                        onClick={handleImport}
+                                        disabled={importing || uploadingCount > 0}
+                                        title={uploadingCount > 0 ? 'Wait for images to finish uploading' : ''}
+                                    >
+                                        {importing
+                                            ? 'Importing…'
+                                            : uploadingCount > 0
+                                                ? <><Loader size={16} className="spin" aria-hidden="true" /> Waiting for uploads…</>
+                                                : <><Upload size={16} aria-hidden="true" /> Import {preview.valid.length} as Pending</>}
+                                    </button>
+                                )}
                             </div>
-                        )}
-                    </div>
-
-                    {preview.invalid.length > 0 && (
-                        <div className="import-invalid-list">
-                            <h4>Rows with errors (skipped):</h4>
-                            {preview.invalid.map((row, i) => (
-                                <div key={i} className="import-invalid-row">
-                                    <span className="import-row-title">Line {row._line}: {row.title || '(no title)'}</span>
-                                    <ul>{row._errors.map((e, j) => <li key={j}>{e}</li>)}</ul>
-                                </div>
-                            ))}
                         </div>
-                    )}
 
-                    {preview.valid.length > 0 && (
-                        <div className="import-table-wrap">
-                            <table className="import-table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Title</th>
-                                        <th>Name</th>
-                                        <th>Conditions</th>
-                                        <th>Products</th>
-                                        <th>Date</th>
-                                        <th>Images</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {preview.valid.map((row, i) => {
-                                        const imgs = rowImages[i] || []
-                                        const doneCount = imgs.filter(u => u.status === 'done').length
-                                        const csvCount = row.gallery_urls ? row.gallery_urls.split('|').filter(Boolean).length : 0
-                                        const totalCount = doneCount + csvCount
-                                        const isUploading = imgs.some(u => u.status === 'uploading' || u.status === 'pending')
-
-                                        return (
-                                            <>
-                                                <tr key={i} className={expandedRow === i ? 'expanded' : ''}>
-                                                    <td>{row._line}</td>
-                                                    <td className="import-td-title">{row.title}</td>
-                                                    <td>{row.anonymous?.toLowerCase() === 'true' ? <em>Anonymous</em> : row.person_name || '—'}</td>
-                                                    <td>{row.conditions || '—'}</td>
-                                                    <td>{row.products || '—'}</td>
-                                                    <td>{row.date || <em>Today</em>}</td>
-                                                    <td>
-                                                        {isUploading
-                                                            ? <span className="import-img-badge uploading"><Loader size={11} className="spin" /> uploading</span>
-                                                            : totalCount > 0
-                                                                ? <span className="import-img-badge done"><Images size={11} /> {totalCount}</span>
-                                                                : <span className="import-img-badge none">—</span>
-                                                        }
-                                                    </td>
-                                                    <td>
-                                                        <button
-                                                            className="import-expand-btn"
-                                                            onClick={() => setExpandedRow(expandedRow === i ? null : i)}
-                                                        >
-                                                            {expandedRow === i ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                {expandedRow === i && (
-                                                    <tr key={`exp-${i}`} className="import-story-row">
-                                                        <td colSpan={8}>
-                                                            <p className="import-story-text">{row.story_text}</p>
+                        <table role="table" aria-label="Import preview">
+                            <thead>
+                                <tr role="row">
+                                    <th role="columnheader" className="c-num">#</th>
+                                    <th role="columnheader" className="c-main">Testimonial</th>
+                                    <th role="columnheader" className="c-tags">Conditions &amp; products</th>
+                                    <th role="columnheader" className="c-imgs">Images</th>
+                                    <th role="columnheader" className="c-check">Check</th>
+                                    <th role="columnheader" className="c-exp"><span className="sr-only">Details</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map(({ row, vi, ok }) => {
+                                    const key = row._line ?? vi
+                                    const open = expandedRow === key
+                                    const imgs = ok ? (rowImages[vi] || []) : []
+                                    const doneCount = imgs.filter(u => u.status === 'done').length
+                                    const csvCount = row.gallery_urls ? row.gallery_urls.split('|').filter(Boolean).length : 0
+                                    const totalCount = doneCount + csvCount
+                                    const isUploading = imgs.some(u => u.status === 'uploading' || u.status === 'pending')
+                                    const conds = split(row.conditions)
+                                    const prods = split(row.products)
+                                    const tagCount = conds.length + prods.length
+                                    const imgCell = isUploading
+                                        ? <span className="import-img-badge uploading"><Loader size={11} className="spin" aria-hidden="true" /> uploading</span>
+                                        : totalCount > 0
+                                            ? <span className="import-img-badge done"><Images size={11} aria-hidden="true" /> {totalCount}</span>
+                                            : <span className="ip-muted">None</span>
+                                    return (
+                                        <Fragment key={key}>
+                                            <tr role="row" className={!ok ? 'is-err' : row._warnings?.length ? 'is-warn' : ''}>
+                                                <td role="cell" className="c-num">{row._line}</td>
+                                                <td role="cell" className="c-main">
+                                                    <span className="ip-title">{row.title || <em>No title</em>}</span>
+                                                    <div className="ip-meta">
+                                                        <span>{row.anonymous?.toLowerCase() === 'true' ? <em>Anonymous</em> : (row.person_name || <em>No name</em>)}</span>
+                                                        <span>{row.date || 'Today'}</span>
+                                                        {(isUploading || totalCount > 0) && <span className="ip-imgs-inline">{imgCell}</span>}
+                                                    </div>
+                                                </td>
+                                                <td role="cell" className="c-tags">
+                                                    <div className="ip-chips">
+                                                        {conds.slice(0, 3).map(c => <span key={'c' + c} className="tag tag-outline tag-condition">{c}</span>)}
+                                                        {prods.slice(0, Math.max(0, 3 - conds.length)).map(p => <span key={'p' + p} className="tag tag-outline tag-product">{p}</span>)}
+                                                        {tagCount > 3 && <span className="ip-muted">+{tagCount - 3} more</span>}
+                                                        {tagCount === 0 && <span className="ip-muted">No tags</span>}
+                                                    </div>
+                                                </td>
+                                                <td role="cell" className="c-imgs">{imgCell}</td>
+                                                <td role="cell" className="c-check">
+                                                    {ok && row._warnings?.length ? (
+                                                        <div className="ip-check">
+                                                            <span className="status-badge badge-pending">To check</span>
+                                                            {row._warnings.map((w, j) => <span key={j} className="ip-msg ip-msg--warn">{w}</span>)}
+                                                        </div>
+                                                    ) : ok ? (
+                                                        <span className="status-badge badge-approved">Ready</span>
+                                                    ) : (
+                                                        <div className="ip-check">
+                                                            <span className="status-badge badge-rejected">Will be skipped</span>
+                                                            {row._errors.map((e, j) => <span key={j} className="ip-msg">{e}</span>)}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td role="cell" className="c-exp">
+                                                    <button
+                                                        type="button"
+                                                        className="icon-btn ip-exp"
+                                                        aria-expanded={open}
+                                                        aria-label={`${open ? 'Hide' : 'Show'} details for line ${row._line}`}
+                                                        onClick={() => setExpandedRow(open ? null : key)}
+                                                    >
+                                                        <ChevronDown size={18} aria-hidden="true" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {open && (
+                                                <tr role="row" className="ip-detail">
+                                                    <td role="cell" colSpan={6}>
+                                                        <p className={`ip-story ${row.story_text ? '' : 'is-empty'}`}>{row.story_text || 'No testimonial text in this row.'}</p>
+                                                        {conds.length > 0 && <><div className="ip-label">Conditions ({conds.length})</div><div className="ip-chips">{conds.map(c => <span key={c} className="tag tag-condition">{c}</span>)}</div></>}
+                                                        {prods.length > 0 && <><div className="ip-label">Products ({prods.length})</div><div className="ip-chips">{prods.map(p => <span key={p} className="tag tag-product">{p}</span>)}</div></>}
+                                                        {ok && (
                                                             <RowImageUploader
-                                                                rowIndex={i}
-                                                                images={rowImages[i] || []}
+                                                                rowIndex={vi}
+                                                                images={rowImages[vi] || []}
                                                                 onImagesChange={handleRowImagesChange}
                                                             />
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    {preview.valid.length > 0 && (
-                        <button
-                            className="btn-import"
-                            onClick={handleImport}
-                            disabled={importing || uploadingCount > 0}
-                            title={uploadingCount > 0 ? 'Wait for images to finish uploading' : ''}
-                        >
-                            {importing
-                                ? 'Importing...'
-                                : uploadingCount > 0
-                                    ? <><Loader size={15} className="spin" /> Waiting for uploads…</>
-                                    : <><Upload size={15} /> Import {preview.valid.length} Testimonial{preview.valid.length !== 1 ? 's' : ''}</>
-                            }
-                        </button>
-                    )}
-                </div>
-            )}
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </Fragment>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )
+            })()}
 
             {/* ── Result ── */}
             {importResult && (
                 <div className="import-result">
-                    <div className="import-result-success">
-                        <Check size={24} />
-                        <h3>{importResult.imported} testimonial{importResult.imported !== 1 ? 's' : ''} imported successfully</h3>
-                        <p>All imports are saved as <strong>Pending</strong> — review them in the Pending queue.</p>
-                    </div>
+                    <Alert type="success" title={`${importResult.imported} testimonial${importResult.imported !== 1 ? 's' : ''} imported`}>
+                        They are saved as <strong>Pending</strong>. Review them in the Pending Review queue.
+                    </Alert>
                     {importResult.failed.length > 0 && (
                         <div className="import-invalid-list">
                             <h4>{importResult.failed.length} failed to save:</h4>
@@ -511,7 +564,7 @@ export default function ImportTestimonials() {
                             ))}
                         </div>
                     )}
-                    <button className="btn-import" onClick={reset}>
+                    <button type="button" className="btn-secondary" onClick={reset}>
                         <Upload size={15} /> Import Another File
                     </button>
                 </div>

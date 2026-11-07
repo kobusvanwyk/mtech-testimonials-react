@@ -1,48 +1,60 @@
 import { useState, useEffect } from 'react'
+import Alert from '../../components/Alert'
 import { supabase } from '../../lib/supabase'
-import { FileText, Save, Check, ExternalLink } from 'lucide-react'
-import { invalidatePDFSettingsCache } from '../../components/PDFDownloadButton'
+import { Save, Check, ExternalLink, FileText } from 'lucide-react'
+import { FormSkeleton } from '../../components/Skeleton'
+import { invalidatePDFSettingsCache, preparePDFSettings } from '../../lib/pdfExport'
+import PDFPreviewDialog from '../../components/PDFPreviewDialog'
+import { useCanPreviewPdf } from '../../lib/useCanPreviewPdf'
+import { PDF_DISCLAIMER, PDF_COPYRIGHT } from '../../lib/pdfText'
 
 const PDF_FIELDS = [
     {
         key: 'pdf_logo_url',
         label: 'Logo URL',
-        hint: 'URL of the Mannatech logo to show in the top-right corner of every PDF. Upload via Image Manager and paste the public URL here.',
+        placeholder: 'https://…/logo.png',
+        hint: 'Optional. URL of a logo to show at the top left of every PDF, in place of the Mtech Testimonials logo. Upload via Image Manager and paste the public URL here.',
         type: 'url',
     },
     {
         key: 'pdf_contact_name',
         label: 'Your Name',
+        placeholder: 'e.g. Jane Smith',
         hint: 'Your name as it appears in the PDF footer (e.g. Jane Smith).',
         type: 'text',
     },
     {
         key: 'pdf_contact_phone',
         label: 'Phone Number',
+        placeholder: 'e.g. 082 123 4567',
         hint: 'Phone number shown in the PDF footer.',
         type: 'text',
     },
     {
         key: 'pdf_contact_email',
         label: 'Email Address',
+        placeholder: 'e.g. jane@example.co.za',
         hint: 'Email address shown in the PDF footer.',
         type: 'email',
     },
     {
         key: 'pdf_contact_whatsapp',
         label: 'WhatsApp Number',
+        placeholder: 'e.g. 082 123 4567',
         hint: 'WhatsApp number shown in the PDF footer.',
         type: 'text',
     },
     {
         key: 'pdf_footer_tagline',
         label: 'Footer Tagline',
-        hint: 'A short line shown below the contact details (e.g. Mannatech – Transforming Lives Naturally).',
+        placeholder: 'e.g. Mannatech | Transforming lives naturally',
+        hint: 'A short line shown below the contact details (e.g. Mannatech | Transforming Lives Naturally).',
         type: 'text',
     },
     {
         key: 'pdf_font_threshold',
         label: 'Compact Font Threshold (characters)',
+        placeholder: '1200',
         hint: 'Testimonials longer than this character count will use a smaller font to save space. Default is 1200. Increase to keep normal size for longer testimonials, decrease to compact sooner.',
         type: 'number',
     },
@@ -71,6 +83,9 @@ export default function PDFSettings() {
     const [saving, setSaving]   = useState(false)
     const [saved, setSaved]     = useState(false)
     const [error, setError]     = useState(null)
+    const [pdfPreview, setPdfPreview] = useState(null) // { testimonial, settings }
+    const [preparing, setPreparing]   = useState(false)
+    const canPreviewPdf = useCanPreviewPdf()
 
     useEffect(() => { loadSettings() }, [])
 
@@ -79,7 +94,7 @@ export default function PDFSettings() {
             .from('site_settings')
             .select('key, value')
             .in('key', ALL_KEYS)
-        if (error) { setError('Could not load settings.'); setLoading(false); return }
+        if (error) { console.error(error); setError('PDF settings could not be loaded. Refresh the page to try again.'); setLoading(false); return }
         const map = {}
         data.forEach(row => { map[row.key] = row.value })
         setValues(map)
@@ -98,13 +113,32 @@ export default function PDFSettings() {
             .from('site_settings')
             .upsert(upserts, { onConflict: 'key' })
         if (error) {
-            setError('Failed to save: ' + error.message)
+            console.error(error)
+            setError('Your PDF settings could not be saved. Check your connection and try again.')
         } else {
             invalidatePDFSettingsCache()
             setSaved(true)
             setTimeout(() => setSaved(false), 2500)
         }
         setSaving(false)
+    }
+
+    // Real PDF with the unsaved values, using the newest published testimonial
+    // (one with photos when there is one). Read-only: nothing is saved.
+    async function previewRealPdf() {
+        setPreparing(true)
+        setError(null)
+        try {
+            const { data } = await supabase.from('testimonials').select('*')
+                .eq('status', 'approved')
+                .order('created_at', { ascending: false })
+                .limit(20)
+            const sample = (data || []).find(t => t.gallery_urls?.length) || data?.[0]
+            if (!sample) { setError('There is no published testimonial to preview yet.'); return }
+            setPdfPreview({ testimonial: sample, settings: await preparePDFSettings(values) })
+        } finally {
+            setPreparing(false)
+        }
     }
 
     const contactItems = [
@@ -114,14 +148,19 @@ export default function PDFSettings() {
         values.pdf_contact_whatsapp ? `WhatsApp: ${values.pdf_contact_whatsapp}` : '',
     ].filter(Boolean)
 
-    if (loading) return <div className="loading">Loading settings…</div>
+    const previewMeta = [
+        values.pdf_show_name !== 'false' ? 'By Thandiwe M.' : '',
+        values.pdf_show_date !== 'false' ? '12 March 2026' : '',
+    ].filter(Boolean).join('   ·   ')
+
+    if (loading) return <FormSkeleton sections={5} />
 
     return (
         <div className="admin-page-content">
             <div className="edit-header">
-                <h2><FileText size={20} /> PDF Settings</h2>
+                <h1>PDF Settings</h1>
                 <button
-                    className={`btn-save ${saved ? 'saved' : ''}`}
+                    className="btn-primary"
                     onClick={handleSave}
                     disabled={saving}
                 >
@@ -132,24 +171,27 @@ export default function PDFSettings() {
                 </button>
             </div>
 
-            {error && <div className="import-error" style={{ marginBottom: 20 }}>{error}</div>}
+            {error && <Alert type="error" onClose={() => setError(null)}>{error}</Alert>}
 
             {/* Branding fields */}
             <div className="settings-section">
                 <h3 className="settings-section-title">Branding &amp; Contact Details</h3>
                 <p className="settings-section-hint">
-                    These details appear on every exported testimonial PDF — the logo in the top-right
-                    corner of the page and your contact information pinned to the footer. Set them once
+                    These details appear on every exported testimonial PDF: the logo at the top of the
+                    page and your contact details in the footer, above the legal disclaimer. Set them once
                     and all PDFs will use them automatically.
                 </p>
 
                 <div className="settings-fields">
                     {PDF_FIELDS.map(f => (
                         <div key={f.key} className="settings-field">
-                            <label className="settings-label">{f.label}</label>
-                            <p className="settings-hint">{f.hint}</p>
+                            <label className="settings-label" htmlFor={f.key}>{f.label}</label>
+                            <p className="settings-hint" id={`${f.key}-hint`}>{f.hint}</p>
                             <div className="settings-input-row">
                                 <input
+                                    id={f.key}
+                                    aria-describedby={`${f.key}-hint`}
+                                    placeholder={f.placeholder}
                                     type={f.type}
                                     className="settings-input"
                                     value={values[f.key] ?? ''}
@@ -201,32 +243,55 @@ export default function PDFSettings() {
                 </div>
             </div>
 
-            {/* Footer preview */}
-            {(contactItems.length > 0 || values.pdf_footer_tagline?.trim()) && (
-                <div className="settings-section">
-                    <h3 className="settings-section-title">Footer Preview</h3>
-                    <p className="settings-section-hint">
-                        Approximate appearance of the footer bar at the bottom of each exported PDF.
-                    </p>
-                    <div className="pdf-footer-preview-bar">
-                        {contactItems.length > 0 && (
-                            <>
-                                <span className="pdf-footer-preview-contact-label">Contact me today</span>
-                                <span className="pdf-footer-preview-items">
-                                    {contactItems.join('  ·  ')}
-                                </span>
-                            </>
+            {/* Live preview of the exported PDF (ui-guide .pdf-preview) */}
+            <div className="settings-section">
+                <h3 className="settings-section-title">Preview</h3>
+                <p className="settings-section-hint">
+                    How the top and bottom of each exported PDF will look with these settings. Updates as you type.
+                    {canPreviewPdf && ' To check the whole page, preview a real testimonial before you save.'}
+                </p>
+                {canPreviewPdf && (
+                    <button type="button" className="btn-secondary pdf-preview-real" onClick={previewRealPdf} disabled={preparing}>
+                        <FileText size={16} aria-hidden="true" /> {preparing ? 'Preparing…' : 'Preview with a real testimonial'}
+                    </button>
+                )}
+                <div className="pdf-preview" aria-label="PDF preview">
+                    <div className="ph">
+                        <img src={values.pdf_logo_url?.trim() || '/mtech-testimonials-logo.svg'} alt="" />
+                    </div>
+                    <p className="pt">My energy came back</p>
+                    {previewMeta && <p className="pm">{previewMeta}</p>}
+                    <p className="pq">I kept waiting for the usual afternoon slump and it just didn&rsquo;t come. My family noticed before I said anything.</p>
+                    <div className="ptags">
+                        <span className="tag tag-condition">Energy</span>
+                        <span className="tag tag-product">Ambrotose Complex</span>
+                    </div>
+                    <div className="pf">
+                        {(contactItems.length > 0 || values.pdf_footer_tagline?.trim()) && (
+                            <div className="pc">
+                                {contactItems.length > 0 && <>
+                                    <div className="pcl">Contact me today</div>
+                                    <div className="pci">{contactItems.join('  ·  ')}</div>
+                                </>}
+                                {values.pdf_footer_tagline?.trim() && <div className="pctag">{values.pdf_footer_tagline}</div>}
+                            </div>
                         )}
-                        {values.pdf_footer_tagline?.trim() && (
-                            <span className="pdf-footer-preview-tagline">{values.pdf_footer_tagline}</span>
-                        )}
+                        {PDF_DISCLAIMER} &copy; {new Date().getFullYear()} {PDF_COPYRIGHT}
                     </div>
                 </div>
+            </div>
+
+            {pdfPreview && (
+                <PDFPreviewDialog
+                    testimonial={pdfPreview.testimonial}
+                    settings={pdfPreview.settings}
+                    onClose={() => setPdfPreview(null)}
+                />
             )}
 
             <div className="settings-save-bar">
                 <button
-                    className={`btn-save ${saved ? 'saved' : ''}`}
+                    className="btn-primary"
                     onClick={handleSave}
                     disabled={saving}
                 >

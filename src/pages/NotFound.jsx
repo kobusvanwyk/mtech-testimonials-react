@@ -14,8 +14,8 @@ export default function NotFound() {
                     The page you're looking for doesn't exist, or may have been moved.
                 </p>
                 <div className="not-found-actions">
-                    <Link to="/" className="btn-nf-primary">Browse testimonials</Link>
-                    <Link to="/submit" className="btn-nf-secondary">Share your story</Link>
+                    <Link to="/" className="btn-primary">Browse testimonials</Link>
+                    <Link to="/submit" className="btn-secondary">Share your testimonial</Link>
                 </div>
             </div>
         </div>

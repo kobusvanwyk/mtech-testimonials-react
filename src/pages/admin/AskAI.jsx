@@ -1,15 +1,19 @@
 import { useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { postFunction } from '../../lib/authFetch'
+import { friendlyError } from '../../lib/feedback'
+import Alert from '../../components/Alert'
+import { storyExcerpt } from '../../lib/storyText'
+import { Link, useOutletContext } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useProducts, useConditions } from '../../lib/ProductsContext'
 import { PDFDownloadButton } from '../../components/PDFDownloadButton'
-import { Sparkles, AlertTriangle, ExternalLink, Square } from 'lucide-react'
+import { Sparkles, ExternalLink, Square } from 'lucide-react'
 
 // ── Candidate gathering ────────────────────────────────────────────────────────
 // Recall first: a testimonial is a *candidate* for a concept group if it matches
 // the curated condition/product TAGS **or** a distinctive story-text KEYWORD.
 // Keyword matching alone is far too noisy on this corpus (common words match
-// everything), so keywords only widen the candidate net — Claude's relevance pass
+// everything), so keywords only widen the candidate net, Claude's relevance pass
 // (netlify/functions/confirm-relevance) does the precision filtering afterwards.
 
 function escapeRegExp(s) {
@@ -30,7 +34,7 @@ function compileGroups(groups) {
                 .filter(Boolean)
                 .map(k => ({ word: k, re: new RegExp(`\\b${escapeRegExp(k.toLowerCase())}\\b`) })),
         }))
-        // A group with no usable signal would make an AND search match nothing — drop it.
+        // A group with no usable signal would make an AND search match nothing, drop it.
         .filter(g => g.condSet.size || g.prodSet.size || g.kwRes.length)
 }
 
@@ -67,10 +71,11 @@ const EXAMPLES = [
     'Type 1 diabetes relating to foot conditions',
     'Children with autism who improved concentration',
     'Skin conditions cleared with Emprizone',
-    'Cancer recovery stories mentioning Ambrotose',
+    'Cancer recovery testimonials mentioning Ambrotose',
 ]
 
 export default function AskAI() {
+    const { role } = useOutletContext() || {}
     const allProducts   = useProducts()
     const allConditions = useConditions()
 
@@ -108,12 +113,7 @@ export default function AskAI() {
 
         try {
             // 1) Understand the query → structured intent (groups + keywords + logic)
-            const resp = await fetch('/.netlify/functions/ask-ai', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: question, conditions: allConditions, products: allProducts }),
-                signal: ac.signal,
-            })
+            const resp = await postFunction('ask-ai', { query: question, conditions: allConditions, products: allProducts }, { signal: ac.signal })
             const intent = await resp.json()
             if (!resp.ok) throw new Error(intent.message || 'Search failed. Please try again.')
 
@@ -126,9 +126,14 @@ export default function AskAI() {
 
             // 2) Fetch testimonials and gather candidates generously (tags OR keywords)
             setPhase('Searching testimonials…')
-            const { data, error: fErr } = await supabase
+            // Finders only ever get published testimonials (the database does
+            // this for real finders; the filter keeps an admin's "View as
+            // Finder" preview faithful)
+            let tq = supabase
                 .from('testimonials')
                 .select('id, title, person_name, anonymous, conditions, products, story_text, status, imported_from, slug, gallery_urls, created_at')
+            if (role !== 'admin') tq = tq.eq('status', 'approved')
+            const { data, error: fErr } = await tq
             if (fErr) throw new Error('Could not load testimonials: ' + fErr.message)
 
             const candidates = []
@@ -150,30 +155,25 @@ export default function AskAI() {
                 return
             }
 
-            // 3) Relevance pass — Claude confirms genuine matches (precision), chunked.
+            // 3) Relevance pass, Claude confirms genuine matches (precision), chunked.
             const byId = Object.fromEntries(candidates.map(c => [c.t.id, c]))
             const confirmed = new Map()   // id → reason
             for (let k = 0; k < candidates.length; k += CHUNK) {
                 if (ac.signal.aborted) return
                 const chunk = candidates.slice(k, k + CHUNK)
-                setPhase(`Checking relevance — ${Math.min(k + chunk.length, candidates.length)} of ${candidates.length}…`)
-                const rResp = await fetch('/.netlify/functions/confirm-relevance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        query: question,
-                        interpretation: intent.interpretation || '',
-                        logic,
-                        candidates: chunk.map(c => ({
-                            id: c.t.id,
-                            name: c.t.anonymous ? 'Anonymous' : (c.t.person_name || 'Unknown'),
-                            conditions: c.t.conditions || [],
-                            products: c.t.products || [],
-                            text: c.evidence,
-                        })),
-                    }),
-                    signal: ac.signal,
-                })
+                setPhase(`Checking relevance: ${Math.min(k + chunk.length, candidates.length)} of ${candidates.length}…`)
+                const rResp = await postFunction('confirm-relevance', {
+                    query: question,
+                    interpretation: intent.interpretation || '',
+                    logic,
+                    candidates: chunk.map(c => ({
+                        id: c.t.id,
+                        name: c.t.anonymous ? 'Anonymous' : (c.t.person_name || 'Unknown'),
+                        conditions: c.t.conditions || [],
+                        products: c.t.products || [],
+                        text: c.evidence,
+                    })),
+                }, { signal: ac.signal })
                 const rJson = await rResp.json()
                 if (!rResp.ok) throw new Error(rJson.message || 'Relevance check failed.')
                 for (const r of (rJson.relevant || [])) {
@@ -189,7 +189,7 @@ export default function AskAI() {
             setResult({ interpretation: intent.interpretation || '', logic, matches })
         } catch (err) {
             // Silently swallow a user-initiated cancellation; surface anything else.
-            if (err.name !== 'AbortError' && !ac.signal.aborted) setError(err.message)
+            if (err.name !== 'AbortError' && !ac.signal.aborted) setError(friendlyError(err, 'Ask AI could not answer that.'))
         } finally {
             // Only clear loading/phase if a newer search hasn't already taken over.
             if (abortRef.current === ac) {
@@ -202,15 +202,19 @@ export default function AskAI() {
 
     return (
         <div className="admin-page-content ask-ai-page">
-            <h2><Sparkles size={20} /> Ask AI</h2>
+            <h1>Ask AI</h1>
             <p className="page-sub">
                 Search testimonials in plain language. The AI maps your question to the right conditions and
-                products, gathers every story that might fit, then confirms which ones genuinely match — so an
+                products, gathers every testimonial that might fit, then confirms which ones genuinely match, so an
                 empty result means nothing fits, not that the wording was off.
             </p>
 
+            {/* Search panel card: input, action and suggestions grouped together */}
+            <div className="search-panel">
             <form className="ask-ai-form" onSubmit={e => { e.preventDefault(); ask() }}>
+                <label htmlFor="ask-ai-q" className="sr-only">Your question</label>
                 <input
+                    id="ask-ai-q"
                     className="ask-ai-input"
                     value={query}
                     onChange={e => setQuery(e.target.value)}
@@ -247,8 +251,9 @@ export default function AskAI() {
                     ))}
                 </div>
             )}
+            </div>
 
-            {error && <div className="dup-error"><AlertTriangle size={15} /> {error}</div>}
+            {error && <Alert type="error" onClose={() => setError(null)}>{error}</Alert>}
 
             {result && !loading && (
                 <div className="ask-ai-results">
@@ -283,12 +288,12 @@ export default function AskAI() {
                                             <p className="ask-ai-card-reason"><Sparkles size={12} /> {reason}</p>
                                         )}
                                         <p className="ask-ai-card-excerpt">
-                                            {(t.story_text || '').slice(0, 220)}{t.story_text?.length > 220 ? '…' : ''}
+                                            {storyExcerpt(t.story_text, 220)}
                                         </p>
                                     </div>
                                     <div className="ask-ai-card-actions">
                                         <a href={`/testimonial/${t.slug || t.id}`} target="_blank" rel="noopener noreferrer">View <ExternalLink size={12} /></a>
-                                        <Link to={`/admin/edit/${t.id}`}>Edit</Link>
+                                        {role === 'admin' && <Link to={`/admin/edit/${t.id}`}>Edit</Link>}
                                         <PDFDownloadButton testimonial={t} variant="icon" className="ask-ai-pdf" />
                                     </div>
                                 </div>

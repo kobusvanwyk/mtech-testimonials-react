@@ -1,17 +1,24 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { useToast } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProducts, useConditions } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
-import { ArrowLeft, ArrowRight, X, Check, Sparkles, Info } from 'lucide-react'
+import { ArrowLeft, ArrowRight, X, Check, CheckCircle2, Info } from 'lucide-react'
+
+const STEP_LABELS = ['', 'Your details', 'Health condition', 'Products', 'Your testimonial', 'Photos', 'Consent', 'Review']
 
 export default function Submit() {
+    const toast = useToast()
     const PRODUCTS = useProducts()
     const ALL_CONDITIONS = useConditions()
     const [step, setStep] = useState(1)
 
     useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, [step])
     const [submitted, setSubmitted] = useState(false)
+    // On success, move focus to the thank-you heading so screen readers announce it.
+    const successRef = useRef(null)
+    useEffect(() => { if (submitted) successRef.current?.focus({ preventScroll: true }) }, [submitted])
     const [loading, setLoading] = useState(false)
     const [galleryImages, setGalleryImages] = useState([])
     const [uploadProgress, setUploadProgress] = useState('')
@@ -56,7 +63,7 @@ export default function Submit() {
             else if (f.size > maxSize) errors.push(`${f.name}: exceeds 3MB limit`)
             else valid.push(f)
         })
-        if (errors.length) alert(errors.join('\n'))
+        errors.forEach(e => toast.error(e))
         return valid
     }
 
@@ -91,7 +98,7 @@ export default function Submit() {
     }
 
     async function handleSubmit() {
-        // Honeypot check — bots fill this, humans don't
+        // Honeypot check, bots fill this, humans don't
         if (honeypot) {
             setSubmitted(true) // Silently pretend it succeeded
             return
@@ -124,7 +131,7 @@ export default function Submit() {
             if (error) throw error
             setSubmitted(true)
         } catch (err) {
-            alert('Something went wrong. Please try again.')
+            toast.error('Your testimonial could not be sent. Check your connection and try again. Nothing you typed has been lost.')
             console.error(err)
         } finally {
             setLoading(false)
@@ -134,13 +141,13 @@ export default function Submit() {
 
     if (submitted) {
         return (
-            <div className="submit-success">
-                <div className="success-icon"><Sparkles size={32} /></div>
-                <h2>Thank you for submitting your testimonial!</h2>
-                <p>Your testimonial has been received and will be reviewed before publishing.</p>
+            <div className="submit-success" role="status">
+                <div className="success-icon" aria-hidden="true"><CheckCircle2 size={32} /></div>
+                <h1 ref={successRef} tabIndex={-1}>Thank you, your testimonial is in</h1>
+                <p>We review every testimonial before it goes live. Once it is approved, it will appear on the site for others to read.</p>
                 <div className="submit-success-actions">
-                    <Link to="/" className="btn-success-home">Browse all testimonials</Link>
-                    <button className="btn-success-another" onClick={() => {
+                    <Link to="/" className="btn-primary">Browse all testimonials</Link>
+                    <button type="button" className="btn-secondary" onClick={() => {
                         setSubmitted(false)
                         setStep(1)
                         setForm({ title: '', person_name: '', anonymous: false, conditions: [], products: [], story_text: '' })
@@ -148,7 +155,7 @@ export default function Submit() {
                         setGalleryImages([])
                         setTerms({ tc: false, privacy: false, consent: false })
                     }}>
-                        Submit another testimonial
+                        Submit another
                     </button>
                 </div>
             </div>
@@ -157,43 +164,35 @@ export default function Submit() {
 
     return (
         <div className="submit-page">
+            <h1 className="sr-only">Share your testimonial</h1>
             <div className="submit-container">
-                {/* Desktop: dot stepper */}
+                {/* Desktop: labelled node stepper (ui-guide "Submit stepper") */}
                 <div className="step-progress">
-                    {[1, 2, 3, 4, 5, 6, 7].map((n, i) => (
-                        <React.Fragment key={n}>
-                            <div
-                                className={`step-dot ${step === n ? 'active' : step > n ? 'completed' : ''}`}
-                                onClick={() => step > n && setStep(n)}
-                                title={step > n ? `Go back to step ${n}` : undefined}
-                            >
-                                {step > n ? <Check size={14} /> : n}
-                            </div>
-                            {i < 6 && (
-                                <div key={`c${n}`} className={`step-connector ${step > n ? 'completed' : ''}`} />
-                            )}
-                        </React.Fragment>
-                    ))}
-                </div>
-                <div className="step-counter">
-                    {(() => {
-                        const STEP_LABELS = ['', 'Your details', 'Health condition', 'Products', 'Your story', 'Photos', 'Consent', 'Review']
+                    {[1, 2, 3, 4, 5, 6, 7].map((n, i) => {
+                        const state = step === n ? 'active' : step > n ? 'completed' : ''
                         return (
-                            <>
-                                <span className="step-counter-current">{STEP_LABELS[step]}</span>
-                                <span className="step-counter-sep"> · </span>
-                                <span className="step-counter-fraction">Step {step} of 7</span>
-                                {step < 7 && (
-                                    <span className="step-counter-next"> — Next: {STEP_LABELS[step + 1]}</span>
+                            <React.Fragment key={n}>
+                                <div className={`step-item ${state}`}>
+                                    <div
+                                        className={`step-dot ${state}`}
+                                        onClick={() => step > n && setStep(n)}
+                                        title={step > n ? `Go back to step ${n}` : undefined}
+                                        aria-current={step === n ? 'step' : undefined}
+                                    >
+                                        {step > n ? <Check size={14} /> : n}
+                                    </div>
+                                    <span className="step-label">{STEP_LABELS[n]}</span>
+                                </div>
+                                {i < 6 && (
+                                    <div className={`step-connector ${step > n ? 'completed' : ''}`} />
                                 )}
-                            </>
+                            </React.Fragment>
                         )
-                    })()}
+                    })}
                 </div>
 
                 {/* Mobile: progress bar */}
                 {(() => {
-                    const STEP_LABELS = ['', 'Your details', 'Health condition', 'Products', 'Your story', 'Photos', 'Consent', 'Review']
                     const pct = Math.round(((step - 1) / 6) * 100)
                     return (
                         <div className="step-progress-mobile">
@@ -212,7 +211,7 @@ export default function Submit() {
                 })()}
 
 
-                {/* Honeypot — hidden from real users, bots will fill it */}
+                {/* Honeypot, hidden from real users, bots will fill it */}
                 <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', opacity: 0, pointerEvents: 'none' }} aria-hidden="true">
                     <label htmlFor="website">Website</label>
                     <input
@@ -230,10 +229,11 @@ export default function Submit() {
                 {step === 1 && (
                     <div className="step">
                         <h2>Whose testimonial are you sharing?</h2>
-                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>You can submit your own experience, or on behalf of someone else — a family member, friend, or client. Give it a title that captures what happened.</span></p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>You can submit your own experience, or on behalf of someone else, a family member, friend, or client. Give it a title that captures what happened.</span></p>
 
-                        <label className="form-label">Testimonial title</label>
+                        <label className="form-label" htmlFor="sub-title">Testimonial title</label>
                         <input
+                            id="sub-title"
                             className="form-input"
                             type="text"
                             placeholder="e.g. How Ambrotose helped my arthritis"
@@ -255,8 +255,9 @@ export default function Submit() {
 
                         {!form.anonymous && (
                             <>
-                                <label className="form-label">Full name</label>
+                                <label className="form-label" htmlFor="sub-name">Full name</label>
                                 <input
+                                    id="sub-name"
                                     className="form-input"
                                     type="text"
                                     placeholder="e.g. Maria van der Berg"
@@ -266,7 +267,7 @@ export default function Submit() {
                             </>
                         )}
                         <button
-                            className="btn-next"
+                            className="btn-primary"
                             disabled={!form.title || (!form.anonymous && !form.person_name)}
                             onClick={() => setStep(2)}
                         >
@@ -279,9 +280,10 @@ export default function Submit() {
                 {step === 2 && (
                     <div className="step">
                         <h2>What health challenge does this testimonial relate to?</h2>
-                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Type the health condition(s) this testimonial relates to. If there is more than one, separate them with a comma — for example: <em>Diabetes, High Blood Pressure</em></span></p>
-                        <label className="form-label">Health conditions</label>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Type the health condition(s) this testimonial relates to. If there is more than one, separate them with a comma, for example: <em>Diabetes, High Blood Pressure</em></span></p>
+                        <label className="form-label" htmlFor="sub-conditions">Health conditions</label>
                         <input
+                            id="sub-conditions"
                             className="form-input"
                             type="text"
                             placeholder="e.g. Diabetes, High Blood Pressure, Arthritis"
@@ -290,9 +292,9 @@ export default function Submit() {
                             autoComplete="off"
                         />
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(1)}><ArrowLeft size={15} /> Back</button>
+                            <button className="btn-ghost" onClick={() => setStep(1)}><ArrowLeft size={15} /> Back</button>
                             <button
-                                className="btn-next"
+                                className="btn-primary"
                                 disabled={!conditionText.trim()}
                                 onClick={() => {
                                     updateForm('conditions', parseConditions())
@@ -309,7 +311,7 @@ export default function Submit() {
                 {step === 3 && (
                     <div className="step">
                         <h2>Which Mannatech products made a difference?</h2>
-                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Select everything that played a role — you can choose more than one.</span></p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Select everything that played a role, you can choose more than one.</span></p>
                         <div className="products-grid">
                             {PRODUCTS.map(p => (
                                 <label
@@ -321,14 +323,15 @@ export default function Submit() {
                                         checked={form.products.includes(p)}
                                         onChange={() => toggleProduct(p)}
                                     />
+                                    <Check size={14} className="tick" aria-hidden="true" />
                                     {p}
                                 </label>
                             ))}
                         </div>
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(2)}><ArrowLeft size={15} /> Back</button>
+                            <button className="btn-ghost" onClick={() => setStep(2)}><ArrowLeft size={15} /> Back</button>
                             <button
-                                className="btn-next"
+                                className="btn-primary"
                                 disabled={form.products.length === 0}
                                 onClick={() => setStep(4)}
                             >
@@ -342,9 +345,10 @@ export default function Submit() {
                 {step === 4 && (
                     <div className="step">
                         <h2>Tell us what happened</h2>
-                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Write it the way you'd tell a friend. What was the health challenge? What changed after using the product? There's no right or wrong way — just be honest.</span></p>
-                        <label className="form-label">Your testimonial</label>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Write it the way you'd tell a friend. What was the health challenge? What changed after using the product? There's no right or wrong way, just be honest.</span></p>
+                        <label className="form-label" htmlFor="sub-story">Your testimonial</label>
                         <textarea
+                            id="sub-story"
                             className="form-textarea"
                             placeholder="Start typing the testimonial here..."
                             value={form.story_text}
@@ -353,9 +357,9 @@ export default function Submit() {
                         />
                         <p className="char-count">{form.story_text.length} characters</p>
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(3)}><ArrowLeft size={15} /> Back</button>
+                            <button className="btn-ghost" onClick={() => setStep(3)}><ArrowLeft size={15} /> Back</button>
                             <button
-                                className="btn-next"
+                                className="btn-primary"
                                 disabled={!form.story_text.trim()}
                                 onClick={() => setStep(5)}
                             >
@@ -369,10 +373,10 @@ export default function Submit() {
                 {step === 5 && (
                     <div className="step">
                         <h2>Would you like to add photos?</h2>
-                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>A before/after photo or a picture of the person really brings the testimonial to life. This step is completely optional — just tap Next if you'd rather skip it.</span></p>
+                        <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>A before/after photo or a picture of the person really brings the testimonial to life. This step is completely optional, just tap Next if you'd rather skip it.</span></p>
 
                         {/* Gallery dropzone */}
-                        <label className="form-label">Gallery photos</label>
+                        <p className="form-label">Gallery photos</p>
                         <p className="upload-hint">Extra photos shown on the full testimonial page.</p>
                         {galleryImages.length < 8 && (
                             <label
@@ -410,21 +414,22 @@ export default function Submit() {
                         )}
 
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(4)}><ArrowLeft size={15} /> Back</button>
-                            <button className="btn-next" onClick={() => setStep(6)}>
+                            <button className="btn-ghost" onClick={() => setStep(4)}><ArrowLeft size={15} /> Back</button>
+                            <button className="btn-primary" onClick={() => setStep(6)}>
                                 Next <ArrowRight size={15} />
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 6 — TERMS */}
+                {/* STEP 6: TERMS */}
                 {step === 6 && (
                     <div className="step">
-                        <h2>Almost done — just one last thing</h2>
+                        <h2>Almost done, just one last thing</h2>
                         <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Please read and tick each box below before we submit the testimonial.</span></p>
 
-                        <div className="terms-list">
+                        <fieldset className="terms-list">
+                            <legend className="sr-only">Terms and consent</legend>
                             <label className={`terms-item ${terms.tc ? 'checked' : ''}`}>
                                 <input
                                     type="checkbox"
@@ -454,12 +459,12 @@ export default function Submit() {
                                 <div className="terms-checkbox">{terms.consent && <Check size={12} />}</div>
                                 <span>I consent to the collection and use of my information as described</span>
                             </label>
-                        </div>
+                        </fieldset>
 
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(5)}><ArrowLeft size={15} /> Back</button>
+                            <button className="btn-ghost" onClick={() => setStep(5)}><ArrowLeft size={15} /> Back</button>
                             <button
-                                className="btn-next"
+                                className="btn-primary"
                                 disabled={!allTermsAccepted}
                                 onClick={() => setStep(7)}
                             >
@@ -469,24 +474,29 @@ export default function Submit() {
                     </div>
                 )}
 
-                {/* STEP 7 — REVIEW */}
+                {/* STEP 7: REVIEW */}
                 {step === 7 && (
                     <div className="step">
                         <h2>Does everything look right?</h2>
                         <p className="step-desc"><Info size={16} className="step-desc-icon" /><span>Take a quick look before we send it. You can go back and change anything.</span></p>
-                        <div className="review-card">
+                        <div className="submit-review">
                             <h3>{form.title}</h3>
-                            <p><strong>By:</strong> {form.anonymous ? 'Anonymous' : form.person_name}</p>
-                            <p><strong>Conditions:</strong> {form.conditions.join(', ')}</p>
-                            <p><strong>Products:</strong> {form.products.join(', ')}</p>
-                            {galleryImages.length > 0 && <p><strong>Gallery photos:</strong> {galleryImages.length} added</p>}
-                            <p><strong>Testimonial:</strong></p>
-                            <p className="review-story">{form.story_text}</p>
+                            <dl>
+                                <dt>Shared by</dt>
+                                <dd>{form.anonymous ? 'Anonymous' : form.person_name}</dd>
+                                <dt>Conditions</dt>
+                                <dd className="submit-review-tags">{form.conditions.map(c => <span key={c} className="tag tag-condition">{c}</span>)}</dd>
+                                <dt>Products</dt>
+                                <dd className="submit-review-tags">{form.products.map(p => <span key={p} className="tag tag-product">{p}</span>)}</dd>
+                                {galleryImages.length > 0 && <><dt>Photos</dt><dd>{galleryImages.length} added</dd></>}
+                            </dl>
+                            <h4>Your testimonial</h4>
+                            <p className="submit-review-story">{form.story_text}</p>
                         </div>
                         {uploadProgress && <p className="upload-progress">{uploadProgress}</p>}
                         <div className="step-nav">
-                            <button className="btn-back" onClick={() => setStep(6)}><ArrowLeft size={15} /> Back</button>
-                            <button className="btn-submit" onClick={handleSubmit} disabled={loading}>
+                            <button className="btn-ghost" onClick={() => setStep(6)}><ArrowLeft size={15} /> Back</button>
+                            <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
                                 {loading ? 'Submitting...' : <><Check size={15} /> Submit Testimonial</>}
                             </button>
                         </div>

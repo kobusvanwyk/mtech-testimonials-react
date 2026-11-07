@@ -254,7 +254,7 @@ Email: <a href="mailto:inforeg@justice.gov.za">inforeg@justice.gov.za</a></p>
 
 <div class="section">
 <h2>13. Contact Information</h2>
-<p><strong>Mtech Testimonials — Privacy Officer</strong><br>
+<p><strong>Mtech Testimonials, Privacy Officer</strong><br>
 Email: <a href="mailto:info@mtechtestimonials.co.za">info@mtechtestimonials.co.za</a></p>
 </div>
 
@@ -268,11 +268,33 @@ Email: <a href="mailto:info@mtechtestimonials.co.za">info@mtechtestimonials.co.z
 
 <p class="legal-footer-note"><strong>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:info@mtechtestimonials.co.za">info@mtechtestimonials.co.za</a></strong></p>`
 
+// Text tables (ui-guide #tbl-text): wrap each table in a query container and
+// copy the column heading onto every cell as data-label, so below 600px each
+// row stacks into a heading with labelled values. The copy itself is unchanged.
+function labelTables(html) {
+    if (typeof DOMParser === 'undefined') return html
+    const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html')
+    doc.querySelectorAll('table').forEach(table => {
+        const heads = [...table.querySelectorAll('thead th')].map(th => th.textContent.trim())
+        table.setAttribute('role', 'table')
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            tr.querySelectorAll('td').forEach((td, i) => { if (heads[i] && i > 0) td.setAttribute('data-label', heads[i]) })
+        })
+        const wrap = doc.createElement('div')
+        wrap.className = 'txt-table'
+        table.parentNode.insertBefore(wrap, table)
+        wrap.appendChild(table)
+    })
+    return doc.body.firstChild.innerHTML
+}
+
+const LABELLED = labelTables(CONTENT)
+
 export default function Privacy() {
     return (
         <div className="legal-page">
             <div className="legal-container">
-                <div className="legal-content" dangerouslySetInnerHTML={{ __html: CONTENT }} />
+                <div className="legal-content" dangerouslySetInnerHTML={{ __html: LABELLED }} />
             </div>
         </div>
     )

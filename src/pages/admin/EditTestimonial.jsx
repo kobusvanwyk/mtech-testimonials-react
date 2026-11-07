@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useToast } from '../../lib/feedback'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { EditTestimonialSkeleton } from '../../components/Skeleton'
 import { useProducts } from '../../lib/ProductsContext'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
-import { ArrowLeft, ArrowRight, Eye, Check, X, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, Check, X, Trash2, FileText, ImagePlus } from 'lucide-react'
+import MoreMenu from '../../components/MoreMenu'
+import { useDialog } from '../../lib/useDialog'
 import { PDFDownloadButton } from '../../components/PDFDownloadButton'
+import PDFPreviewDialog from '../../components/PDFPreviewDialog'
+import { useCanPreviewPdf } from '../../lib/useCanPreviewPdf'
+import { StatusBadge } from '../../components/TestimonialTable'
+import { STATUS_MAP } from '../../lib/status'
 
 const STATUS_OPTIONS = [
     { value: 'pending', label: 'Pending' },
@@ -14,7 +22,14 @@ const STATUS_OPTIONS = [
     { value: 'rejected', label: 'Rejected' },
 ]
 
+// History notes are stored as "Status: approved"; show the label the admin
+// sees everywhere else ("Status: Published").
+function historyNote(note = '') {
+    return note.replace(/^Status: (\w+)$/, (m, v) => `Status: ${STATUS_MAP[v]?.label || v}`)
+}
+
 export default function EditTestimonial() {
+    const toast = useToast()
     const PRODUCTS = useProducts()
     const [CONDITIONS, setConditions] = useState([])
     const { id } = useParams()
@@ -28,8 +43,14 @@ export default function EditTestimonial() {
     const [newGalleryImages, setNewGalleryImages] = useState([])
     const [form, setForm] = useState(null)
     const [pendingNav, setPendingNav] = useState(null)
+    const [pdfPreview, setPdfPreview] = useState(null)
+    const [galleryDrag, setGalleryDrag] = useState(false)
+    const canPreviewPdf = useCanPreviewPdf()
     const originalForm = useRef(null)
     const storyRef     = useRef(null)
+    // Confirmation dialogs: focus in, Tab trapped, Escape cancels, focus restored.
+    const deleteDialogRef = useDialog(confirmDelete, () => { if (!deleting) setConfirmDelete(false) })
+    const leaveDialogRef  = useDialog(!!pendingNav, () => setPendingNav(null))
 
     const isDirty = useCallback(() => {
         if (!form || !originalForm.current) return false
@@ -37,7 +58,7 @@ export default function EditTestimonial() {
         return JSON.stringify(form) !== JSON.stringify(originalForm.current)
     }, [form, newGalleryImages])
 
-    // Safe navigate — shows confirmation if dirty
+    // Safe navigate, shows confirmation if dirty
     function safeNavigate(to) {
         if (isDirty()) {
             setPendingNav(to)
@@ -57,6 +78,26 @@ export default function EditTestimonial() {
         window.addEventListener('beforeunload', handleBeforeUnload)
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
     }, [isDirty])
+
+    // In-app links (breadcrumb, sidebar, account menu) ask first when there are
+    // unsaved edits. BrowserRouter has no route blocker, so catch the click.
+    useEffect(() => {
+        function onClick(e) {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+            const a = e.target.closest?.('a[href]')
+            if (!a || a.target === '_blank' || a.hasAttribute('download')) return
+            const url = new URL(a.href, window.location.href)
+            if (url.origin !== window.location.origin) return
+            const to = url.pathname + url.search + url.hash
+            if (to === window.location.pathname + window.location.search + window.location.hash) return
+            if (!isDirty()) return
+            e.preventDefault()
+            e.stopPropagation()
+            safeNavigate(to)
+        }
+        document.addEventListener('click', onClick, true)
+        return () => document.removeEventListener('click', onClick, true)
+    })
 
     useEffect(() => { fetchTestimonial() }, [id])
 
@@ -194,7 +235,7 @@ export default function EditTestimonial() {
             setTimeout(() => setSaved(false), 3000)
             fetchTestimonial()
         } catch (err) {
-            alert('Error saving. Please try again.')
+            toast.error('Your changes could not be saved. Check your connection and try again.')
             console.error(err)
         } finally {
             setSaving(false)
@@ -205,32 +246,58 @@ export default function EditTestimonial() {
         setDeleting(true)
         const { error } = await supabase.from('testimonials').delete().eq('id', id)
         if (error) {
-            alert('Error deleting. Please try again.')
+            toast.error('The testimonial could not be deleted. Try again in a moment.')
             setDeleting(false)
             return
         }
         navigate('/admin/all')
     }
 
-    if (loading) return <div className="admin-page-content"><div className="loading">Loading...</div></div>
+    if (loading) return <EditTestimonialSkeleton />
     if (!form) return <div className="admin-page-content"><p>Testimonial not found.</p></div>
 
-    const saveLabel = saving ? 'Saving...' : saved ? <><Check size={14} /> Saved!</> : 'Save Changes'
+    const saveLabel = saving ? 'Saving…' : saved ? <><Check size={16} aria-hidden="true" /> Saved</> : 'Save changes'
+    const dirty = isDirty()
+    const authorName = form.anonymous ? 'Anonymous' : (form.person_name || 'Unnamed')
+    const submitted = form.created_at
+        ? new Date(form.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+        : null
+
+    function discardChanges() {
+        form.gallery_urls?.forEach(u => { if (u.startsWith('blob:')) URL.revokeObjectURL(u) })
+        setForm({ ...originalForm.current })
+        setNewGalleryImages([])
+    }
 
     return (
         <div className="admin-page-content">
+            {/* Page header: title + meta, then Preview, Save, More (Download PDF, Delete). Back lives in the breadcrumb. */}
             <div className="edit-header">
-                <button className="back-link btn-link" onClick={() => safeNavigate('/admin/all')}><ArrowLeft size={15} /> Back</button>
-                <h2>Edit Testimonial</h2>
+                <div className="edit-header-title">
+                    <h1>Edit Testimonial</h1>
+                    <div className="edit-header-meta">
+                        <StatusBadge status={originalForm.current?.status || form.status} />
+                        <span>{authorName}</span>
+                        {submitted && <><span aria-hidden="true">·</span><span>Submitted {submitted}</span></>}
+                    </div>
+                </div>
                 <div className="edit-header-actions">
-                    <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
-                        <Trash2 size={14} /> Delete
-                    </button>
-                    <Link to={`/testimonial/${form.slug || id}`} target="_blank" className="btn-preview">
-                        <Eye size={14} /> Preview
+                    <Link to={`/testimonial/${form.slug || id}`} target="_blank" className="btn-secondary">
+                        <Eye size={16} aria-hidden="true" /> Preview
                     </Link>
-                    {form && <PDFDownloadButton testimonial={form} />}
-                    <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>
+                    <button type="button" className="btn-primary" onClick={handleSave} disabled={saving}>{saveLabel}</button>
+                    <MoreMenu label="More actions for this testimonial">
+                        {canPreviewPdf && (
+                            <button type="button" role="menuitem" onClick={() => setPdfPreview({ ...form })}>
+                                <FileText size={16} aria-hidden="true" /> Preview PDF
+                            </button>
+                        )}
+                        <PDFDownloadButton testimonial={form} variant="menuitem" />
+                        <hr />
+                        <button type="button" role="menuitem" className="danger" onClick={() => setConfirmDelete(true)}>
+                            <Trash2 size={16} aria-hidden="true" /> Delete testimonial
+                        </button>
+                    </MoreMenu>
                 </div>
             </div>
 
@@ -238,14 +305,14 @@ export default function EditTestimonial() {
                 {/* LEFT COLUMN */}
                 <div className="edit-main">
                     <div className="edit-section">
-                        <label className="edit-label">Title</label>
-                        <input className="edit-input" value={form.title || ''} onChange={e => update('title', e.target.value)} />
+                        <label className="edit-label" htmlFor="edit-title">Title</label>
+                        <input id="edit-title" className="edit-input" value={form.title || ''} onChange={e => update('title', e.target.value)} placeholder="e.g. Energy back after six weeks on PLUS" />
                     </div>
 
                     <div className="edit-section">
-                        <label className="edit-label">Author Name</label>
+                        <label className="edit-label" htmlFor="edit-author">Author Name</label>
                         <div className="edit-row">
-                            <input className="edit-input" value={form.person_name || ''} onChange={e => update('person_name', e.target.value)} disabled={form.anonymous} placeholder={form.anonymous ? 'Anonymous submission' : 'Author name'} />
+                            <input id="edit-author" className="edit-input" value={form.person_name || ''} onChange={e => update('person_name', e.target.value)} disabled={form.anonymous} placeholder={form.anonymous ? 'Anonymous submission' : 'Author name'} />
                             <label className="edit-checkbox-label">
                                 <input type="checkbox" checked={form.anonymous || false} onChange={e => update('anonymous', e.target.checked)} />
                                 Anonymous
@@ -254,29 +321,33 @@ export default function EditTestimonial() {
                     </div>
 
                     <div className="edit-section">
-                        <label className="edit-label">Testimonial</label>
-                        <div className="story-toolbar">
-                            <button type="button" className="story-toolbar-btn" onClick={() => formatText('bold')} title="Bold"><strong>B</strong></button>
-                            <button type="button" className="story-toolbar-btn" onClick={() => formatText('italic')} title="Italic"><em>I</em></button>
-                            <span className="story-toolbar-sep" />
-                            <button type="button" className="story-toolbar-btn" onClick={() => formatText('ul')} title="Bullet list">• List</button>
-                            <button type="button" className="story-toolbar-btn" onClick={() => formatText('ol')} title="Numbered list">1. List</button>
-                        </div>
-                        <textarea
-                            ref={storyRef}
-                            className="edit-textarea"
-                            value={form.story_text || ''}
-                            onChange={e => update('story_text', e.target.value)}
-                            rows={12}
-                        />
-                        <div className="story-count">
-                            <span>{(form.story_text || '').trim().split(/\s+/).filter(Boolean).length} words</span>
-                            <span>{(form.story_text || '').length} characters</span>
+                        <label className="edit-label" htmlFor="story-text">Testimonial</label>
+                        <div className="rte">
+                            <div className="rte-tools" role="toolbar" aria-label="Formatting" aria-controls="story-text">
+                                <button type="button" onClick={() => formatText('bold')} aria-label="Bold" title="Bold"><strong>B</strong></button>
+                                <button type="button" onClick={() => formatText('italic')} aria-label="Italic" title="Italic"><em>I</em></button>
+                                <span className="rte-sep" aria-hidden="true" />
+                                <button type="button" onClick={() => formatText('ul')} aria-label="Bullet list" title="Bullet list">• List</button>
+                                <button type="button" onClick={() => formatText('ol')} aria-label="Numbered list" title="Numbered list">1. List</button>
+                            </div>
+                            <textarea
+                                id="story-text"
+                                placeholder="Write or paste the testimonial here. Select text and use the buttons above for bold, italic or lists."
+                                ref={storyRef}
+                                className="rte-area"
+                                value={form.story_text || ''}
+                                onChange={e => update('story_text', e.target.value)}
+                                rows={12}
+                            />
+                            <div className="rte-foot" aria-live="polite">
+                                <span>{(form.story_text || '').trim().split(/\s+/).filter(Boolean).length} words</span>
+                                <span>{(form.story_text || '').length} characters</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="edit-section">
-                        <label className="edit-label">Health Conditions</label>
+                    <fieldset className="edit-section">
+                        <legend className="edit-label">Health Conditions</legend>
                         <div className="products-grid">
                             {CONDITIONS.map(c => (
                                 <label key={c} className={`product-option ${(form.conditions || []).includes(c) ? 'selected' : ''}`}>
@@ -284,37 +355,38 @@ export default function EditTestimonial() {
                                         const current = form.conditions || []
                                         update('conditions', current.includes(c) ? current.filter(x => x !== c) : [...current, c])
                                     }} />
-                                    <span className="product-check"><Check size={12} /></span>
+                                    <Check size={14} className="tick" aria-hidden="true" />
                                     {c}
                                 </label>
                             ))}
                         </div>
-                    </div>
+                    </fieldset>
 
-                    <div className="edit-section">
-                        <label className="edit-label">Products</label>
+                    <fieldset className="edit-section">
+                        <legend className="edit-label">Products</legend>
                         <div className="products-grid">
                             {PRODUCTS.map(p => (
                                 <label key={p} className={`product-option ${(form.products || []).includes(p) ? 'selected' : ''}`}>
                                     <input type="checkbox" checked={(form.products || []).includes(p)} onChange={() => toggleProduct(p)} />
+                                    <Check size={14} className="tick" aria-hidden="true" />
                                     {p}
                                 </label>
                             ))}
                         </div>
-                    </div>
+                    </fieldset>
                 </div>
 
                 {/* RIGHT COLUMN */}
                 <div className="edit-sidebar">
                     <div className="edit-section">
-                        <label className="edit-label">Status</label>
-                        <select className="edit-select" value={form.status} onChange={e => update('status', e.target.value)}>
+                        <label className="edit-label" htmlFor="edit-status">Status</label>
+                        <select id="edit-status" className="edit-select" value={form.status} onChange={e => update('status', e.target.value)}>
                             {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                     </div>
 
                     <div className="edit-section">
-                        <label className="edit-label">Gallery Photos</label>
+                        <h2 className="edit-label">Gallery Photos</h2>
                         {(form.gallery_urls || []).length > 0 && (
                             <div className="gallery-manage">
                                 {(form.gallery_urls || []).map((url, i) => (
@@ -322,22 +394,28 @@ export default function EditTestimonial() {
                                         <img src={url} alt={`Gallery ${i + 1}`} />
                                         <div className="gallery-overlay-actions">
                                             <button
+                                                type="button"
                                                 className="gallery-overlay-btn"
                                                 onClick={() => moveGalleryImage(i, -1)}
                                                 disabled={i === 0}
                                                 title="Move left"
-                                            ><ArrowLeft size={12} /></button>
+                                                aria-label={`Move image ${i + 1} left`}
+                                            ><ArrowLeft size={18} aria-hidden="true" /></button>
                                             <button
+                                                type="button"
                                                 className="gallery-overlay-btn remove"
                                                 onClick={() => removeGalleryImage(url)}
                                                 title="Remove"
-                                            ><X size={12} /></button>
+                                                aria-label={`Remove image ${i + 1}`}
+                                            ><X size={18} aria-hidden="true" /></button>
                                             <button
+                                                type="button"
                                                 className="gallery-overlay-btn"
                                                 onClick={() => moveGalleryImage(i, 1)}
                                                 disabled={i === (form.gallery_urls.length - 1)}
                                                 title="Move right"
-                                            ><ArrowRight size={12} /></button>
+                                                aria-label={`Move image ${i + 1} right`}
+                                            ><ArrowRight size={18} aria-hidden="true" /></button>
                                         </div>
                                         {url.startsWith('blob:') && (
                                             <span className="gallery-unsaved-badge">unsaved</span>
@@ -346,49 +424,50 @@ export default function EditTestimonial() {
                                 ))}
                             </div>
                         )}
-                        <div
-                            className="gallery-dropzone"
-                            onDragOver={e => e.preventDefault()}
-                            onDrop={handleDrop}
-                            onClick={() => document.getElementById('gallery-file-input').click()}
+                        <label
+                            className={`dropzone dropzone--sm ${galleryDrag ? 'drag' : ''}`}
+                            onDragOver={e => { e.preventDefault(); setGalleryDrag(true) }}
+                            onDragLeave={() => setGalleryDrag(false)}
+                            onDrop={e => { setGalleryDrag(false); handleDrop(e) }}
                         >
-                            <span className="gallery-dropzone-icon">📷</span>
-                            <span className="gallery-dropzone-text">Drag & drop photos here, or click to browse</span>
-                            <span className="gallery-dropzone-hint">JPG or PNG · Multiple files supported</span>
-                        </div>
-                        <input
-                            id="gallery-file-input"
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            style={{ display: 'none' }}
-                            onChange={e => handleGalleryFiles(e.target.files)}
-                        />
+                            <ImagePlus size={24} className="dropzone-icon" aria-hidden="true" />
+                            <span className="dropzone-main">Drag photos here or click to browse</span>
+                            <span className="dropzone-sub">JPG or PNG · several at once</span>
+                            <input
+                                id="gallery-file-input"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="dropzone-input"
+                                onChange={e => handleGalleryFiles(e.target.files)}
+                            />
+                        </label>
                     </div>
 
                     <div className="edit-section">
-                        <label className="edit-label">Edit History</label>
+                        <h2 className="edit-label">Edit History</h2>
                         {(form.edit_history || []).length === 0 ? (
                             <p className="edit-meta">No edits yet.</p>
                         ) : (
-                            <div className="edit-history-list">
+                            <ol className="timeline" aria-label="Edit history, newest first">
                                 {[...(form.edit_history || [])].reverse().map((entry, i) => (
-                                    <div key={i} className="edit-history-item">
-                                        <span className="edit-history-date">
+                                    <li key={i} className={`tl-item ${i > 0 ? 'muted' : ''}`}>
+                                        <time className="when" dateTime={entry.at}>
                                             {new Date(entry.at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            {' '}
+                                            {' · '}
                                             {new Date(entry.at).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                        <span className="edit-history-note">{entry.note}</span>
-                                    </div>
+                                        </time>
+                                        <span className="what">{historyNote(entry.note)}</span>
+                                    </li>
                                 ))}
-                            </div>
+                            </ol>
                         )}
                     </div>
 
                     <div className="edit-section">
-                        <label className="edit-label">Testimonial Date</label>
+                        <label className="edit-label" htmlFor="edit-date">Testimonial Date</label>
                         <input
+                            id="edit-date"
                             type="date"
                             className="edit-input"
                             value={form.created_at ? new Date(form.created_at).toISOString().slice(0, 10) : ''}
@@ -402,24 +481,21 @@ export default function EditTestimonial() {
                 </div>
             </div>
 
-            <div className="edit-footer">
-                <button className="btn-save" onClick={handleSave} disabled={saving}>{saveLabel}</button>
-                {isDirty() && !saving && (
-                    <span className="unsaved-indicator">You have unsaved changes</span>
-                )}
-            </div>
+
+            {/* PDF preview: uses what is on screen, unsaved edits included */}
+            {pdfPreview && <PDFPreviewDialog testimonial={pdfPreview} onClose={() => setPdfPreview(null)} />}
 
             {/* Delete confirmation modal */}
             {confirmDelete && (
-                <div className="unsaved-modal-backdrop">
-                    <div className="unsaved-modal">
-                        <h3>Delete this testimonial?</h3>
+                <div className="modal-backdrop">
+                    <div className="modal" ref={deleteDialogRef} role="alertdialog" aria-modal="true" aria-labelledby="delete-dialog-title">
+                        <h3 id="delete-dialog-title">Delete this testimonial?</h3>
                         <p>This will permanently remove <strong>{form.title}</strong> from the database. This cannot be undone.</p>
-                        <div className="unsaved-modal-actions">
-                            <button className="btn-secondary" onClick={() => setConfirmDelete(false)} disabled={deleting}>
+                        <div className="modal-ft">
+                            <button type="button" className="btn-secondary" data-autofocus onClick={() => setConfirmDelete(false)} disabled={deleting}>
                                 Cancel
                             </button>
-                            <button className="btn-danger" onClick={handleDelete} disabled={deleting}>
+                            <button type="button" className="btn-danger" onClick={handleDelete} disabled={deleting}>
                                 {deleting ? 'Deleting…' : 'Yes, delete'}
                             </button>
                         </div>
@@ -427,17 +503,25 @@ export default function EditTestimonial() {
                 </div>
             )}
 
+            {(dirty || saving) && (
+                <div className="save-bar" role="region" aria-label="Unsaved changes">
+                    <span className="save-bar-msg">{saving ? 'Saving your changes…' : 'You have unsaved changes'}</span>
+                    <button type="button" className="btn-ghost" onClick={discardChanges} disabled={saving}>Discard</button>
+                    <button type="button" className="btn-primary" onClick={handleSave} disabled={saving}>{saveLabel}</button>
+                </div>
+            )}
+
             {/* Navigation confirmation modal */}
             {pendingNav && (
-                <div className="unsaved-modal-backdrop">
-                    <div className="unsaved-modal">
-                        <h3>Leave without saving?</h3>
+                <div className="modal-backdrop">
+                    <div className="modal" ref={leaveDialogRef} role="alertdialog" aria-modal="true" aria-labelledby="leave-dialog-title">
+                        <h3 id="leave-dialog-title">Leave without saving?</h3>
                         <p>You have unsaved changes. If you leave now they will be lost.</p>
-                        <div className="unsaved-modal-actions">
-                            <button className="btn-secondary" onClick={() => setPendingNav(null)}>
+                        <div className="modal-ft">
+                            <button type="button" className="btn-secondary" data-autofocus onClick={() => setPendingNav(null)}>
                                 Stay and keep editing
                             </button>
-                            <button className="btn-danger" onClick={() => { setPendingNav(null); navigate(pendingNav) }}>
+                            <button type="button" className="btn-danger" onClick={() => { setPendingNav(null); navigate(pendingNav) }}>
                                 Leave without saving
                             </button>
                         </div>

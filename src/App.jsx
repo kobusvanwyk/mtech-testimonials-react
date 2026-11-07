@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import Navbar from './components/Navbar'
 import Topbar from './components/Topbar'
 import Footer from './components/Footer'
+import SkipLink from './components/SkipLink'
 import LogoOnlyLayout from './components/LogoOnlyLayout'
 import Home from './pages/Home'
 import Submit from './pages/Submit'
@@ -23,15 +24,18 @@ import PDFSettings from './pages/admin/PDFSettings'
 import Duplicates from './pages/admin/Duplicates'
 import WhatsAppSync from './pages/admin/WhatsAppSync'
 import AskAI from './pages/admin/AskAI'
+import PendingReview from './pages/admin/PendingReview'
+import FeedbackProvider from './components/FeedbackProvider'
 import NotFound from './pages/NotFound'
 import { useSiteSettings } from './lib/SiteSettingsContext'
 
 function PublicLayout({ children }) {
     return (
         <>
+            <SkipLink />
             <Topbar />
-                <Navbar />
-            <main className="main-content">{children}</main>
+            <Navbar />
+            <main id="main-content" tabIndex={-1} className="main-content">{children}</main>
             <Footer />
         </>
     )
@@ -49,14 +53,14 @@ function SingleRoute() {
 function AppRoutes() {
     const { privateMode, loading, isLoggedIn } = useSiteSettings()
 
-    // Blank screen while fetching private_mode — prevents flash of wrong content
+    // Blank screen while fetching private_mode, prevents flash of wrong content
     if (loading) return null
 
     // Logged-in admins always see the full site regardless of private mode
     if (privateMode && !isLoggedIn) {
         return (
             <Routes>
-                {/* Accessible in private mode — logo only layout */}
+                {/* Accessible in private mode, logo only layout */}
                 <Route path="/submit"  element={<LogoOnlyLayout><Submit /></LogoOnlyLayout>} />
                 <Route path="/terms"   element={<LogoOnlyLayout><Terms /></LogoOnlyLayout>} />
                 <Route path="/privacy" element={<LogoOnlyLayout><Privacy /></LogoOnlyLayout>} />
@@ -66,6 +70,7 @@ function AppRoutes() {
                     <Route index element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="dashboard"  element={<Dashboard />} />
                     <Route path="all"        element={<AllTestimonials />} />
+                    <Route path="pending"    element={<PendingReview />} />
                     <Route path="edit/:id"   element={<EditTestimonial />} />
                     <Route path="categories" element={<Categories />} />
                     <Route path="images"     element={<ImageManager />} />
@@ -77,7 +82,7 @@ function AppRoutes() {
                     <Route path="duplicates"  element={<Duplicates />} />
                 </Route>
 
-                {/* Everything else — neutral dead end */}
+                {/* Everything else, neutral dead end */}
                 <Route path="*" element={<PrivateModePage />} />
             </Routes>
         )
@@ -96,6 +101,7 @@ function AppRoutes() {
                 <Route index element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="dashboard"  element={<Dashboard />} />
                 <Route path="all"        element={<AllTestimonials />} />
+                <Route path="pending"    element={<PendingReview />} />
                 <Route path="edit/:id"   element={<EditTestimonial />} />
                 <Route path="categories" element={<Categories />} />
                 <Route path="images"     element={<ImageManager />} />
@@ -127,8 +133,10 @@ function PageViewTracker() {
 function App() {
     return (
         <BrowserRouter>
-            <PageViewTracker />
-            <AppRoutes />
+            <FeedbackProvider>
+                <PageViewTracker />
+                <AppRoutes />
+            </FeedbackProvider>
         </BrowserRouter>
     )
 }
