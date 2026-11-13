@@ -1009,10 +1009,10 @@ select.settings-input {
 .edit-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; white-space: nowrap; cursor: pointer; }
 .edit-meta { color: var(--muted-dark); font-size: 0.9rem; }
 
-// Edit gallery: tiles wide enough for three 44px round actions
+// Edit gallery: tiles wide enough for four 44px round actions
 .gallery-manage {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
     gap: var(--space-3);
     margin-bottom: var(--space-4);
 
@@ -2362,3 +2362,118 @@ fieldset.settings-names:disabled .name-mode { cursor: progress; opacity: 0.7; }
     color: var(--warning-ink);
     font-size: var(--text-caption);
 }
+
+// Add Testimonial (/admin/new): paste panel above the form
+.add-paste {
+    margin-bottom: 20px;   // same gap as between the form cards (.edit-main gap)
+
+    .settings-hint { margin: 0 0 var(--space-3); }
+    .alert { margin: var(--space-4) 0 0; }
+}
+.add-paste-area {
+    min-height: 160px;
+    line-height: 1.6;
+    resize: vertical;
+}
+.add-paste-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+
+    .settings-hint { margin: 0; }
+}
+.add-paste .alert ul,
+.add-similar ul {
+    margin: var(--space-2) 0 0;
+    padding-left: var(--space-5);
+}
+.add-paste .alert p,
+.add-similar p { margin: 0; }
+
+// Photo editor dialog (components/ImageEditor.jsx): stage left, tools right,
+// stacked below 900px. Wider than the standard 540px modal.
+.modal.image-editor {
+    max-width: 1080px;
+    max-height: 94vh;
+}
+.image-editor-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+    margin-top: var(--space-3);
+
+    @media (min-width: 900px) { grid-template-columns: minmax(0, 1fr) 280px; }
+}
+.image-editor-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--dark-navy);
+
+    .ReactCrop { max-width: 100%; }
+    img {
+        display: block;
+        max-width: 100%;
+        max-height: 62vh;
+    }
+}
+.image-editor-empty { margin: 0; color: #fff; font-size: var(--text-caption); }
+.image-editor-tools {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+
+    .edit-label { margin-bottom: var(--space-2); }
+    .settings-hint { margin: var(--space-2) 0 0; }
+}
+.image-editor-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+.image-editor-chip,
+.image-editor-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: var(--text-caption);
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+
+    &:hover:not(:disabled) { border-color: var(--accent-ink); color: var(--accent-ink); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    &.active { background: var(--accent-tint); border-color: var(--accent-ink); color: var(--accent-ink); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+.image-editor-icon { width: 40px; min-height: 40px; padding: 0; }
+.image-editor-slider {
+    display: block;
+    margin-top: var(--space-3);
+    font-size: var(--text-caption);
+    color: var(--text-2);
+
+    span { display: flex; justify-content: space-between; margin-bottom: var(--space-1); }
+    output { font-variant-numeric: tabular-nums; color: var(--text-1); font-weight: 600; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+}
+.image-editor-reset { align-self: flex-start; }
+.image-editor .alert { margin: var(--space-4) 0 0; }
+.image-editor-ft {
+    align-items: center;
+    .image-editor-remove { margin-right: auto; white-space: normal; }
+}
+
+// Pencil button on gallery tiles sits with move/remove
+.gallery-overlay-btn.edit { color: var(--accent-ink); }

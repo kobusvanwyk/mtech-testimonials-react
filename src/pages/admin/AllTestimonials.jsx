@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
 import TestimonialTable from '../../components/TestimonialTable'
-import { Download, X, Calendar } from 'lucide-react'
+import { Download, X, Calendar, Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import flatpickr from 'flatpickr'
 import 'flatpickr/dist/flatpickr.min.css'
 
@@ -154,6 +155,9 @@ export default function AllTestimonials() {
                     <button type="button" className="btn-secondary" onClick={exportCSV}>
                         <Download size={16} aria-hidden="true" /> Export CSV
                     </button>
+                    <Link to="/admin/new" className="btn-primary">
+                        <Plus size={16} aria-hidden="true" /> Add testimonial
+                    </Link>
                 </div>
             </div>
             <TestimonialTable

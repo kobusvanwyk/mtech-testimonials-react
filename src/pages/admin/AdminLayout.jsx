@@ -9,7 +9,7 @@ import { fetchRole, finderMayOpen, FINDER_HOME, isViewingAsFinder, setViewingAsF
 import {
     LayoutDashboard, List, Clock, Sparkles, Tag, Images, Upload, MessageCircle,
     ScanSearch, Settings, FileText, Menu, X, Lock, ExternalLink, BookOpen, LogOut,
-    ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, KeyRound, UserRoundSearch,
+    ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, KeyRound, UserRoundSearch, FilePlus,
 } from 'lucide-react'
 
 // App shell (design/DESIGN.md "App shell", ui-guide #shell to #shell-login).
@@ -18,6 +18,7 @@ const NAV_GROUPS = [
     { label: 'Testimonials', items: [
         { to: '/admin/dashboard', label: 'Dashboard',        Icon: LayoutDashboard },
         { to: '/admin/all',       label: 'All Testimonials', Icon: List, also: ['/admin/edit/:id'] },
+        { to: '/admin/new',       label: 'Add Testimonial',  Icon: FilePlus },
         { to: '/admin/pending',   label: 'Pending Review',   Icon: Clock, count: true },
         { to: '/admin/ask',       label: 'Ask AI',           Icon: Sparkles, finder: true },
     ]},
@@ -52,6 +53,9 @@ function isActive(item, pathname) {
 
 // Breadcrumb trail for the top bar: [{ label, to? }]
 function crumbsFor(pathname) {
+    if (matchPath('/admin/new', pathname)) {
+        return [{ label: 'All Testimonials', to: '/admin/all' }, { label: 'Add Testimonial' }]
+    }
     if (matchPath('/admin/edit/:id', pathname)) {
         return [{ label: 'All Testimonials', to: '/admin/all' }, { label: 'Edit Testimonial' }]
     }

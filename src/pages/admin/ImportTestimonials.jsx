@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, Fragment } from 'react'
 import Alert from '../../components/Alert'
 import { supabase } from '../../lib/supabase'
+import { optimiseImage } from '../../lib/imageTools'
 import { generateUniqueSlug } from '../../lib/slugify'
 import {
     Upload, FileText, Check, X, AlertTriangle,
@@ -63,9 +64,10 @@ function RowImageUploader({ rowIndex, images, onImagesChange }) {
         ))
 
         try {
-            const ext = uploadItem.file.name.split('.').pop()
+            const file = await optimiseImage(uploadItem.file)   // WebP, long edge 2000px
+            const ext = file.name.split('.').pop()
             const path = `gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-            const { error } = await supabase.storage.from(BUCKET).upload(path, uploadItem.file)
+            const { error } = await supabase.storage.from(BUCKET).upload(path, file)
             if (error) throw error
             const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
             onImagesChange(rowIndex, prev => prev.map(u =>

@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { EditTestimonialSkeleton } from '../../components/Skeleton'
 import { useProducts } from '../../lib/ProductsContext'
 import { syncConditionsOnApproval } from '../../lib/syncConditions'
-import { ArrowLeft, ArrowRight, Eye, Check, X, Trash2, FileText, ImagePlus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, Check, X, Trash2, FileText, ImagePlus, Sparkles, Pencil } from 'lucide-react'
 import MoreMenu from '../../components/MoreMenu'
 import { useDialog } from '../../lib/useDialog'
 import { PDFDownloadButton } from '../../components/PDFDownloadButton'
@@ -13,6 +13,12 @@ import PDFPreviewDialog from '../../components/PDFPreviewDialog'
 import { useCanPreviewPdf } from '../../lib/useCanPreviewPdf'
 import { StatusBadge } from '../../components/TestimonialTable'
 import { STATUS_MAP } from '../../lib/status'
+import Alert from '../../components/Alert'
+import { postFunction } from '../../lib/authFetch'
+import { generateUniqueSlug } from '../../lib/slugify'
+import { findSimilar } from '../../lib/similarity'
+import ImageEditor from '../../components/ImageEditor'
+import { optimiseImage } from '../../lib/imageTools'
 
 const STATUS_OPTIONS = [
     { value: 'pending', label: 'Pending' },
@@ -28,11 +34,24 @@ function historyNote(note = '') {
     return note.replace(/^Status: (\w+)$/, (m, v) => `Status: ${STATUS_MAP[v]?.label || v}`)
 }
 
+// A blank testimonial for /admin/new. Pending by default, the status dropdown
+// can publish it straight away.
+function emptyForm() {
+    return {
+        title: '', person_name: '', anonymous: false, story_text: '',
+        conditions: [], products: [], gallery_urls: [],
+        status: 'pending', created_at: new Date().toISOString(), edit_history: [],
+    }
+}
+
+const LANGUAGE_LABEL = { afrikaans: 'Translated from Afrikaans.', mixed: 'Translated from Afrikaans and English.' }
+
 export default function EditTestimonial() {
     const toast = useToast()
     const PRODUCTS = useProducts()
     const [CONDITIONS, setConditions] = useState([])
     const { id } = useParams()
+    const isNew = !id
     const navigate = useNavigate()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving]   = useState(false)
@@ -40,7 +59,11 @@ export default function EditTestimonial() {
     const [confirmDelete, setConfirmDelete] = useState(false)
     const [saved, setSaved] = useState(false)
     const [conditionInput, setConditionInput] = useState('')
-    const [newGalleryImages, setNewGalleryImages] = useState([])
+    // New photos not uploaded yet: blob preview URL -> File (optimised WebP)
+    const [newGalleryImages, setNewGalleryImages] = useState({})
+    const [preparing, setPreparing] = useState(0)
+    const [editingUrl, setEditingUrl] = useState(null)
+    const editAdded = useRef(0)
     const [form, setForm] = useState(null)
     const [pendingNav, setPendingNav] = useState(null)
     const [pdfPreview, setPdfPreview] = useState(null)
@@ -52,11 +75,19 @@ export default function EditTestimonial() {
     const deleteDialogRef = useDialog(confirmDelete, () => { if (!deleting) setConfirmDelete(false) })
     const leaveDialogRef  = useDialog(!!pendingNav, () => setPendingNav(null))
 
+    // Add mode: paste raw text, tidy with AI, warn about likely duplicates
+    const [pasteText, setPasteText] = useState('')
+    const [tidying, setTidying]     = useState(false)
+    const [tidyError, setTidyError] = useState('')
+    const [tidyResult, setTidyResult] = useState(null)   // { language, notes }
+    const [similar, setSimilar]     = useState([])
+    const existingRef = useRef(null)
+
     const isDirty = useCallback(() => {
         if (!form || !originalForm.current) return false
-        if (newGalleryImages.length > 0) return true
+        // New photos show as blob: URLs in gallery_urls, so this covers them too
         return JSON.stringify(form) !== JSON.stringify(originalForm.current)
-    }, [form, newGalleryImages])
+    }, [form])
 
     // Safe navigate, shows confirmation if dirty
     function safeNavigate(to) {
@@ -106,7 +137,77 @@ export default function EditTestimonial() {
             .then(({ data }) => setConditions((data || []).map(d => d.name)))
     }, [])
 
+    // Add mode: compare the story with existing testimonials (TF-IDF, in the
+    // browser, no AI cost). Loaded once, checked shortly after typing stops.
+    const storyText = form?.story_text || ''
+    useEffect(() => {
+        if (!isNew) { setSimilar([]); return }
+        let cancelled = false
+        const t = setTimeout(async () => {
+            if (!existingRef.current) {
+                const { data } = await supabase.from('testimonials').select('id, title, story_text, person_name, anonymous, status')
+                existingRef.current = data || []
+            }
+            if (!cancelled) setSimilar(findSimilar(storyText, existingRef.current))
+        }, 700)
+        return () => { cancelled = true; clearTimeout(t) }
+    }, [isNew, storyText])
+
+    async function handleTidy() {
+        const text = pasteText.trim()
+        if (!text || tidying) return
+        setTidying(true)
+        setTidyError('')
+        try {
+            const resp = await postFunction('tidy-testimonial', { text, conditions: CONDITIONS, products: PRODUCTS })
+            const out = await resp.json().catch(() => ({}))
+            if (!resp.ok) throw new Error(out.message || 'The AI could not tidy this text. Try again.')
+
+            // Use the site's own spelling where a condition or product already exists
+            const findIn = (list, name) => list.find(x => x.toLowerCase() === name.trim().toLowerCase())
+            const conditions = [...new Set((out.conditions || []).filter(Boolean).map(c => findIn(CONDITIONS, c) || c.trim()))]
+            const newConditions = conditions.filter(c => !CONDITIONS.includes(c))
+            if (newConditions.length) setConditions(prev => [...prev, ...newConditions].sort((a, b) => a.localeCompare(b)))
+
+            const unmatched = []
+            const products = []
+            for (const p of out.products || []) {
+                const hit = findIn(PRODUCTS, p)
+                if (hit) { if (!products.includes(hit)) products.push(hit) }
+                else unmatched.push(p)
+            }
+
+            const notes = [...(out.review_notes || [])]
+            if (newConditions.length) notes.push(`New condition${newConditions.length > 1 ? 's' : ''} not on the list yet: ${newConditions.join(', ')}.`)
+            if (unmatched.length) notes.push(`Product${unmatched.length > 1 ? 's' : ''} not on the list, left unticked: ${unmatched.join(', ')}.`)
+
+            setForm(prev => ({
+                ...prev,
+                title: out.title || prev.title,
+                person_name: out.person_name || '',
+                anonymous: !!out.anonymous || !out.person_name,
+                story_text: out.story_text || prev.story_text,
+                conditions,
+                products,
+            }))
+            setTidyResult({ language: out.source_language, notes })
+        } catch (err) {
+            setTidyError(err.message || 'The AI could not tidy this text. Try again.')
+        } finally {
+            setTidying(false)
+        }
+    }
+
     async function fetchTestimonial() {
+        if (isNew) {
+            const blank = emptyForm()
+            setForm(blank)
+            originalForm.current = blank
+            setNewGalleryImages({})
+            setPasteText(''); setTidyResult(null); setTidyError(''); setSimilar([])
+            setLoading(false)
+            return
+        }
         const { data } = await supabase.from('testimonials').select('*').eq('id', id).single()
         if (data) {
             setForm(data)
@@ -188,13 +289,68 @@ export default function EditTestimonial() {
         return data.publicUrl
     }
 
-    function handleGalleryFiles(files) {
+    // Keep a new photo for upload on save and return its preview URL
+    function stageFile(file) {
+        const url = URL.createObjectURL(file)
+        setNewGalleryImages(prev => ({ ...prev, [url]: file }))
+        return url
+    }
+
+    async function handleGalleryFiles(files) {
         const valid = Array.from(files).filter(f => f.type.startsWith('image/'))
         if (!valid.length) return
-        // Preview immediately
-        const previews = valid.map(f => URL.createObjectURL(f))
-        update('gallery_urls', [...(form.gallery_urls || []), ...previews])
-        setNewGalleryImages(prev => [...prev, ...valid])
+        // Shrink and convert to WebP before they are shown and uploaded
+        setPreparing(n => n + valid.length)
+        try {
+            const optimised = await Promise.all(valid.map(optimiseImage))
+            const previews = optimised.map(stageFile)
+            setForm(prev => ({ ...prev, gallery_urls: [...(prev.gallery_urls || []), ...previews] }))
+        } finally {
+            setPreparing(n => n - valid.length)
+        }
+    }
+
+    // Upload the new photos in gallery order; saved photos keep their URL
+    async function uploadGallery(urls = []) {
+        return Promise.all(urls.map(u => (u.startsWith('blob:') && newGalleryImages[u]) ? uploadImage(newGalleryImages[u], 'gallery') : u))
+    }
+
+    function clearStagedFiles() {
+        Object.keys(newGalleryImages).forEach(u => URL.revokeObjectURL(u))
+        setNewGalleryImages({})
+    }
+
+    // Photo editor callbacks
+    function openEditor(url) {
+        editAdded.current = 0
+        setEditingUrl(url)
+    }
+
+    function replaceEditedPhoto(file) {
+        const oldUrl = editingUrl
+        const newUrl = stageFile(file)
+        setForm(prev => ({ ...prev, gallery_urls: (prev.gallery_urls || []).map(u => u === oldUrl ? newUrl : u) }))
+        setEditingUrl(null)
+    }
+
+    // Collage pieces go straight after the photo they came from, in order
+    function addEditedPhotos(files) {
+        const urls = files.map(stageFile)
+        const anchor = editingUrl
+        const offset = editAdded.current
+        editAdded.current += urls.length
+        setForm(prev => {
+            const arr = [...(prev.gallery_urls || [])]
+            const at = arr.indexOf(anchor)
+            arr.splice(at < 0 ? arr.length : at + 1 + offset, 0, ...urls)
+            return { ...prev, gallery_urls: arr }
+        })
+    }
+
+    function closeEditor({ removeOriginal } = {}) {
+        const url = editingUrl
+        if (removeOriginal) setForm(prev => ({ ...prev, gallery_urls: (prev.gallery_urls || []).filter(u => u !== url) }))
+        setEditingUrl(null)
     }
 
     function handleDrop(e) {
@@ -202,21 +358,48 @@ export default function EditTestimonial() {
         handleGalleryFiles(e.dataTransfer.files)
     }
 
+    async function handleCreate() {
+        if (!form.title?.trim() || !form.story_text?.trim()) {
+            toast.error('Add a title and the testimonial text before saving.')
+            return
+        }
+        setSaving(true)
+        try {
+            const record = { ...form, title: form.title.trim() }
+            record.gallery_urls = await uploadGallery(record.gallery_urls)
+            record.slug = await generateUniqueSlug(record.title)
+            // Shown as "Manual" in the source column, like the other imports
+            record.is_imported = true
+            record.imported_from = 'manual_import'
+            const now = new Date().toISOString()
+            record.edit_history = [{ at: now, note: 'Added by admin' }, { at: now, note: `Status: ${record.status}` }]
+
+            const { data, error } = await supabase.from('testimonials').insert(record).select('id').single()
+            if (error) throw error
+            if (record.status === 'approved') {
+                await syncConditionsOnApproval(record.conditions || [])
+            }
+
+            originalForm.current = form   // not dirty, so leaving does not ask
+            clearStagedFiles()
+            toast.success('Testimonial added')
+            navigate(`/admin/edit/${data.id}`, { replace: true })
+        } catch (err) {
+            toast.error('The testimonial could not be saved. Check your connection and try again.')
+            console.error(err)
+        } finally {
+            setSaving(false)
+        }
+    }
+
     async function handleSave() {
+        if (isNew) return handleCreate()
         setSaving(true)
         try {
             let updates = { ...form }
 
-            if (newGalleryImages.length > 0) {
-                const newUrls = await Promise.all(newGalleryImages.map(f => uploadImage(f, 'gallery')))
-                // Replace blob preview URLs with real uploaded URLs
-                const blobPreviews = newGalleryImages.map(f => {
-                    // Find matching blob URL in gallery_urls by matching file order
-                    return null
-                })
-                const existing = (updates.gallery_urls || []).filter(u => !u.startsWith('blob:'))
-                updates.gallery_urls = [...existing, ...newUrls]
-            }
+            // New and edited photos are uploaded where they sit in the gallery
+            updates.gallery_urls = await uploadGallery(updates.gallery_urls)
 
             const historyEntry = { at: new Date().toISOString(), note: `Status: ${updates.status}` }
             updates.edit_history = [...(form.edit_history || []), historyEntry]
@@ -230,7 +413,9 @@ export default function EditTestimonial() {
             }
 
             setSaved(true)
-            setNewGalleryImages([])
+            // Swap the previews for the uploaded URLs before the blobs are released
+            setForm(prev => ({ ...prev, gallery_urls: updates.gallery_urls }))
+            clearStagedFiles()
             originalForm.current = { ...updates, id, created_at: form.created_at }
             setTimeout(() => setSaved(false), 3000)
             fetchTestimonial()
@@ -256,7 +441,7 @@ export default function EditTestimonial() {
     if (loading) return <EditTestimonialSkeleton />
     if (!form) return <div className="admin-page-content"><p>Testimonial not found.</p></div>
 
-    const saveLabel = saving ? 'Saving…' : saved ? <><Check size={16} aria-hidden="true" /> Saved</> : 'Save changes'
+    const saveLabel = saving ? 'Saving…' : saved ? <><Check size={16} aria-hidden="true" /> Saved</> : isNew ? 'Save testimonial' : 'Save changes'
     const dirty = isDirty()
     const authorName = form.anonymous ? 'Anonymous' : (form.person_name || 'Unnamed')
     const submitted = form.created_at
@@ -264,9 +449,8 @@ export default function EditTestimonial() {
         : null
 
     function discardChanges() {
-        form.gallery_urls?.forEach(u => { if (u.startsWith('blob:')) URL.revokeObjectURL(u) })
         setForm({ ...originalForm.current })
-        setNewGalleryImages([])
+        clearStagedFiles()
     }
 
     return (
@@ -274,14 +458,17 @@ export default function EditTestimonial() {
             {/* Page header: title + meta, then Preview, Save, More (Download PDF, Delete). Back lives in the breadcrumb. */}
             <div className="edit-header">
                 <div className="edit-header-title">
-                    <h1>Edit Testimonial</h1>
-                    <div className="edit-header-meta">
+                    <h1>{isNew ? 'Add Testimonial' : 'Edit Testimonial'}</h1>
+                    {!isNew && <div className="edit-header-meta">
                         <StatusBadge status={originalForm.current?.status || form.status} />
                         <span>{authorName}</span>
                         {submitted && <><span aria-hidden="true">·</span><span>Submitted {submitted}</span></>}
-                    </div>
+                    </div>}
                 </div>
                 <div className="edit-header-actions">
+                    {isNew ? (
+                        <button type="button" className="btn-primary" onClick={handleSave} disabled={saving}>{saveLabel}</button>
+                    ) : <>
                     <Link to={`/testimonial/${form.slug || id}`} target="_blank" className="btn-secondary">
                         <Eye size={16} aria-hidden="true" /> Preview
                     </Link>
@@ -298,8 +485,59 @@ export default function EditTestimonial() {
                             <Trash2 size={16} aria-hidden="true" /> Delete testimonial
                         </button>
                     </MoreMenu>
+                    </>}
                 </div>
             </div>
+
+            {isNew && (
+                <div className="edit-section add-paste">
+                    <label className="edit-label" htmlFor="paste-text">Paste the raw testimonial</label>
+                    <p className="settings-hint">
+                        English or Afrikaans, straight from WhatsApp, email or a note. The AI translates it to English,
+                        proofreads it in the person's own voice, suggests a title and ticks the conditions and products.
+                        Check everything below before you save.
+                    </p>
+                    <textarea
+                        id="paste-text"
+                        className="edit-input add-paste-area"
+                        value={pasteText}
+                        onChange={e => setPasteText(e.target.value)}
+                        rows={7}
+                        placeholder="Paste the testimonial here"
+                    />
+                    <div className="add-paste-actions">
+                        <button type="button" className="btn-primary" onClick={handleTidy} disabled={tidying || !pasteText.trim()}>
+                            <Sparkles size={16} aria-hidden="true" /> {tidying ? 'Tidying…' : tidyResult ? 'Tidy again' : 'Tidy with AI'}
+                        </button>
+                        <span className="settings-hint" aria-live="polite">{tidying ? 'Reading, translating and proofreading. This takes a few seconds.' : ''}</span>
+                    </div>
+                    {tidyError && <Alert type="error" onClose={() => setTidyError('')}>{tidyError}</Alert>}
+                    {tidyResult && (
+                        <Alert
+                            type={tidyResult.notes.length ? 'warning' : 'success'}
+                            title={tidyResult.notes.length ? 'Filled in below. Please check:' : 'Filled in below. Give it a read before you save.'}
+                            onClose={() => setTidyResult(null)}
+                        >
+                            {LANGUAGE_LABEL[tidyResult.language] && <p>{LANGUAGE_LABEL[tidyResult.language]}</p>}
+                            {tidyResult.notes.length > 0 && <ul>{tidyResult.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>}
+                        </Alert>
+                    )}
+                </div>
+            )}
+
+            {isNew && similar.length > 0 && (
+                <Alert type="warning" title="This may already be on the site" className="add-similar">
+                    <p>These existing testimonials read very similar. Open them to compare before you save.</p>
+                    <ul>
+                        {similar.map(t => (
+                            <li key={t.id}>
+                                <Link to={`/admin/edit/${t.id}`} target="_blank">{t.title || 'Untitled'}</Link>
+                                {' '}({t.anonymous ? 'Anonymous' : (t.person_name || 'Unnamed')}, {STATUS_MAP[t.status]?.label || t.status}, {Math.round(t.sim * 100)}% similar)
+                            </li>
+                        ))}
+                    </ul>
+                </Alert>
+            )}
 
             <div className="edit-grid">
                 {/* LEFT COLUMN */}
@@ -403,6 +641,13 @@ export default function EditTestimonial() {
                                             ><ArrowLeft size={18} aria-hidden="true" /></button>
                                             <button
                                                 type="button"
+                                                className="gallery-overlay-btn edit"
+                                                onClick={() => openEditor(url)}
+                                                title="Edit photo"
+                                                aria-label={`Edit image ${i + 1}: crop, rotate, adjust or split a collage`}
+                                            ><Pencil size={18} aria-hidden="true" /></button>
+                                            <button
+                                                type="button"
                                                 className="gallery-overlay-btn remove"
                                                 onClick={() => removeGalleryImage(url)}
                                                 title="Remove"
@@ -432,19 +677,19 @@ export default function EditTestimonial() {
                         >
                             <ImagePlus size={24} className="dropzone-icon" aria-hidden="true" />
                             <span className="dropzone-main">Drag photos here or click to browse</span>
-                            <span className="dropzone-sub">JPG or PNG · several at once</span>
+                            <span className="dropzone-sub">{preparing > 0 ? 'Optimising photos…' : 'JPG or PNG · several at once · saved as WebP'}</span>
                             <input
                                 id="gallery-file-input"
                                 type="file"
                                 accept="image/*"
                                 multiple
                                 className="dropzone-input"
-                                onChange={e => handleGalleryFiles(e.target.files)}
+                                onChange={e => { handleGalleryFiles(e.target.files); e.target.value = '' }}
                             />
                         </label>
                     </div>
 
-                    <div className="edit-section">
+                    {!isNew && <div className="edit-section">
                         <h2 className="edit-label">Edit History</h2>
                         {(form.edit_history || []).length === 0 ? (
                             <p className="edit-meta">No edits yet.</p>
@@ -462,7 +707,7 @@ export default function EditTestimonial() {
                                 ))}
                             </ol>
                         )}
-                    </div>
+                    </div>}
 
                     <div className="edit-section">
                         <label className="edit-label" htmlFor="edit-date">Testimonial Date</label>
@@ -481,6 +726,15 @@ export default function EditTestimonial() {
                 </div>
             </div>
 
+
+            {editingUrl && (
+                <ImageEditor
+                    src={editingUrl}
+                    onReplace={replaceEditedPhoto}
+                    onAdd={addEditedPhotos}
+                    onClose={closeEditor}
+                />
+            )}
 
             {/* PDF preview: uses what is on screen, unsaved edits included */}
             {pdfPreview && <PDFPreviewDialog testimonial={pdfPreview} onClose={() => setPdfPreview(null)} />}
@@ -505,7 +759,7 @@ export default function EditTestimonial() {
 
             {(dirty || saving) && (
                 <div className="save-bar" role="region" aria-label="Unsaved changes">
-                    <span className="save-bar-msg">{saving ? 'Saving your changes…' : 'You have unsaved changes'}</span>
+                    <span className="save-bar-msg">{saving ? 'Saving your changes…' : isNew ? 'This testimonial is not saved yet' : 'You have unsaved changes'}</span>
                     <button type="button" className="btn-ghost" onClick={discardChanges} disabled={saving}>Discard</button>
                     <button type="button" className="btn-primary" onClick={handleSave} disabled={saving}>{saveLabel}</button>
                 </div>
