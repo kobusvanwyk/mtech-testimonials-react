@@ -6,7 +6,7 @@ import { useDialog } from '../lib/useDialog'
 import Alert from './Alert'
 import {
     loadImage, renderGeometry, cropCanvas, applyAdjustments, canvasToFile, detectCollageTiles,
-    cssFilter, sharpenStrength, NO_ADJUST, MAX_EDGE,
+    cssFilter, sharpenStrength, NO_ADJUST, MAX_EDGE, levelsTable, histogram, autoLevels,
 } from '../lib/imageTools'
 
 // Photo editor (Add and Edit Testimonial galleries): crop, rotate, flip,
@@ -37,6 +37,16 @@ const FULL = { unit: '%', x: 0, y: 0, width: 100, height: 100 }
 const PREVIEW_EDGE = 1400   // the on-screen copy; the saved photo uses the full image
 const SOURCE_EDGE = 6000    // cap on the working copy, keeps memory sane on huge scans
 const SHARPEN_ID = 'image-editor-sharpen'
+const LEVELS_ID = 'image-editor-levels'
+
+// Histogram as an SVG path, 256 wide by 60 high (square-root scale so the
+// quieter tones still show)
+function histogramPath(bins) {
+    const peak = Math.sqrt(Math.max(...bins, 1))
+    let dPath = 'M0 60'
+    bins.forEach((n, i) => { dPath += ` L${i} ${(60 - (Math.sqrt(n) / peak) * 58).toFixed(1)}` })
+    return dPath + ' L255 60 Z'
+}
 
 export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
     const [img, setImg] = useState(null)
@@ -49,6 +59,7 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
     const [crop, setCrop] = useState(FULL)
     const [adjust, setAdjust] = useState(NO_ADJUST)
     const [preview, setPreview] = useState(null)     // { url, width, height }
+    const [hist, setHist] = useState(null)           // 256 brightness bins of the photo
     const [busy, setBusy] = useState('')
     const [added, setAdded] = useState(0)
     const [removeOriginal, setRemoveOriginal] = useState(true)
@@ -74,6 +85,7 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
         if (!img) return
         let url
         const canvas = renderGeometry(img, geometry, PREVIEW_EDGE)
+        setHist(histogram(canvas))
         canvas.toBlob(blob => {
             url = URL.createObjectURL(blob)
             setPreview({ url, width: canvas.width, height: canvas.height })
@@ -141,6 +153,14 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
     })
 
     const k = sharpenStrength(adjust.sharpen)
+    const levelsValues = Array.from(levelsTable(adjust), v => (v / 255).toFixed(4)).join(' ')
+    const setLevel = (key, value) => setAdjust(a => {
+        const next = { ...a, [key]: value }
+        // Keep black below white with a small gap
+        if (key === 'levelsBlack') next.levelsBlack = Math.min(value, a.levelsWhite - 2)
+        if (key === 'levelsWhite') next.levelsWhite = Math.max(value, a.levelsBlack + 2)
+        return next
+    })
     const ready = img && preview && !busy
 
     return (
@@ -148,9 +168,17 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
             <div className="modal image-editor" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="image-editor-title">
                 <h3 id="image-editor-title">Edit photo</h3>
 
-                {/* Same kernel as the saved photo's sharpen (lib/imageTools.js) */}
+                {/* Same kernel and Levels table as the saved photo (lib/imageTools.js).
+                    sRGB so the filters work on the same values as the canvas. */}
                 <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>
-                    <filter id={SHARPEN_ID}>
+                    <filter id={LEVELS_ID} colorInterpolationFilters="sRGB">
+                        <feComponentTransfer>
+                            <feFuncR type="table" tableValues={levelsValues} />
+                            <feFuncG type="table" tableValues={levelsValues} />
+                            <feFuncB type="table" tableValues={levelsValues} />
+                        </feComponentTransfer>
+                    </filter>
+                    <filter id={SHARPEN_ID} colorInterpolationFilters="sRGB">
                         <feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix={`0 ${-k} 0 ${-k} ${1 + 4 * k} ${-k} 0 ${-k} 0`} />
                     </filter>
                 </svg>
@@ -171,7 +199,7 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                                 <img
                                     src={preview.url}
                                     alt="Photo being edited"
-                                    style={{ filter: cssFilter(adjust, SHARPEN_ID) }}
+                                    style={{ filter: cssFilter(adjust, SHARPEN_ID, LEVELS_ID) }}
                                 />
                             </ReactCrop>
                         )}
@@ -205,6 +233,32 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                             <label className="image-editor-slider">
                                 <span>Straighten <output>{straighten > 0 ? '+' : ''}{straighten}°</output></span>
                                 <input type="range" min={-15} max={15} step={0.5} value={straighten} onChange={e => setStraighten(Number(e.target.value))} disabled={!ready} />
+                            </label>
+                        </div>
+
+                        <div className="image-editor-group">
+                            <div className="image-editor-levels-head">
+                                <span className="edit-label">Levels</span>
+                                <button type="button" className="image-editor-chip" onClick={() => hist && setAdjust(a => ({ ...a, ...autoLevels(hist) }))} disabled={!ready || !hist}>Auto</button>
+                            </div>
+                            {hist && (
+                                <svg className="image-editor-hist" viewBox="0 0 256 60" preserveAspectRatio="none" role="img" aria-label="Histogram of the photo's tones, dark on the left, light on the right">
+                                    <path d={histogramPath(hist)} />
+                                    <line x1={adjust.levelsBlack} x2={adjust.levelsBlack} y1="0" y2="60" className="black" />
+                                    <line x1={adjust.levelsWhite} x2={adjust.levelsWhite} y1="0" y2="60" className="white" />
+                                </svg>
+                            )}
+                            <label className="image-editor-slider">
+                                <span>Black point <output>{adjust.levelsBlack}</output></span>
+                                <input type="range" min={0} max={253} step={1} value={adjust.levelsBlack} onChange={e => setLevel('levelsBlack', Number(e.target.value))} disabled={!ready} />
+                            </label>
+                            <label className="image-editor-slider">
+                                <span>Midtones <output>{adjust.levelsMid.toFixed(2)}</output></span>
+                                <input type="range" min={0.3} max={3} step={0.01} value={adjust.levelsMid} onChange={e => setLevel('levelsMid', Number(e.target.value))} disabled={!ready} />
+                            </label>
+                            <label className="image-editor-slider">
+                                <span>White point <output>{adjust.levelsWhite}</output></span>
+                                <input type="range" min={2} max={255} step={1} value={adjust.levelsWhite} onChange={e => setLevel('levelsWhite', Number(e.target.value))} disabled={!ready} />
                             </label>
                         </div>
 

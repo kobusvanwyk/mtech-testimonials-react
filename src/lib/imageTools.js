@@ -80,20 +80,65 @@ export function cropCanvas(source, crop, maxEdge = MAX_EDGE) {
     return out
 }
 
-// The editor's default adjustments. Slider values are percentages, as CSS
-// filters take them: brightness/contrast/saturation 100 = unchanged, sharpen 0 = off.
-export const NO_ADJUST = { brightness: 100, contrast: 100, saturation: 100, sharpen: 0 }
+// The editor's default adjustments. Levels as in Photoshop: black and white
+// input points (0 to 255) and midtones (gamma, 1 = unchanged, above 1 lightens).
+// The rest are percentages, as CSS filters take them: brightness/contrast/
+// saturation 100 = unchanged, sharpen 0 = off.
+export const NO_ADJUST = {
+    levelsBlack: 0, levelsMid: 1, levelsWhite: 255,
+    brightness: 100, contrast: 100, saturation: 100, sharpen: 0,
+}
+
+export const hasLevels = a => a.levelsBlack !== 0 || a.levelsWhite !== 255 || a.levelsMid !== 1
 
 export const isAdjusted = a =>
-    a.brightness !== 100 || a.contrast !== 100 || a.saturation !== 100 || a.sharpen > 0
+    hasLevels(a) || a.brightness !== 100 || a.contrast !== 100 || a.saturation !== 100 || a.sharpen > 0
+
+// Levels as a 256-entry lookup table, used for the saved photo and (as an SVG
+// feComponentTransfer table) for the live preview, so both match.
+export function levelsTable(a) {
+    const lut = new Uint8ClampedArray(256)
+    const range = Math.max(1, a.levelsWhite - a.levelsBlack)
+    for (let i = 0; i < 256; i++) {
+        const v = Math.min(1, Math.max(0, (i - a.levelsBlack) / range))
+        lut[i] = Math.round(Math.pow(v, 1 / a.levelsMid) * 255)
+    }
+    return lut
+}
+
+// Brightness histogram (256 bins) of a canvas, sampling about 250k pixels
+export function histogram(canvas) {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+    const bins = new Array(256).fill(0)
+    const step = Math.max(1, Math.floor((d.length / 4) / 250000)) * 4
+    for (let i = 0; i < d.length; i += step) {
+        bins[Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2])]++
+    }
+    return bins
+}
+
+// Photoshop-style auto levels: black and white points where 0.5% of the
+// pixels sit beyond them, midtones left alone.
+export function autoLevels(bins, clip = 0.005) {
+    const total = bins.reduce((s, n) => s + n, 0) || 1
+    let black = 0, white = 255, acc = 0
+    for (let i = 0; i < 256; i++) { acc += bins[i]; if (acc > total * clip) { black = i; break } }
+    acc = 0
+    for (let i = 255; i >= 0; i--) { acc += bins[i]; if (acc > total * clip) { white = i; break } }
+    if (white - black < 10) return { levelsBlack: 0, levelsWhite: 255 }
+    return { levelsBlack: black, levelsWhite: white }
+}
 
 // Sharpen is a 3x3 unsharp kernel; the slider (0 to 100) maps to its strength.
 export const sharpenStrength = sharpen => sharpen / 100
 
 // CSS filter string for the live preview. Sharpen uses an SVG filter with the
 // same kernel (see ImageEditor), so preview and saved photo match.
-export function cssFilter(a, sharpenFilterId) {
-    const parts = [`brightness(${a.brightness}%)`, `contrast(${a.contrast}%)`, `saturate(${a.saturation}%)`]
+export function cssFilter(a, sharpenFilterId, levelsFilterId) {
+    const parts = []
+    if (hasLevels(a) && levelsFilterId) parts.push(`url(#${levelsFilterId})`)
+    parts.push(`brightness(${a.brightness}%)`, `contrast(${a.contrast}%)`, `saturate(${a.saturation}%)`)
     if (a.sharpen > 0 && sharpenFilterId) parts.push(`url(#${sharpenFilterId})`)
     return parts.join(' ')
 }
@@ -106,6 +151,7 @@ export function applyAdjustments(canvas, a) {
     const ctx = canvas.getContext('2d')
     const image = ctx.getImageData(0, 0, canvas.width, canvas.height)
     const d = image.data
+    const lut = levelsTable(a)   // identity when Levels is untouched
     const b = a.brightness / 100
     const c = a.contrast / 100
     const s = a.saturation / 100
@@ -117,7 +163,8 @@ export function applyAdjustments(canvas, a) {
         0.213 - 0.213 * s, 0.715 - 0.715 * s, 0.072 + 0.928 * s,
     ]
     for (let i = 0; i < d.length; i += 4) {
-        let r = clamp(d[i] * b), g = clamp(d[i + 1] * b), bl = clamp(d[i + 2] * b)
+        // Levels first, as in Photoshop, then the CSS-filter adjustments
+        let r = clamp(lut[d[i]] * b), g = clamp(lut[d[i + 1]] * b), bl = clamp(lut[d[i + 2]] * b)
         r = clamp((r - 127.5) * c + 127.5)
         g = clamp((g - 127.5) * c + 127.5)
         bl = clamp((bl - 127.5) * c + 127.5)
