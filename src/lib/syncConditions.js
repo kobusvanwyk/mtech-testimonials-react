@@ -1,11 +1,31 @@
 import { supabase } from './supabase'
 
 /**
- * Normalise a condition name: trim whitespace.
- * We preserve the user's capitalisation as submitted.
+ * Clean a condition name before it is stored: drop anything in brackets (an AI
+ * once saved "Cancer (implied by oncologist context)"), collapse spaces and
+ * trim stray punctuation. Capitalisation is kept as given.
  */
+export function cleanConditionName(name) {
+    return String(name || '')
+        .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/^[\s,.;:-]+|[\s,.;:-]+$/g, '')
+}
+
+/** Clean a list of condition names, dropping blanks and case-insensitive repeats. */
+export function cleanConditions(list = []) {
+    const seen = new Set()
+    const out = []
+    for (const raw of list) {
+        const name = cleanConditionName(raw)
+        const key = name.toLowerCase()
+        if (name && !seen.has(key)) { seen.add(key); out.push(name) }
+    }
+    return out
+}
+
 function normalise(name) {
-    return name.trim()
+    return cleanConditionName(name)
 }
 
 /**

@@ -3,6 +3,7 @@ import { useToast } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { optimiseImage } from '../lib/imageTools'
+import { cleanConditions } from '../lib/syncConditions'
 import { useProducts, useConditions } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
 import { ArrowLeft, ArrowRight, X, Check, CheckCircle2, Info } from 'lucide-react'
@@ -124,7 +125,7 @@ export default function Submit() {
                 slug,
                 person_name: form.anonymous ? null : form.person_name,
                 anonymous: form.anonymous,
-                conditions: form.conditions,
+                conditions: cleanConditions(form.conditions),
                 products: form.products,
                 story_text: form.story_text,
                 gallery_urls,

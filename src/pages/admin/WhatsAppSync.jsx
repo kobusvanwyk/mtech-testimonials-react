@@ -6,6 +6,7 @@ import { useConfirm, useToast, friendlyError } from '../../lib/feedback'
 import { storyExcerpt } from '../../lib/storyText'
 import { supabase } from '../../lib/supabase'
 import { generateUniqueSlug } from '../../lib/slugify'
+import { cleanConditions } from '../../lib/syncConditions'
 import {
   Search, CheckCircle2, User, Activity, Pill, AlertTriangle,
   ChevronDown, ChevronRight, RefreshCw, UploadCloud, FileText, X,
@@ -311,7 +312,7 @@ export default function WhatsAppSync() {
             title: item.title || 'WhatsApp Testimonial',
             person_name: item.person_name || null,
             anonymous: item.anonymous || false,
-            conditions: item.conditions || [],
+            conditions: cleanConditions(item.conditions || []),
             products: item.products || [],
             story_text: item.story_text || '',
             // Imports use status 'pending' + is_imported (same convention as the

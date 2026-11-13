@@ -42,7 +42,7 @@ For each message, return a JSON object with these fields:
 - "person_name": the author's name ONLY if it appears within the testimonial text itself. Never the WhatsApp sender/forwarder. If no name is stated in the text, use null.
 - "anonymous": true if no author name appears in the text (or the person explicitly asks to remain anonymous); false only when a real author name is present in the text.
 - "title": a concise, descriptive title for the testimonial (max 10 words, no quotes)
-- "conditions": array of health conditions mentioned (e.g. ["Arthritis", "High Blood Pressure"]). Use proper names, not abbreviations. Empty array if none.
+- "conditions": array of health conditions mentioned (e.g. ["Arthritis", "High Blood Pressure"]). Use proper names, not abbreviations. Names only: no notes, reasons or brackets. Empty array if none.
 - "products": array of Mannatech products mentioned, match ONLY to the official product list above. Empty array if none mentioned or none match.
 - "story_text": the testimonial text cleaned up and formatted with proper paragraphs. Fix obvious typos. Keep the person's voice. Do not add information not in the original.
 - "review_notes": string with any flags for manual review (e.g. "Product name unclear, could be Ambrotose AO or Ambrotose Complex", "Name not mentioned, used sender name"). Omit if nothing to flag.

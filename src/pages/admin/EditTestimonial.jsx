@@ -4,7 +4,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { EditTestimonialSkeleton } from '../../components/Skeleton'
 import { useProducts } from '../../lib/ProductsContext'
-import { syncConditionsOnApproval } from '../../lib/syncConditions'
+import { syncConditionsOnApproval, cleanConditions } from '../../lib/syncConditions'
+import ConditionPicker from '../../components/ConditionPicker'
+import { useTagCounts } from '../../lib/useTagCounts'
 import { ArrowLeft, ArrowRight, Eye, Check, X, Trash2, FileText, ImagePlus, Sparkles, Pencil } from 'lucide-react'
 import MoreMenu from '../../components/MoreMenu'
 import { useDialog } from '../../lib/useDialog'
@@ -49,6 +51,7 @@ const LANGUAGE_LABEL = { afrikaans: 'Translated from Afrikaans.', mixed: 'Transl
 export default function EditTestimonial() {
     const toast = useToast()
     const PRODUCTS = useProducts()
+    const { counts: tagCounts } = useTagCounts()
     const [CONDITIONS, setConditions] = useState([])
     const { id } = useParams()
     const isNew = !id
@@ -165,9 +168,8 @@ export default function EditTestimonial() {
 
             // Use the site's own spelling where a condition or product already exists
             const findIn = (list, name) => list.find(x => x.toLowerCase() === name.trim().toLowerCase())
-            const conditions = [...new Set((out.conditions || []).filter(Boolean).map(c => findIn(CONDITIONS, c) || c.trim()))]
+            const conditions = cleanConditions(out.conditions || []).map(c => findIn(CONDITIONS, c) || c)
             const newConditions = conditions.filter(c => !CONDITIONS.includes(c))
-            if (newConditions.length) setConditions(prev => [...prev, ...newConditions].sort((a, b) => a.localeCompare(b)))
 
             const unmatched = []
             const products = []
@@ -365,7 +367,7 @@ export default function EditTestimonial() {
         }
         setSaving(true)
         try {
-            const record = { ...form, title: form.title.trim() }
+            const record = { ...form, title: form.title.trim(), conditions: cleanConditions(form.conditions) }
             record.gallery_urls = await uploadGallery(record.gallery_urls)
             record.slug = await generateUniqueSlug(record.title)
             // Shown as "Manual" in the source column, like the other imports
@@ -405,7 +407,7 @@ export default function EditTestimonial() {
         if (isNew) return handleCreate()
         setSaving(true)
         try {
-            let updates = { ...form }
+            let updates = { ...form, conditions: cleanConditions(form.conditions) }
 
             // New and edited photos are uploaded where they sit in the gallery
             updates.gallery_urls = await uploadGallery(updates.gallery_urls)
@@ -593,21 +595,12 @@ export default function EditTestimonial() {
                         </div>
                     </div>
 
-                    <fieldset className="edit-section">
-                        <legend className="edit-label">Health Conditions</legend>
-                        <div className="products-grid">
-                            {CONDITIONS.map(c => (
-                                <label key={c} className={`product-option ${(form.conditions || []).includes(c) ? 'selected' : ''}`}>
-                                    <input type="checkbox" checked={(form.conditions || []).includes(c)} onChange={() => {
-                                        const current = form.conditions || []
-                                        update('conditions', current.includes(c) ? current.filter(x => x !== c) : [...current, c])
-                                    }} />
-                                    <Check size={14} className="tick" aria-hidden="true" />
-                                    {c}
-                                </label>
-                            ))}
-                        </div>
-                    </fieldset>
+                    <ConditionPicker
+                        value={form.conditions || []}
+                        options={CONDITIONS}
+                        popular={CONDITIONS.filter(c => tagCounts[c]).sort((a, b) => tagCounts[b] - tagCounts[a])}
+                        onChange={list => update('conditions', list)}
+                    />
 
                     <fieldset className="edit-section">
                         <legend className="edit-label">Products</legend>
