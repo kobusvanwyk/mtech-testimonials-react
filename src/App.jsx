@@ -72,6 +72,7 @@ function AppRoutes() {
                     <Route path="all"        element={<AllTestimonials />} />
                     <Route path="pending"    element={<PendingReview />} />
                     <Route path="edit/:id"   element={<EditTestimonial />} />
+                    <Route path="new"        element={<EditTestimonial />} />
                     <Route path="categories" element={<Categories />} />
                     <Route path="images"     element={<ImageManager />} />
                     <Route path="import"       element={<ImportTestimonials />} />
@@ -103,6 +104,7 @@ function AppRoutes() {
                 <Route path="all"        element={<AllTestimonials />} />
                 <Route path="pending"    element={<PendingReview />} />
                 <Route path="edit/:id"   element={<EditTestimonial />} />
+                <Route path="new"        element={<EditTestimonial />} />
                 <Route path="categories" element={<Categories />} />
                 <Route path="images"     element={<ImageManager />} />
                 <Route path="import"       element={<ImportTestimonials />} />

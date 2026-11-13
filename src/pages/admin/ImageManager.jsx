@@ -3,6 +3,7 @@ import Alert from '../../components/Alert'
 import { useConfirm, useToast } from '../../lib/feedback'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { optimiseImage } from '../../lib/imageTools'
 import {
     LayoutGrid, AlignJustify, RefreshCw, Upload,
     Trash2, RefreshCcw, Link2, ExternalLink, Check, FileText, ImageOff, CheckCircle2
@@ -215,13 +216,14 @@ export default function ImageManager() {
     }
 
     async function handleReplaceFile(e) {
-        const file = e.target.files[0]
-        if (!file || !replaceTargetRef.current) return
+        const picked = e.target.files[0]
+        if (!picked || !replaceTargetRef.current) return
         const img = replaceTargetRef.current
         e.target.value = ''
 
         setReplacingId(img.id)
         try {
+            const file = await optimiseImage(picked)   // WebP, long edge 2000px
             const ext = file.name.split('.').pop()
             const newPath = `${img.folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
             const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(newPath, file)

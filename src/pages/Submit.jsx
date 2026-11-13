@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useToast } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { optimiseImage } from '../lib/imageTools'
 import { useProducts, useConditions } from '../lib/ProductsContext'
 import { generateUniqueSlug } from '../lib/slugify'
 import { ArrowLeft, ArrowRight, X, Check, CheckCircle2, Info } from 'lucide-react'
@@ -84,7 +85,9 @@ export default function Submit() {
         setGalleryImages(prev => prev.filter((_, i) => i !== index))
     }
 
-    async function uploadImage(file, folder) {
+    async function uploadImage(original, folder) {
+        // Shrink and convert to WebP first (lib/imageTools.js)
+        const file = await optimiseImage(original)
         const ext = file.name.split('.').pop()
         const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         const { data, error } = await supabase.storage

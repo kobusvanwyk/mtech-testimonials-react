@@ -28,10 +28,35 @@ export function invalidatePDFSettingsCache() {
     settingsPromise = null
 }
 
+// react-pdf only draws JPEG and PNG. Photos saved by the editor and uploads
+// are WebP, so redraw anything else as a JPEG on white.
+async function toPdfSafeBlob(blob) {
+    if (/^image\/(jpeg|png)$/.test(blob.type)) return blob
+    const url = URL.createObjectURL(blob)
+    try {
+        const img = await new Promise((resolve, reject) => {
+            const i = new Image()
+            i.onload = () => resolve(i)
+            i.onerror = reject
+            i.src = url
+        })
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        const ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#fff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(img, 0, 0)
+        return await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.9))
+    } finally {
+        URL.revokeObjectURL(url)
+    }
+}
+
 async function fetchImageAsBase64(url) {
     try {
         const res = await fetch(url)
-        const blob = await res.blob()
+        const blob = await toPdfSafeBlob(await res.blob())
         return await new Promise((resolve, reject) => {
             const reader = new FileReader()
             reader.onloadend = () => resolve(reader.result)
