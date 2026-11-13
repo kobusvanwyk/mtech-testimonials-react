@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Check, GitMerge, AlertTriangle, Search, X, Chevro
 import { ListPageSkeleton } from '../../components/Skeleton'
 import { useDialog } from '../../lib/useDialog'
 import { useConfirm, useToast } from '../../lib/feedback'
+import { cleanConditionName } from '../../lib/syncConditions'
 
 // Categories (ui-guide #p-manage, #p-merge, DESIGN.md "Toolbar card" rule):
 // one card with Conditions / Products tabs, a tools row (search, sort, unused
@@ -28,6 +29,21 @@ function similarity(a, b) {
     return 1 - dp[a.length][b.length] / Math.max(a.length, b.length)
 }
 const SIMILARITY_THRESHOLD = 0.62
+
+// Same name once notes in brackets are dropped: "Cancer (implied by ...)" and "Cancer"
+const bare = name => cleanConditionName(name).toLowerCase()
+
+// "ADHD" and "Attention Deficit Hyperactivity Disorder": a short all-capitals
+// name that matches the other name's initials (small words ignored)
+const SMALL_WORDS = new Set(['and', 'of', 'the', 'in', 'to', 'a'])
+function isAcronymOf(short, long) {
+    if (!/^[A-Z0-9]{2,6}$/.test(short.trim())) return false
+    const initials = long.split(/[\s-]+/).filter(w => w && !SMALL_WORDS.has(w.toLowerCase())).map(w => w[0]).join('').toUpperCase()
+    return initials.length > 1 && initials === short.trim()
+}
+function relatedNames(a, b) {
+    return bare(a) === bare(b) || isAcronymOf(a, b) || isAcronymOf(b, a)
+}
 
 // ── Duplicate review (dismissals are remembered in this browser) ────────────
 function getDismissedKey(group) {
@@ -149,10 +165,12 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange, hidd
         const countMap = {}
         ;(testimonials || []).forEach(t => {
             const field = table === 'products' ? t.products : t.conditions
-            ;(field || []).forEach(v => { countMap[v] = (countMap[v] || 0) + 1 })
+            // Ignore capitalisation: "Digestive issues" on the list is in use when a
+            // testimonial says "Digestive Issues", so it must not count as unused
+            ;(field || []).forEach(v => { const k = v.toLowerCase(); countMap[k] = (countMap[k] || 0) + 1 })
         })
 
-        const result = (tableData || []).map(item => ({ ...item, _count: countMap[item.name] || 0 }))
+        const result = (tableData || []).map(item => ({ ...item, _count: countMap[item.name.toLowerCase()] || 0 }))
         setItems(result)
         setLoading(false)
         if (onDataChange) onDataChange(result)
@@ -210,14 +228,27 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange, hidd
     }
 
     async function handleBulkDelete() {
-        const toDelete = items.filter(i => selectedIds.has(i.id))
+        return deleteItems(items.filter(i => selectedIds.has(i.id)))
+    }
+
+    // Unused ones are on no testimonial, so nothing else changes
+    async function handleDeleteUnused() {
+        return deleteItems(items.filter(i => i._count === 0), { listNames: true })
+    }
+
+    async function deleteItems(toDelete, { listNames = false } = {}) {
+        if (!toDelete.length) return
         const withTestimonials = toDelete.filter(i => i._count > 0)
         const n = toDelete.length
+        const names = toDelete.map(i => i.name).sort((a, b) => a.localeCompare(b))
         const ok = await confirm({
             title: `Delete ${n} ${n !== 1 ? table : noun}?`,
-            body: withTestimonials.length
-                ? `${withTestimonials.length} of them ${withTestimonials.length !== 1 ? 'are' : 'is'} used in testimonials and will be removed from those too. This cannot be undone.`
-                : 'This cannot be undone.',
+            body: <>
+                {withTestimonials.length
+                    ? `${withTestimonials.length} of them ${withTestimonials.length !== 1 ? 'are' : 'is'} used in testimonials and will be removed from those too. This cannot be undone.`
+                    : 'None of them is on a testimonial. This cannot be undone.'}
+                {listNames && <span className="cat-delete-list">{names.join(', ')}</span>}
+            </>,
             confirmLabel: `Delete ${n}`,
             tone: 'danger',
         })
@@ -354,7 +385,7 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange, hidd
             for (let j = i + 1; j < items.length; j++) {
                 if (visited.has(items[j].id)) continue
                 const sim = similarity(items[i].name, items[j].name)
-                if (fuzzy ? sim >= SIMILARITY_THRESHOLD : sim === 1) {
+                if (fuzzy ? (sim >= SIMILARITY_THRESHOLD || relatedNames(items[i].name, items[j].name)) : sim === 1) {
                     group.push(items[j])
                     visited.add(items[j].id)
                 }
@@ -451,6 +482,11 @@ function CategorySection({ title, table, color, fuzzy = true, onDataChange, hidd
                 >
                     Unused <span className="count">{unusedCount}</span>
                 </button>
+                {unusedOnly && unusedCount > 0 && (
+                    <button type="button" className="btn-danger btn-sm" onClick={handleDeleteUnused} disabled={saving}>
+                        <Trash2 size={14} aria-hidden="true" /> Delete all {unusedCount} unused
+                    </button>
+                )}
                 <span className="cat-tools-sp" />
                 <button type="button" className="btn-secondary" onClick={() => { setBulkAdding(true); setAdding(false) }}>
                     Bulk add

@@ -3,6 +3,7 @@ import Alert from '../../components/Alert'
 import { supabase } from '../../lib/supabase'
 import { optimiseImage } from '../../lib/imageTools'
 import { generateUniqueSlug } from '../../lib/slugify'
+import { cleanConditions } from '../../lib/syncConditions'
 import {
     Upload, FileText, Check, X, AlertTriangle,
     ChevronDown, Images, Loader, ImagePlus
@@ -231,7 +232,7 @@ function validateRow(row) {
 
 function buildRecord(row, filename, uploadedUrls = []) {
     const anonymous = row.anonymous?.toLowerCase() === 'true'
-    const conditions = row.conditions ? row.conditions.split('|').map(s => s.trim()).filter(Boolean) : []
+    const conditions = row.conditions ? cleanConditions(row.conditions.split('|')) : []
     const products = row.products ? row.products.split('|').map(s => s.trim()).filter(Boolean) : []
     const csvUrls = row.gallery_urls ? row.gallery_urls.split('|').map(s => convertGoogleDriveUrl(s.trim())).filter(Boolean) : []
     // Merge CSV urls with any images uploaded inline, deduplicated

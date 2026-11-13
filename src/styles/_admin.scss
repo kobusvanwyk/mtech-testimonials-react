@@ -2500,3 +2500,115 @@ fieldset.settings-names:disabled .name-mode { cursor: progress; opacity: 0.7; }
     .black { stroke: var(--text-1); }
     .white { stroke: var(--accent); }
 }
+
+// Condition picker (components/ConditionPicker.jsx): chosen chips, a search
+// combobox with suggestions, and most-used quick chips
+.condition-picker { position: relative; }
+.cp-chosen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-3);
+    padding: 0;
+    list-style: none;
+}
+.cp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 32px;
+    padding: 0 var(--space-1) 0 var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--accent-tint);
+    color: var(--accent-ink);
+    font-size: var(--text-caption);
+    font-weight: 600;
+
+    button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: var(--radius-full);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+
+        &:hover { background: var(--surface); color: var(--error-ink); }
+        &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    }
+}
+.cp-none { margin: 0 0 var(--space-3); color: var(--text-3); font-size: var(--text-caption); }
+.cp-combo { position: relative; }
+.cp-list {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 0;
+    padding: var(--space-1);
+    list-style: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+}
+.cp-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 40px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--text-1);
+    font-size: var(--text-body);
+    cursor: pointer;
+
+    &.active { background: var(--hover-tint); color: var(--accent-ink); }
+    &.new { color: var(--accent-ink); font-weight: 600; }
+}
+.cp-quick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+.cp-quick-label { color: var(--text-3); font-size: var(--text-caption); }
+.cp-quick-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 30px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: var(--text-caption);
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+
+    &:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}
+
+// Categories "Delete all unused": the names, listed in the confirm dialog
+.cat-delete-list {
+    display: block;
+    max-height: 180px;
+    overflow-y: auto;
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-size: var(--text-caption);
+    line-height: 1.6;
+}
