@@ -374,9 +374,17 @@ export default function EditTestimonial() {
             const now = new Date().toISOString()
             record.edit_history = [{ at: now, note: 'Added by admin' }, { at: now, note: `Status: ${record.status}` }]
 
-            const { data, error } = await supabase.from('testimonials').insert(record).select('id').single()
+            // The database only accepts new testimonials as Pending (the same rule
+            // that guards the public form), so add it as Pending, then set the
+            // status the admin chose (admins may update).
+            const status = record.status
+            const { data, error } = await supabase.from('testimonials').insert({ ...record, status: 'pending' }).select('id').single()
             if (error) throw error
-            if (record.status === 'approved') {
+            if (status !== 'pending') {
+                const { error: statusErr } = await supabase.from('testimonials').update({ status }).eq('id', data.id)
+                if (statusErr) throw statusErr
+            }
+            if (status === 'approved') {
                 await syncConditionsOnApproval(record.conditions || [])
             }
 
@@ -385,7 +393,8 @@ export default function EditTestimonial() {
             toast.success('Testimonial added')
             navigate(`/admin/edit/${data.id}`, { replace: true })
         } catch (err) {
-            toast.error('The testimonial could not be saved. Check your connection and try again.')
+            // Include the reason so a failure can be traced (photo upload or database)
+            toast.error(`The testimonial could not be saved.${err?.message ? ` (${err.message})` : ''} Try again, or let the developer know.`)
             console.error(err)
         } finally {
             setSaving(false)
