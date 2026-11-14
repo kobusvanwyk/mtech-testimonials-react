@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
-import { RotateCcw, RotateCw, FlipHorizontal2, FlipVertical2, Plus, LayoutGrid, Undo2, X, ChevronDown } from 'lucide-react'
+import { RotateCcw, RotateCw, FlipHorizontal2, FlipVertical2, Plus, LayoutGrid, Undo2, X, ChevronDown, Maximize2, Minimize2, Spline } from 'lucide-react'
+import PerspectivePins from './PerspectivePins'
 import { useDialog } from '../lib/useDialog'
 import Alert from './Alert'
 import {
     loadImage, renderGeometry, cropCanvas, applyAdjustments, canvasToFile, detectCollageTiles,
     cssFilter, sharpenStrength, NO_ADJUST, MAX_EDGE, levelsTable, histogram, autoLevels, hasLevels,
+    quadSize, warpPerspective,
 } from '../lib/imageTools'
 
 // Photo editor (Add and Edit Testimonial galleries): crop, rotate, flip,
-// straighten, brightness, contrast, saturation and sharpen, saved as an
+// straighten, perspective fix (corner pins), Levels, brightness, contrast,
+// saturation and sharpen, saved as an
 // optimised WebP. Collages can be split into separate photos, either by
 // "Split collage" (finds the gaps) or one crop at a time ("Add as new photo").
 //
@@ -38,6 +41,23 @@ const PREVIEW_EDGE = 1400   // the on-screen copy; the saved photo uses the full
 const SOURCE_EDGE = 6000    // cap on the working copy, keeps memory sane on huge scans
 const SHARPEN_ID = 'image-editor-sharpen'
 const LEVELS_ID = 'image-editor-levels'
+
+// Perspective fix: pins start a little inside the corners; the shape of the
+// straightened result is guessed from the pins unless one is chosen
+const START_PINS = [[10, 10], [90, 10], [90, 90], [10, 90]]
+const PIN_SHAPES = [
+    { label: 'Auto', aspect: null },
+    { label: '4:3', aspect: 4 / 3 },
+    { label: '3:4', aspect: 3 / 4 },
+    { label: 'Square', aspect: 1 },
+]
+const WARP_SOURCE_EDGE = 4000   // detail the warp reads from
+const WARP_OUT_EDGE = 2400      // largest straightened photo (saved photos cap at 2000)
+
+const FULL_KEY = 'image_editor_full'
+function readFull() {
+    try { return localStorage.getItem(FULL_KEY) === '1' } catch { return false }
+}
 
 // Which tool sections are open is remembered in this browser (a convenience,
 // so it may come back empty)
@@ -92,6 +112,15 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
     const [removeOriginal, setRemoveOriginal] = useState(true)
     const [message, setMessage] = useState(null)     // { type, text }
     const [sections, setSections] = useState(readSections)
+    const [pinMode, setPinMode] = useState(false)
+    const [pins, setPins] = useState(START_PINS)
+    const [pinAspect, setPinAspect] = useState(null)
+    const [history, setHistory] = useState([])        // states before each perspective fix, for Undo
+    const [full, setFull] = useState(readFull)
+    const toggleFull = () => setFull(f => {
+        try { localStorage.setItem(FULL_KEY, f ? '0' : '1') } catch { /* private mode */ }
+        return !f
+    })
     const toggleSection = key => setSections(prev => {
         const next = { ...prev, [key]: !prev[key] }
         try { localStorage.setItem(SECTIONS_KEY, JSON.stringify(next)) } catch { /* private mode */ }
@@ -136,7 +165,36 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
     function flip(axis) { (axis === 'h' ? setFlipH : setFlipV)(v => !v); setCrop(FULL); setAspect(null) }
     function chooseShape(a) { setAspect(a); resetCrop(a) }
 
+    // Perspective fix: the straightened photo becomes the one being edited, so
+    // rotation and flips (already applied to it) start again from zero
+    const applyPerspective = () => run('Straightening…', async () => {
+        const source = renderGeometry(img, geometry, WARP_SOURCE_EDGE)
+        const quad = pins.map(([x, y]) => [(x / 100) * source.width, (y / 100) * source.height])
+        const out = warpPerspective(source, quad, quadSize(quad, pinAspect), WARP_OUT_EDGE)
+        setHistory(h => [...h, { img, quarter, straighten, flipH, flipV }])
+        setImg(out)
+        setQuarter(0); setStraighten(0); setFlipH(false); setFlipV(false)
+        setCrop(FULL); setAspect(null)
+        setPinMode(false)
+        setMessage({ type: 'success', text: 'Straightened. Crop or adjust it further, or use Undo perspective.' })
+    })
+
+    function undoPerspective() {
+        const last = history[history.length - 1]
+        if (!last) return
+        setHistory(h => h.slice(0, -1))
+        setImg(last.img)
+        setQuarter(last.quarter); setStraighten(last.straighten); setFlipH(last.flipH); setFlipV(last.flipV)
+        setCrop(FULL); setAspect(null); setMessage(null)
+    }
+
+    function startPins() {
+        setPins(START_PINS); setPinAspect(null); setPinMode(true); setMessage(null)
+    }
+
     function resetAll() {
+        if (history.length) { setImg(history[0].img); setHistory([]) }
+        setPinMode(false)
         setQuarter(0); setStraighten(0); setFlipH(false); setFlipV(false)
         setAspect(null); setCrop(FULL); setAdjust(NO_ADJUST); setMessage(null)
     }
@@ -195,12 +253,23 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
         return next
     })
     const ready = img && preview && !busy
+    const toolsReady = ready && !pinMode
 
     return (
-        <div className="modal-backdrop">
-            <div className="modal image-editor" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="image-editor-title">
+        <div className={`modal-backdrop ${full ? 'image-editor-backdrop--full' : ''}`}>
+            <div className={`modal image-editor ${full ? 'image-editor--full' : ''}`} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="image-editor-title">
                 <div className="image-editor-hd">
                     <h3 id="image-editor-title" className="modal-title">Edit photo</h3>
+                    <button
+                        type="button"
+                        className="image-editor-close image-editor-full-btn"
+                        onClick={toggleFull}
+                        aria-pressed={full}
+                        aria-label={full ? 'Exit full screen' : 'Full screen'}
+                        title={full ? 'Exit full screen' : 'Full screen'}
+                    >
+                        {full ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}
+                    </button>
                     <button type="button" className="image-editor-close" onClick={close} disabled={!!busy} aria-label="Close the photo editor" title="Close">
                         <X size={20} aria-hidden="true" />
                     </button>
@@ -225,7 +294,15 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                     <div className="image-editor-stage">
                         {loadError && <p className="image-editor-empty">{loadError}</p>}
                         {!loadError && !preview && <p className="image-editor-empty">Loading photo…</p>}
-                        {preview && (
+                        {preview && pinMode && (
+                            <PerspectivePins
+                                src={preview.url}
+                                filter={cssFilter(adjust, SHARPEN_ID, LEVELS_ID)}
+                                pins={pins}
+                                onChange={setPins}
+                            />
+                        )}
+                        {preview && !pinMode && (
                             <ReactCrop
                                 crop={crop}
                                 aspect={aspect || undefined}
@@ -254,7 +331,7 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                                         className={`image-editor-chip ${aspect === s.aspect ? 'active' : ''}`}
                                         aria-pressed={aspect === s.aspect}
                                         onClick={() => chooseShape(s.aspect)}
-                                        disabled={!ready}
+                                        disabled={!toolsReady}
                                     >{s.label}</button>
                                 ))}
                             </div>
@@ -263,15 +340,48 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                         <div className="image-editor-group">
                             <span className="edit-label">Rotate and flip</span>
                             <div className="image-editor-chips">
-                                <button type="button" className="image-editor-icon" onClick={() => turn(-1)} disabled={!ready} aria-label="Rotate left" title="Rotate left"><RotateCcw size={18} aria-hidden="true" /></button>
-                                <button type="button" className="image-editor-icon" onClick={() => turn(1)} disabled={!ready} aria-label="Rotate right" title="Rotate right"><RotateCw size={18} aria-hidden="true" /></button>
-                                <button type="button" className={`image-editor-icon ${flipH ? 'active' : ''}`} aria-pressed={flipH} onClick={() => flip('h')} disabled={!ready} aria-label="Flip horizontally" title="Flip horizontally"><FlipHorizontal2 size={18} aria-hidden="true" /></button>
-                                <button type="button" className={`image-editor-icon ${flipV ? 'active' : ''}`} aria-pressed={flipV} onClick={() => flip('v')} disabled={!ready} aria-label="Flip vertically" title="Flip vertically"><FlipVertical2 size={18} aria-hidden="true" /></button>
+                                <button type="button" className="image-editor-icon" onClick={() => turn(-1)} disabled={!toolsReady} aria-label="Rotate left" title="Rotate left"><RotateCcw size={18} aria-hidden="true" /></button>
+                                <button type="button" className="image-editor-icon" onClick={() => turn(1)} disabled={!toolsReady} aria-label="Rotate right" title="Rotate right"><RotateCw size={18} aria-hidden="true" /></button>
+                                <button type="button" className={`image-editor-icon ${flipH ? 'active' : ''}`} aria-pressed={flipH} onClick={() => flip('h')} disabled={!toolsReady} aria-label="Flip horizontally" title="Flip horizontally"><FlipHorizontal2 size={18} aria-hidden="true" /></button>
+                                <button type="button" className={`image-editor-icon ${flipV ? 'active' : ''}`} aria-pressed={flipV} onClick={() => flip('v')} disabled={!toolsReady} aria-label="Flip vertically" title="Flip vertically"><FlipVertical2 size={18} aria-hidden="true" /></button>
                             </div>
                             <label className="image-editor-slider">
                                 <span>Straighten <output>{straighten > 0 ? '+' : ''}{straighten}°</output></span>
-                                <input type="range" min={-15} max={15} step={0.5} value={straighten} onChange={e => setStraighten(Number(e.target.value))} disabled={!ready} />
+                                <input type="range" min={-15} max={15} step={0.5} value={straighten} onChange={e => setStraighten(Number(e.target.value))} disabled={!toolsReady} />
                             </label>
+                            {!pinMode ? (
+                                <div className="image-editor-chips image-editor-persp">
+                                    <button type="button" className="btn-secondary btn-sm" onClick={startPins} disabled={!toolsReady}>
+                                        <Spline size={16} aria-hidden="true" /> Fix perspective
+                                    </button>
+                                    {history.length > 0 && (
+                                        <button type="button" className="btn-ghost btn-sm" onClick={undoPerspective} disabled={!toolsReady}>
+                                            <Undo2 size={16} aria-hidden="true" /> Undo perspective
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="image-editor-pinpanel" role="group" aria-label="Fix perspective">
+                                    <p className="settings-hint">Drag the four pins onto the corners of what should be a rectangle, such as a printed photo or a page. Apply straightens it.</p>
+                                    <span className="image-editor-sub">Shape</span>
+                                    <div className="image-editor-chips" role="group" aria-label="Shape of the straightened photo">
+                                        {PIN_SHAPES.map(sh => (
+                                            <button
+                                                key={sh.label}
+                                                type="button"
+                                                className={`image-editor-chip ${pinAspect === sh.aspect ? 'active' : ''}`}
+                                                aria-pressed={pinAspect === sh.aspect}
+                                                onClick={() => setPinAspect(sh.aspect)}
+                                                disabled={!!busy}
+                                            >{sh.label}</button>
+                                        ))}
+                                    </div>
+                                    <div className="image-editor-chips">
+                                        <button type="button" className="btn-primary btn-sm" onClick={applyPerspective} disabled={!ready}>{busy === 'Straightening…' ? busy : 'Apply'}</button>
+                                        <button type="button" className="btn-secondary btn-sm" onClick={() => setPinMode(false)} disabled={!!busy}>Cancel</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <Section
@@ -280,7 +390,7 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                             open={sections.levels}
                             onToggle={() => toggleSection('levels')}
                             changed={hasLevels(adjust)}
-                            extra={<button type="button" className="image-editor-chip" onClick={() => hist && setAdjust(a => ({ ...a, ...autoLevels(hist) }))} disabled={!ready || !hist}>Auto</button>}
+                            extra={<button type="button" className="image-editor-chip" onClick={() => hist && setAdjust(a => ({ ...a, ...autoLevels(hist) }))} disabled={!toolsReady || !hist}>Auto</button>}
                         >
                             {hist && (
                                 <svg className="image-editor-hist" viewBox="0 0 256 60" preserveAspectRatio="none" role="img" aria-label="Histogram of the photo's tones, dark on the left, light on the right">
@@ -291,15 +401,15 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                             )}
                             <label className="image-editor-slider">
                                 <span>Black point <output>{adjust.levelsBlack}</output></span>
-                                <input type="range" min={0} max={253} step={1} value={adjust.levelsBlack} onChange={e => setLevel('levelsBlack', Number(e.target.value))} disabled={!ready} />
+                                <input type="range" min={0} max={253} step={1} value={adjust.levelsBlack} onChange={e => setLevel('levelsBlack', Number(e.target.value))} disabled={!toolsReady} />
                             </label>
                             <label className="image-editor-slider">
                                 <span>Midtones <output>{adjust.levelsMid.toFixed(2)}</output></span>
-                                <input type="range" min={0.3} max={3} step={0.01} value={adjust.levelsMid} onChange={e => setLevel('levelsMid', Number(e.target.value))} disabled={!ready} />
+                                <input type="range" min={0.3} max={3} step={0.01} value={adjust.levelsMid} onChange={e => setLevel('levelsMid', Number(e.target.value))} disabled={!toolsReady} />
                             </label>
                             <label className="image-editor-slider">
                                 <span>White point <output>{adjust.levelsWhite}</output></span>
-                                <input type="range" min={2} max={255} step={1} value={adjust.levelsWhite} onChange={e => setLevel('levelsWhite', Number(e.target.value))} disabled={!ready} />
+                                <input type="range" min={2} max={255} step={1} value={adjust.levelsWhite} onChange={e => setLevel('levelsWhite', Number(e.target.value))} disabled={!toolsReady} />
                             </label>
                         </Section>
 
@@ -317,7 +427,7 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                                         type="range" min={s.min} max={s.max} step={1}
                                         value={adjust[s.key]}
                                         onChange={e => setAdjust(a => ({ ...a, [s.key]: Number(e.target.value) }))}
-                                        disabled={!ready}
+                                        disabled={!toolsReady}
                                     />
                                 </label>
                             ))}
@@ -326,17 +436,17 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                         <div className="image-editor-group">
                             <span className="edit-label">Collage</span>
                             <div className="image-editor-chips">
-                                <button type="button" className="btn-secondary" onClick={handleSplit} disabled={!ready}>
+                                <button type="button" className="btn-secondary" onClick={handleSplit} disabled={!toolsReady}>
                                     <LayoutGrid size={16} aria-hidden="true" /> Split collage
                                 </button>
-                                <button type="button" className="btn-secondary" onClick={handleAddCrop} disabled={!ready}>
+                                <button type="button" className="btn-secondary" onClick={handleAddCrop} disabled={!toolsReady}>
                                     <Plus size={16} aria-hidden="true" /> Add as new photo
                                 </button>
                             </div>
                             <p className="settings-hint">Split collage finds the gaps between the photos and adds each one. Or draw a box and use Add as new photo.</p>
                         </div>
 
-                        <button type="button" className="btn-ghost image-editor-reset" onClick={resetAll} disabled={!ready}>
+                        <button type="button" className="btn-ghost image-editor-reset" onClick={resetAll} disabled={!toolsReady}>
                             <Undo2 size={16} aria-hidden="true" /> Reset all
                         </button>
                     </div>
@@ -358,7 +468,7 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                         {added > 0 ? 'Done' : 'Cancel'}
                     </button>
                     {added === 0 && (
-                        <button type="button" className="btn-primary" onClick={handleSave} disabled={!ready}>
+                        <button type="button" className="btn-primary" onClick={handleSave} disabled={!toolsReady}>
                             {busy === 'Saving…' ? busy : 'Save photo'}
                         </button>
                     )}

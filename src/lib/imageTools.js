@@ -310,3 +310,94 @@ export function detectCollageTiles(source) {
             height: ((t.y1 - t.y0) / h) * 100,
         }))
 }
+
+// ── Perspective fix (corner pins) ───────────────────────────────
+// quad: four points in source pixels, in order top-left, top-right,
+// bottom-right, bottom-left. The area inside is stretched into a rectangle.
+
+// 3x3 homography that maps each `from` point to the matching `to` point
+// (8 unknowns, solved by Gaussian elimination). Returns [a..h] with i = 1.
+function homography(from, to) {
+    const A = [], b = []
+    for (let i = 0; i < 4; i++) {
+        const [x, y] = from[i], [u, v] = to[i]
+        A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u)
+        A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v)
+    }
+    const n = 8
+    for (let c = 0; c < n; c++) {
+        let p = c
+        for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r
+        ;[A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]]
+        if (Math.abs(A[c][c]) < 1e-12) throw new Error('The corner pins do not form a usable shape.')
+        for (let r = c + 1; r < n; r++) {
+            const f = A[r][c] / A[c][c]
+            for (let k = c; k < n; k++) A[r][k] -= f * A[c][k]
+            b[r] -= f * b[c]
+        }
+    }
+    const h = new Array(n)
+    for (let r = n - 1; r >= 0; r--) {
+        let s = b[r]
+        for (let k = r + 1; k < n; k++) s -= A[r][k] * h[k]
+        h[r] = s / A[r][r]
+    }
+    return h
+}
+
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1])
+
+// Size of the straightened rectangle, from the longer of each pair of
+// opposite edges. With `aspect` (width / height) the shape is forced to it.
+export function quadSize(quad, aspect = null) {
+    let w = Math.max(dist(quad[0], quad[1]), dist(quad[3], quad[2]))
+    let h = Math.max(dist(quad[0], quad[3]), dist(quad[1], quad[2]))
+    if (aspect) {
+        const area = w * h
+        w = Math.sqrt(area * aspect)
+        h = w / aspect
+    }
+    return { width: Math.max(1, Math.round(w)), height: Math.max(1, Math.round(h)) }
+}
+
+// Stretch the quad in `source` (a canvas) into a width x height canvas,
+// capped at maxEdge on the long side. Each output pixel is looked up in the
+// source through the inverse mapping, with bilinear smoothing.
+export function warpPerspective(source, quad, { width, height }, maxEdge = 2400) {
+    const scale = Math.min(1, maxEdge / Math.max(width, height))
+    const W = Math.max(1, Math.round(width * scale))
+    const H = Math.max(1, Math.round(height * scale))
+    const h = homography([[0, 0], [W, 0], [W, H], [0, H]], quad)   // output -> source
+
+    const sw = source.width, sh = source.height
+    const src = source.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, sw, sh).data
+    const out = document.createElement('canvas')
+    out.width = W; out.height = H
+    const ctx = out.getContext('2d')
+    const image = ctx.createImageData(W, H)
+    const d = image.data
+
+    for (let y = 0; y < H; y++) {
+        const yc = y + 0.5
+        for (let x = 0; x < W; x++) {
+            const xc = x + 0.5
+            const den = h[6] * xc + h[7] * yc + 1
+            const sx = (h[0] * xc + h[1] * yc + h[2]) / den - 0.5
+            const sy = (h[3] * xc + h[4] * yc + h[5]) / den - 0.5
+            const o = (y * W + x) * 4
+            const x0 = Math.floor(sx), y0 = Math.floor(sy)
+            const fx = sx - x0, fy = sy - y0
+            const xa = Math.min(sw - 1, Math.max(0, x0)), xb = Math.min(sw - 1, Math.max(0, x0 + 1))
+            const ya = Math.min(sh - 1, Math.max(0, y0)), yb = Math.min(sh - 1, Math.max(0, y0 + 1))
+            const i00 = (ya * sw + xa) * 4, i10 = (ya * sw + xb) * 4
+            const i01 = (yb * sw + xa) * 4, i11 = (yb * sw + xb) * 4
+            for (let c = 0; c < 4; c++) {
+                const top = src[i00 + c] + (src[i10 + c] - src[i00 + c]) * fx
+                const bot = src[i01 + c] + (src[i11 + c] - src[i01 + c]) * fx
+                d[o + c] = top + (bot - top) * fy
+            }
+        }
+    }
+    ctx.putImageData(image, 0, 0)
+    return out
+}
