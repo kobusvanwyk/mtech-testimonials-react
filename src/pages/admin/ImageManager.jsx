@@ -6,11 +6,12 @@ import { supabase } from '../../lib/supabase'
 import { optimiseImage } from '../../lib/imageTools'
 import {
     LayoutGrid, AlignJustify, RefreshCw, Upload,
-    Trash2, RefreshCcw, Link2, ExternalLink, Check, FileText, ImageOff, CheckCircle2
+    Trash2, RefreshCcw, Link2, ExternalLink, Check, FileText, ImageOff, CheckCircle2, Minimize2
 } from 'lucide-react'
 import EmptyState from '../../components/EmptyState'
 import { ImageGridSkeleton } from '../../components/Skeleton'
 import MoreMenu from '../../components/MoreMenu'
+import OptimisePhotosDialog from '../../components/OptimisePhotosDialog'
 
 const BUCKET = 'testimonial-images'
 
@@ -41,6 +42,7 @@ export default function ImageManager() {
     const [deletingId, setDeletingId] = useState(null)
     const [uploading, setUploading] = useState(false)
     const [uploadedUrl, setUploadedUrl] = useState(null)
+    const [optimising, setOptimising] = useState(false)
     const replaceInputRef = useRef(null)
     const replaceTargetRef = useRef(null)
     const uploadInputRef = useRef(null)
@@ -278,11 +280,19 @@ export default function ImageManager() {
                 <h1>Image Manager</h1>
                 <div className="edit-header-actions">
                     <button type="button" className="btn-secondary" onClick={loadImages}><RefreshCw size={16} aria-hidden="true" /> Refresh</button>
+                    <button type="button" className="btn-secondary" onClick={() => setOptimising(true)}><Minimize2 size={16} aria-hidden="true" /> Optimise photos</button>
                     <button type="button" className="btn-primary" onClick={() => uploadInputRef.current.click()} disabled={uploading}>
                         <Upload size={16} aria-hidden="true" /> {uploading ? 'Uploading…' : 'Upload image'}
                     </button>
                 </div>
             </div>
+
+            {optimising && (
+                <OptimisePhotosDialog
+                    images={images}
+                    onClose={changed => { setOptimising(false); if (changed) loadImages() }}
+                />
+            )}
 
             {uploadedUrl && (
                 <Alert
