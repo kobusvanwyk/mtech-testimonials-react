@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
-import { RotateCcw, RotateCw, FlipHorizontal2, FlipVertical2, Plus, LayoutGrid, Undo2 } from 'lucide-react'
+import { RotateCcw, RotateCw, FlipHorizontal2, FlipVertical2, Plus, LayoutGrid, Undo2, X, ChevronDown } from 'lucide-react'
 import { useDialog } from '../lib/useDialog'
 import Alert from './Alert'
 import {
     loadImage, renderGeometry, cropCanvas, applyAdjustments, canvasToFile, detectCollageTiles,
-    cssFilter, sharpenStrength, NO_ADJUST, MAX_EDGE, levelsTable, histogram, autoLevels,
+    cssFilter, sharpenStrength, NO_ADJUST, MAX_EDGE, levelsTable, histogram, autoLevels, hasLevels,
 } from '../lib/imageTools'
 
 // Photo editor (Add and Edit Testimonial galleries): crop, rotate, flip,
@@ -39,6 +39,33 @@ const SOURCE_EDGE = 6000    // cap on the working copy, keeps memory sane on hug
 const SHARPEN_ID = 'image-editor-sharpen'
 const LEVELS_ID = 'image-editor-levels'
 
+// Which tool sections are open is remembered in this browser (a convenience,
+// so it may come back empty)
+const SECTIONS_KEY = 'image_editor_sections'
+function readSections() {
+    try { return { levels: false, adjust: false, ...JSON.parse(localStorage.getItem(SECTIONS_KEY) || '{}') } }
+    catch { return { levels: false, adjust: false } }
+}
+
+// A tool section with a heading that opens and closes it. `changed` shows a
+// dot so edits inside a closed section are not missed; `extra` sits on the
+// right of the heading (Levels puts Auto there so it works while closed).
+function Section({ id, title, open, onToggle, changed, extra, children }) {
+    return (
+        <div className="image-editor-group image-editor-section">
+            <div className="image-editor-section-hd">
+                <button type="button" className="image-editor-toggle" aria-expanded={open} aria-controls={id} onClick={onToggle}>
+                    <ChevronDown size={16} aria-hidden="true" className="chev" />
+                    <span className="edit-label">{title}</span>
+                    {changed && <span className="image-editor-changed" title="Changed"><span className="sr-only">(changed)</span></span>}
+                </button>
+                {extra}
+            </div>
+            <div id={id} hidden={!open}>{children}</div>
+        </div>
+    )
+}
+
 // Histogram as an SVG path, 256 wide by 60 high (square-root scale so the
 // quieter tones still show)
 function histogramPath(bins) {
@@ -64,6 +91,12 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
     const [added, setAdded] = useState(0)
     const [removeOriginal, setRemoveOriginal] = useState(true)
     const [message, setMessage] = useState(null)     // { type, text }
+    const [sections, setSections] = useState(readSections)
+    const toggleSection = key => setSections(prev => {
+        const next = { ...prev, [key]: !prev[key] }
+        try { localStorage.setItem(SECTIONS_KEY, JSON.stringify(next)) } catch { /* private mode */ }
+        return next
+    })
 
     const close = useCallback(() => {
         if (!busy) onClose({ removeOriginal: added > 0 && removeOriginal })
@@ -166,7 +199,12 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
     return (
         <div className="modal-backdrop">
             <div className="modal image-editor" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="image-editor-title">
-                <h3 id="image-editor-title">Edit photo</h3>
+                <div className="image-editor-hd">
+                    <h3 id="image-editor-title" className="modal-title">Edit photo</h3>
+                    <button type="button" className="image-editor-close" onClick={close} disabled={!!busy} aria-label="Close the photo editor" title="Close">
+                        <X size={20} aria-hidden="true" />
+                    </button>
+                </div>
 
                 {/* Same kernel and Levels table as the saved photo (lib/imageTools.js).
                     sRGB so the filters work on the same values as the canvas. */}
@@ -236,11 +274,14 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                             </label>
                         </div>
 
-                        <div className="image-editor-group">
-                            <div className="image-editor-levels-head">
-                                <span className="edit-label">Levels</span>
-                                <button type="button" className="image-editor-chip" onClick={() => hist && setAdjust(a => ({ ...a, ...autoLevels(hist) }))} disabled={!ready || !hist}>Auto</button>
-                            </div>
+                        <Section
+                            id="image-editor-levels-body"
+                            title="Levels"
+                            open={sections.levels}
+                            onToggle={() => toggleSection('levels')}
+                            changed={hasLevels(adjust)}
+                            extra={<button type="button" className="image-editor-chip" onClick={() => hist && setAdjust(a => ({ ...a, ...autoLevels(hist) }))} disabled={!ready || !hist}>Auto</button>}
+                        >
                             {hist && (
                                 <svg className="image-editor-hist" viewBox="0 0 256 60" preserveAspectRatio="none" role="img" aria-label="Histogram of the photo's tones, dark on the left, light on the right">
                                     <path d={histogramPath(hist)} />
@@ -260,10 +301,15 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                                 <span>White point <output>{adjust.levelsWhite}</output></span>
                                 <input type="range" min={2} max={255} step={1} value={adjust.levelsWhite} onChange={e => setLevel('levelsWhite', Number(e.target.value))} disabled={!ready} />
                             </label>
-                        </div>
+                        </Section>
 
-                        <div className="image-editor-group">
-                            <span className="edit-label">Adjust</span>
+                        <Section
+                            id="image-editor-adjust-body"
+                            title="Adjust"
+                            open={sections.adjust}
+                            onToggle={() => toggleSection('adjust')}
+                            changed={adjust.brightness !== 100 || adjust.contrast !== 100 || adjust.saturation !== 100 || adjust.sharpen > 0}
+                        >
                             {SLIDERS.map(s => (
                                 <label key={s.key} className="image-editor-slider">
                                     <span>{s.label} <output>{s.key === 'sharpen' ? adjust[s.key] : adjust[s.key] - 100 > 0 ? `+${adjust[s.key] - 100}` : adjust[s.key] - 100}</output></span>
@@ -275,7 +321,7 @@ export default function ImageEditor({ src, onReplace, onAdd, onClose }) {
                                     />
                                 </label>
                             ))}
-                        </div>
+                        </Section>
 
                         <div className="image-editor-group">
                             <span className="edit-label">Collage</span>
