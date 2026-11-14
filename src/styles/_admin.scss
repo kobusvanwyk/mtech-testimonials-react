@@ -2470,9 +2470,22 @@ fieldset.settings-names:disabled .name-mode { cursor: progress; opacity: 0.7; }
 }
 .image-editor-reset { align-self: flex-start; }
 .image-editor .alert { margin: var(--space-4) 0 0; }
+// Footer stays in view while the tools scroll: sticks to the bottom of the
+// scrolling modal, flush with its padding edge (the modal has --space-6 padding)
 .image-editor-ft {
+    position: sticky;
+    bottom: calc(-1 * var(--space-6));
+    z-index: 2;
     align-items: center;
+    margin: var(--space-4) calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+
     .image-editor-remove { margin-right: auto; white-space: normal; }
+
+    @media (max-width: 575.98px) { border-radius: 0; }
 }
 
 // Pencil button on gallery tiles sits with move/remove
